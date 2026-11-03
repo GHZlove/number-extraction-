@@ -1,40 +1,41 @@
 # Number Extraction
 
-**Merge equal numbers. Choose your fights. Extract with the loot.**
+**Merge. Overload. Extract. Build your shelter.**
 
-A single-player HTML5 Canvas prototype combining number merging, exploration, tactical combat and extraction. Start each raid at **1**, grow by merging, collect supplies and reach an exit before time runs out. Loot becomes permanent currency only after a successful extraction.
+A single-player HTML5 Canvas game combining 2048-style number merging, directional combat and extraction. Start each expedition at **1**, choose when to fight or escape, and invest extracted resources in a persistent shelter.
 
-**Version:** 0.2.0 · **Game UI:** Simplified Chinese · **Hosted demo:** Restricted access
+**Version:** 0.3.0 · **Game UI:** Simplified Chinese · **Hosted demo:** Restricted access
 
-[简体中文](README.zh-CN.md) · [v0.2 combat rules](docs/COMBAT_V02.md) · [Game design](docs/GAME_DESIGN.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing notes](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.3 shelter and expeditions](docs/SHELTER_V03.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
-The detailed design, architecture and testing documents are currently in Chinese.
+Detailed design and verification notes are currently in Chinese.
 
 ## Gameplay
 
-Each raid follows this loop:
+**Prepare at the shelter → Deploy → Merge and explore → Fight or evade → Extract → Upgrade**
 
-**Deploy → Merge → Explore → Fight or evade → Collect loot → Extract → Upgrade**
+- **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
+- **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
+- **Eight weapons:** pistols, SMGs, assault rifles, sniper rifles, shotguns, railguns, greatswords and dual blades. Equip two slots, six quality tiers, durability-based armour and a laser sight.
+- **Five expedition difficulties:** larger maps, higher enemy numbers and greater resource rewards. The minimum map is **four times wider and four times taller** than v0.2, for **16 times the area**.
+- **Fullscreen raids:** the world fills the screen, with a compact HUD and minimap. Shelter facilities and deployment controls appear outside the raid.
+- **Persistent shelter:** extracted currency, alloy and cores upgrade storage, supplies, the workshop and recycling. Every ending returns directly to the shelter; failed raids preserve banked assets.
 
-- **Equal-number merging:** neutral tiles merge only when their value matches the player. Growth is capped at 2048; living enemies must be defeated before their dropped number can be merged.
-- **Weapons and armour:** equip two weapon slots from six weapon types and six quality tiers, with durability-based armour and an optional laser sight.
-- **Directional combat:** mouse-aimed projectiles and melee arcs, reciprocal body-contact damage, six enemy attack patterns, dodging and a limited-use **÷2** ability.
-- **Terrain:** ruined courtyards, warehouse walls, containers and cover vary between raids; water and mud affect movement.
-- **Risk and reward:** three map regions offer different enemies and loot values. Each raid has a seven-minute deadline.
-- **Extraction:** remain still inside a green exit circle and hold **E** for four seconds. Moving, releasing the key or taking damage interrupts the progress.
-- **Persistent progression:** extracted loot converts to base currency for backpack and starting-supply upgrades. Death or timeout loses raid loot while preserving previously banked assets.
+| Difficulty | World size | Area vs v0.2 | Time limit | Enemy numbers* | Base reward |
+| --- | --- | --- | --- | --- | --- |
+| 边境巡查 / Scout | 12,800 × 8,000 | 16× | 8:00 | 2–512 | 1× |
+| 失序探索 / Standard | 16,000 × 10,000 | 25× | 9:30 | 4–1,024 | 1.6× |
+| 深层突袭 / Hard | 19,200 × 12,000 | 36× | 11:00 | 8–2,048 | 2.4× |
+| 核心危机 / Severe | 22,400 × 14,000 | 49× | 12:30 | 16–4,096 | 3.6× |
+| 零点噩梦 / Nightmare | 25,600 × 16,000 | 64× | 14:00 | 32–8,192 | 5.2× |
+
+*Includes elite enemies; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
 
 ## Run locally
 
-### Requirements
+Requirements: **Python 3**, a modern browser with JavaScript enabled, and optional **Node.js 22+** for automated checks. There are no third-party package dependencies or build steps.
 
-- Python 3 to serve static files.
-- A modern browser with JavaScript enabled.
-- Optional: Node.js **22 or newer** for automated checks.
-
-There are no third-party package dependencies and no build step.
-
-Clone the repository, or download and extract the complete source archive:
+Clone the repository, or extract the complete source ZIP:
 
 ```bash
 git clone https://github.com/GHZlove/number-extraction-.git number-extraction
@@ -43,62 +44,55 @@ cd number-extraction
 
 Repository access is required while the source remains private.
 
-### Windows
-
-Double-click `start-windows.bat`, or run this from the project root:
+On **Windows**, double-click `start-windows.bat`, or run:
 
 ```powershell
 py -3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-If the Python launcher is unavailable, use:
+If the Python launcher is unavailable, replace `py -3` with `python`.
 
-```powershell
-python -m http.server 8000 --bind 127.0.0.1 --directory dist
-```
-
-### macOS / Linux
+On **macOS / Linux**:
 
 ```bash
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-Open [http://localhost:8000](http://localhost:8000) and select **开始行动** (Start raid). Keep the terminal open; press **Ctrl+C** to stop the server. If port 8000 is occupied, change both the command and the browser address to another port.
+Open [http://localhost:8000](http://localhost:8000), select a difficulty and workshop weapon, then click **确认出击** (Deploy). Keep the terminal open; **Ctrl+C** stops the server. If port 8000 is occupied, change the port in both the command and browser address.
 
-ES modules require an HTTP server; opening `dist/index.html` directly as a local file is unsupported. The Python server only serves files. The game simulation runs in the browser.
+ES modules require an HTTP server; opening `dist/index.html` as a local file is unsupported. The Python server only serves files; simulation runs in the browser.
 
 ## Controls
 
 | Input | Action |
 | --- | --- |
 | WASD / arrow keys | Move |
-| Mouse movement | Aim in world space |
-| Space / left mouse button | Fire or swing toward the aim direction; hold to repeat |
+| Mouse movement | Aim |
+| Left mouse button / Space | Fire or swing; hold to repeat |
 | 1 / 2 | Switch weapon slots |
 | F | Pick up nearby equipment |
-| B | Open the equipment backpack and change loadout; pauses the raid |
-| Q | Spend one ÷2 charge to weaken and interrupt an eligible enemy |
-| Shift | Dodge in the movement direction with brief invulnerability |
-| Hold E | Search a nearby chest or extract while stationary |
+| B | Open the backpack, equip, switch or drop items; pauses the raid |
+| G | Activate Overload at full energy |
+| Q | Spend a ÷2 charge to weaken and interrupt an eligible enemy |
+| Shift | Dodge with brief invulnerability |
+| Hold E | Search a chest, activate a node or extract while stationary |
 | R | Spend a repair kit to restore 30 health |
 | Esc | Pause / resume |
 
-Touch controls include a virtual joystick, action buttons and assisted aiming. Physical-device touch input, screen rotation and Safari compatibility still need validation. Sound is optional and starts disabled.
+Touch controls provide a joystick, action buttons and assisted aiming; weapons can also be switched in the inventory. Physical-device touch input, screen rotation and Safari compatibility still need validation. Sound starts disabled.
 
-### Try a first extraction
+### First expedition
 
-1. Move right through the initial **1 → 2 → 4** tile chain to reach player value **8**. The third tile is slightly above the others.
-2. Find the starter chest near `(485, 1190)`. Stand still and hold **E** for about 0.75 seconds to collect loot worth **24** and one ÷2 charge.
-3. Open the equipment chest at `(620, 1260)`. Press **F** for each dropped item, then **B** to equip its yellow assault rifle, white armour and laser. Compare **1/2** weapon slots and the white/red aim guide.
-4. Avoid the nearby hunter, or use its attack warning, **Q** and **Shift** to practise combat.
-5. Return left, then head north to the western exit at `(310, 530)`.
-6. Enter the green circle, release movement controls and hold **E** for four uninterrupted seconds. A successful result banks the loot value.
+1. Follow the fixed **1 → 2 → 4 → 8** neutral tile chain to reach player value **16** and full energy. The third tile is slightly above the others.
+2. Search the starter chest at `(485, 1190)` by standing still and holding **E** for 0.75 seconds. It provides 24 currency value and a ÷2 charge.
+3. Open the equipment chest at `(620, 1260)`. Press **F** for each item, then **B** to equip the yellow rifle, white armour and laser. Compare the two weapon slots and white/red aim guides.
+4. Practise **G**, **Q** and dodging against the nearby hunter, or evade it. The node at `(1180, 1270)` grants a temporary damage buff.
+5. Return to the western green exit at `(310, 530)`. Stand still and hold **E** for four uninterrupted seconds.
+6. The shelter shows your banked rewards. Upgrade a facility when you can afford its listed resources, or prepare another expedition.
 
-The tutorial tiles and chest are fixed; the rest of the map varies by seed. Enemies can still approach the tutorial area.
+## Combat and progression
 
-## Damage and equipment
-
-White weapons use a percentage of the target's maximum health. Equal numbers deal **25%**. For a tier difference `d = log2(attacker / defender)`, higher numbers deal `1 - 2^(-d)` and lower numbers deal `2^(d-1)`.
+White weapons use a fraction of the target's maximum health. Equal numbers deal **25%**. With `d = log2(attacker / defender)`, higher numbers deal `1 - 2^(-d)` and lower numbers deal `2^(d-1)`.
 
 | Match-up | Higher number deals | Lower number deals |
 | --- | --- | --- |
@@ -106,69 +100,56 @@ White weapons use a percentage of the target's maximum health. Equal numbers dea
 | 16 vs 4 | 75% | 12.5% |
 | 32 vs 4 | 87.5% | 6.25% |
 
-Weapon quality multiplies this base damage: **white 1.0, yellow 1.2, green 1.4, blue 1.6, purple 1.8, red 2.0**. Armour absorbs part of incoming damage while consuming durability. The examples above exclude armour and invulnerability effects.
+Quality multipliers are **white 1.0, yellow 1.2, green 1.4, blue 1.6, purple 1.8, red 2.0**. Armour, Overload and node buffs modify the final damage. The examples exclude these effects.
 
-Pistols, SMGs, assault rifles and sniper rifles fire physical projectiles with different cadence, range and spread. Greatswords and dual blades use directional melee arcs. Ammunition is unlimited in this prototype. Switching or equipping weapons does not reset the attack cooldown.
+Shotguns share one attack's base damage across five pellets. Railguns can hit three distinct targets before stopping; walls block both. A laser reduces actual firearm spread by **70%**. Switching or equipping does not reset the shared attack cooldown. Ammunition is unlimited in this prototype.
 
-An equipped laser changes the white aim guide to red and reduces actual firearm spread by **70%**. Equipment occupies backpack slots until equipped; picked-up replacements are swapped back into the backpack. Equipped loot is included once in the extraction value. Equipment is converted into base currency on extraction and is not carried into the next raid.
-
-## Architecture
-
-The project uses JavaScript ES modules, Canvas 2D, DOM-based UI, Web Audio and browser local storage. The eleven JavaScript modules separate game rules from browser interaction.
-
-| Module | Responsibility |
+| Shelter facility | Effect |
 | --- | --- |
-| `dist/src/config.js` | Balance settings, region definitions and upgrades |
-| `dist/src/math.js` | Damage fractions, seeded randomness, collision and line-of-sight geometry |
-| `dist/src/equipment.js` | Weapon and quality definitions, armour absorption and equipment value |
-| `dist/src/world.js` | Map, enemy and loot generation |
-| `dist/src/game.js` | `Raid` simulation, combat, interaction and run results |
-| `dist/src/input.js` | Keyboard, mouse and touch input |
-| `dist/src/renderer.js` | World, camera, effects and minimap rendering |
-| `dist/src/ui.js` | HUD, dialogs and base interface |
-| `dist/src/storage.js` | Save validation, settlement and upgrades |
-| `dist/src/audio.js` | Optional synthesised sound effects |
-| `dist/src/main.js` | Startup, fixed-step loop and event routing |
+| Storage | +2 backpack slots per level, up to level 20 |
+| Supplies | +1 starting ÷2 charge per level; +1 repair kit every two levels, up to level 20 |
+| Workshop | Unlock starter weapons, improve starting quality, add armour at level 2 and a laser at level 4; maximum level 6 |
+| Recycler | +5% extraction yield per level, up to level 20 |
 
-### Engineering decisions
+Picked-up equipment is converted into resources on extraction. Workshop equipment is issued afresh for each raid and has no salvage value. There is no persistent equipment warehouse. See [v0.3 rules](docs/SHELTER_V03.md) for costs, unlocks and rewards.
 
-- **Testable simulation:** `Raid` does not access the DOM or local storage, allowing direct Node.js tests.
-- **Fixed simulation step:** gameplay advances at 1/60 second per step. Catch-up time is capped at 0.1 seconds to limit large jumps after stalls; sustained low frame rates can still slow simulation time.
-- **Collision and visibility:** movement is split into substeps to prevent dashes crossing thin walls. Line-of-sight checks constrain attacks and division.
-- **Explicit damage rules:** tier-gap percentages, quality multipliers and armour absorption are separate, testable stages. Projectiles resolve the first wall or target collision along their path.
-- **Save handling:** data is validated on load, unavailable storage falls back to session-only play, and repeated settlement is guarded in the current single-tab flow.
+## Engineering
 
-## Automated checks
+The 14 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation, spatial obstacle queries, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
-From the project root, with Node.js 22 or newer:
+- `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
+- Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
+- Movement uses substeps; projectiles use ordered segment intersections. A static spatial grid narrows obstacle queries, and distant enemies skip active AI work.
+- Shelter progression is validated on load. v0.1/v0.2 saves migrate to a new key without overwriting the original; duplicate settlement is guarded within the current single-tab flow.
+- Canvas handles the world; DOM handles the shelter, HUD and dialogs. Artwork and sound are generated locally without external assets.
+
+### Checks
+
+With Node.js 22+:
 
 ```bash
-node tools/check.mjs
-node --test tests/game.test.js tests/combat-v02.test.js tests/browser-contract.test.js
+npm run check
+npm test
 ```
 
-The equivalent npm commands are `npm run check` and `npm test`; no `npm install` is required.
+No `npm install` is required. The current verification has **14 modules passing syntax/reference checks and 74 passing tests**: 19 core, 28 combat, 17 shelter/expedition and 10 browser-contract tests.
 
-The v0.2 baseline has **11 modules passing syntax/reference checks and 54 passing tests**: 19 core-rule tests, 28 combat/equipment tests and 7 Node-based input/DOM/Canvas contract tests. Coverage includes the exact damage examples, quality tiers, armour durability, directional attacks, projectile ordering, equipment swaps, extraction value, enemy patterns, movement and save compatibility.
-
-Map checks sample **100 seeds** for safe object placement and **25 seeds** for exit reachability on a navigation grid. These samples do not prove that every possible map is reachable. The contract tests use test doubles; they do not verify visual layout, native browser event defaults, audio or real-device performance. See [testing notes](docs/TESTING.md) for manual scenarios and earlier verification records.
+Coverage includes damage, equipment, large-map bounds, exit reachability, spatial queries, shelter upgrades, reward settlement, save migration, Overload, nodes, shotgun damage sharing, railgun penetration and application flow. The browser-contract tests use Node.js DOM/Canvas doubles; they do not establish actual layout, native browser behaviour, audio or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
-- Saves belong to the current browser and site origin. Local and hosted copies have separate progress; clearing site data removes saves, and private browsing may not retain them.
-- Only settled progress is saved. Refreshing or closing the page does not preserve an active raid or bank its loot. Concurrent tabs can overwrite local progress.
-- The base currently stores currency, upgrade levels and recent run records. Extracted items are converted automatically; persistent equipment storage and trading are not implemented. Backpack items can be dropped during a raid.
-- Enemy behaviour uses direct pursuit and local patrols; obstacle-aware pathfinding is not implemented.
-- This is a single-player prototype with no multiplayer or cloud synchronisation. Game code has no application-level network requests or telemetry.
-- Mobile devices, Safari, long sessions, low-performance hardware and gameplay balance need further testing. An English in-game interface and public showcase are future work.
+Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
+
+This is a single-player prototype with no multiplayer, cloud synchronisation, application-level network requests or telemetry. Enemies use direct pursuit and local patrols; obstacle-aware pathfinding is not implemented. Real-browser layout, mobile devices, Safari, long sessions, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 
 ## Documentation
 
-- [Chinese README](README.zh-CN.md): quick start and gameplay guide.
-- [v0.2 combat rules](docs/COMBAT_V02.md): damage, quality, weapons, armour, terrain and a playtest checklist.
-- [Game design](docs/GAME_DESIGN.md): formulas, map rules, economy and proposed iterations.
-- [Architecture](docs/ARCHITECTURE.md): module boundaries, simulation, collision and persistence.
-- [Testing](docs/TESTING.md): automated coverage, manual checks and verification limits.
+- [Chinese quick start](README.zh-CN.md)
+- [v0.3 shelter, difficulty and Overload rules](docs/SHELTER_V03.md)
+- [v0.2 combat foundation](docs/COMBAT_V02.md)
+- [Original v0.1 design record](docs/GAME_DESIGN.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Testing and verification limits](docs/TESTING.md)
 
 ## License
 
