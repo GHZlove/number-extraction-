@@ -10,3 +10,306 @@
 @media(max-width:650px){body{min-height:600px;height:100dvh}.app-header{height:60px;padding:0 12px}.brand strong{font-size:16px;letter-spacing:2px}.brand small{font-size:6px;letter-spacing:1px}.brand-mark{height:30px;width:30px;font-size:24px}.brand-mark span{font-size:12px}.nav{font-size:10px;padding:0}.nav.active{display:none}nav{margin-left:auto;gap:13px}.header-end{margin-left:0}.icon-button{font-size:14px;min-width:29px;height:29px}.icon-button span{font-size:6px;padding-left:3px}.app-main{padding:0;gap:0;flex-direction:column}.sidebar{width:auto;flex-direction:row;align-items:center;gap:12px;height:70px;flex-shrink:0;padding:10px 13px;background:#1b251d;border-bottom:1px solid #3a4837}.sidebar-top,.evolution-track,.objective-section,.sidebar-bottom,.supplies,.bag-grid,.bag-section>p,.bag-section .section-heading{display:none}.number-panel{border:0;background:none;border-radius:0;padding:0;min-width:88px}.number-panel:after{display:none}.number-panel>.panel-label{font-size:8px;justify-content:start}.number-panel>.panel-label span{display:none}.number-display{margin:3px 0 0;gap:9px}.number-display>strong{font-size:30px;min-width:18px;letter-spacing:-1px}.number-meta{font-size:7px}.number-meta>span:first-child{display:none}.number-meta b{font-size:8px}.number-meta>span:last-child{font-size:7px}.health-section{flex:1;padding:0;border:0;max-width:180px}.health-section .panel-label{font-size:8px;gap:5px}.health-section .panel-label span{font-size:8px}.meter{margin-top:8px;height:4px}.bag-section{border:0;padding:0;margin-left:auto;min-width:61px}.loot-total{flex-direction:column;align-items:end;margin:0;gap:4px}.loot-total>span{font-size:8px}.loot-total b{font-size:23px}.loot-total small{font-size:13px}.game-area{border:0;border-radius:0}.arena{min-height:340px}.app-footer{display:none}.arena-top{top:11px;left:11px;right:11px}.zone-pill{padding:7px 9px}.zone-pill small{font-size:6px;margin-top:4px}.arena-top-right{gap:7px}.timer{padding:5px 8px}.timer span{font-size:7px}.timer b{font-size:15px}.zone-caption{font-size:6px;bottom:151px;left:13px}.zone-caption small{font-size:6px}.mini-wrap{width:107px;padding:6px;bottom:158px;right:11px}.mini-label{font-size:7px;margin-bottom:5px}.mini-label .mint{font-size:6px}.mini-legend{font-size:6px;margin-top:5px}.message{top:66px;font-size:9px;padding:7px 10px;max-width:92%}.dialog{padding:22px;max-width:360px}.overlay{padding:15px;align-items:center}.dialog h1{font-size:29px;margin-bottom:9px}.dialog .eyebrow{font-size:8px;letter-spacing:1px}.hero-symbols{margin:17px 0!important}.hero-cube{height:50px;width:50px;font-size:30px}.hero-cube.ghost{height:35px;width:35px;font-size:21px}.hero-cube.faint{height:30px;width:30px;font-size:16px}.dialog p.lead{font-size:10px;margin-bottom:15px}.loop-chips{font-size:9px;padding:11px 0;margin-bottom:14px;gap:10px}.primary-button{font-size:12px;min-height:43px;padding:12px 15px}.dialog-note{font-size:8px;margin-top:9px}.touch-controls{left:16px;right:14px;bottom:22px}.touch-actions{grid-template-columns:repeat(3,44px);gap:7px}.touch-button{width:44px;height:44px}.touch-button.attack{width:47px;height:47px}#joystick{width:100px;height:100px}.interaction{bottom:150px;min-width:200px;left:13px;transform:none;padding:9px 11px;max-width:calc(100% - 133px)}.interaction>div:first-child{font-size:9px;gap:7px}.interaction b{font-size:8px}.interaction kbd{font-size:8px;min-height:20px;min-width:20px}.control-bar{height:49px;padding:0 12px}.control-bar button{font-size:8px}.control-bar kbd{font-size:8px;min-height:19px}.rule-grid{gap:7px;margin:14px 0}.rule-card{padding:10px}.rule-card b{font-size:10px}.rule-card p{font-size:9px}.key-help{font-size:9px;line-height:2}.dialog h2{font-size:21px}.upgrade-card{padding:12px;gap:9px}.upgrade-card b{font-size:11px}.upgrade-card p{font-size:9px}.upgrade-card button{min-width:76px;font-size:10px}.vault-balance{font-size:33px;margin:16px 0}.dialog.wide{max-height:100%;overflow:auto}.result-summary b{font-size:20px}.dialog-actions{margin-top:15px}}
 @media(max-height:650px) and (min-width:651px){body{min-height:560px}.objective-section{display:none}.dialog{padding:20px 28px}.hero-symbols{margin:12px 0!important}.hero-cube{height:42px;width:42px;font-size:30px}.dialog h1{font-size:27px}.dialog p.lead{font-size:11px;margin-bottom:12px}.loop-chips{padding:10px 0;margin-bottom:12px}.arena{min-height:320px}.app-header{height:58px}.app-footer{height:25px}.app-main{padding-top:10px}.number-display>strong{font-size:48px}.bag-slot{height:29px}.health-section,.bag-section{padding:12px 0}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* v0.2 equipment and aiming */
+.message {
+  top:110px;
+}
+.message.suppressed {
+  visibility:hidden;
+}
+.sidebar {
+  overflow-y:auto;
+}
+.loadout-panel {
+  padding:12px 0;
+  border-bottom:1px solid var(--line);
+}
+.loadout-panel h2 {
+  font-size:12px;
+  margin:0;
+}
+.loadout-panel .section-heading {
+  margin-bottom:8px;
+}
+.loadout-panel .section-heading span {
+  font:9px monospace;
+  color:var(--muted);
+}
+.weapon-slot {
+  display:block;
+  width:100%;
+  text-align:left;
+  margin:6px 0;
+  padding:9px 10px;
+  border:1px solid #405044;
+  border-radius:5px;
+  color:var(--rarity);
+  font-size:11px;
+  background:#ffffff03;
+}
+.weapon-slot.active {
+  border-color:var(--rarity);
+  background:#a9e9cd0b;
+}
+.armor-row {
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+  margin-top:10px;
+  color:#9dc9ef;
+}
+.armor-row b {
+  font:10px monospace;
+}
+.armor-meter {
+  height:3px;
+  background:#263d4b;
+  margin-top:6px;
+}
+.armor-meter i {
+  display:block;
+  width:0;
+  height:100%;
+  background:#90c9ff;
+}
+.laser-status {
+  font-size:9px;
+  color:#bcc9c0;
+  margin:9px 0;
+}
+.laser-status.laser-on {
+  color:#ff8b91;
+}
+.loadout-panel p {
+  font-size:9px;
+  margin:8px 0 0;
+}
+.weapon-strip {
+  position:absolute;
+  top:69px;
+  left:20px;
+  display:flex;
+  gap:6px;
+  align-items:center;
+  z-index:3;
+  font-size:10px;
+}
+.weapon-strip button {
+  border:1px solid #6a7a6866;
+  border-radius:5px;
+  background:#102419da;
+  padding:7px 9px;
+}
+.weapon-strip button.active {
+  border-color:currentColor;
+  background:#294835e8;
+}
+.weapon-strip span {
+  background:#163042cc;
+  border:1px solid #8ecbff33;
+  color:#a5d4fa;
+  padding:7px;
+  border-radius:5px;
+  font:10px monospace;
+}
+.nearby-gear {
+  position:absolute;
+  left:20px;
+  bottom:48px;
+  background:#102218ed;
+  padding:9px 13px;
+  border:1px solid currentColor;
+  border-radius:6px;
+  font-size:11px;
+  z-index:3;
+  max-width:calc(100% - 210px);
+}
+.nearby-gear[hidden] {
+  display:none;
+}
+.equipped-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:15px 0;
+}
+.equipped-card {
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:12px;
+  background:#ffffff03;
+  border:1px solid var(--rarity);
+  border-radius:7px;
+}
+.equipped-card small {
+  font-size:9px;
+  color:var(--muted);
+}
+.equipped-card b {
+  font-size:13px;
+  color:var(--rarity);
+}
+.equipped-card span {
+  font-size:9px;
+  color:#b0c3b1;
+}
+.attachment-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:9px 0;
+  border-bottom:1px solid var(--line);
+  font-size:11px;
+}
+.attachment-row button {
+  font-size:10px;
+  color:var(--mint);
+  padding:5px 8px;
+  border:1px solid #718c7044;
+  border-radius:4px;
+}
+.inventory-list {
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  max-height:260px;
+  overflow:auto;
+  margin:10px 0 15px;
+}
+.inventory-item {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border:1px solid #65775e55;
+  border-left:3px solid var(--rarity);
+  background:#ffffff03;
+  border-radius:5px;
+  padding:10px;
+}
+.inventory-item b {
+  display:block;
+  color:var(--rarity);
+  font-size:11px;
+}
+.inventory-item small {
+  display:block;
+  font-size:9px;
+  color:var(--muted);
+  margin-top:4px;
+}
+.inventory-actions {
+  display:flex;
+  gap:5px;
+  flex-shrink:0;
+}
+.inventory-actions button {
+  padding:7px;
+  border:1px solid #8ba48055;
+  border-radius:4px;
+  color:var(--mint);
+  font-size:10px;
+}
+.dialog.wide {
+  max-height:calc(100% - 8px);
+  overflow:auto;
+}
+.bag-slot.filled {
+  cursor:pointer;
+}
+.bag-slot {
+  font-size:11px;
+}
+#game-canvas {
+  cursor:crosshair;
+}
+@media(pointer:coarse) {
+  .touch-button.interact-touch {
+    grid-column:auto;
+    width:48px;
+    border-radius:50%;
+    flex-direction:column;
+    gap:0;
+  }
+}
+@media(max-width:650px) {
+  .loadout-panel {
+    display:none;
+  }
+  .weapon-strip {
+    top:59px;
+    left:11px;
+    gap:4px;
+  }
+  .weapon-strip button {
+    font-size:8px;
+    padding:5px 6px;
+  }
+  .weapon-strip span {
+    font-size:8px;
+    padding:5px;
+  }
+  .message {
+    top:105px;
+  }
+  .nearby-gear {
+    left:12px;
+    bottom:205px;
+    max-width:calc(100% - 133px);
+    font-size:9px;
+    padding:7px 10px;
+  }
+  .inventory-item {
+    align-items:flex-start;
+    gap:7px;
+    padding:8px;
+  }
+  .inventory-item b {
+    font-size:10px;
+  }
+  .inventory-actions {
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    max-width:140px;
+  }
+  .inventory-actions button {
+    font-size:9px;
+    padding:6px;
+  }
+  .equipped-card {
+    padding:9px;
+  }
+  .equipped-card b {
+    font-size:11px;
+  }
+  .equipped-card span {
+    font-size:8px;
+  }
+  .equipped-grid {
+    gap:7px;
+  }
+  .inventory-list {
+    max-height:220px;
+  }
+  .attachment-row {
+    font-size:10px;
+  }
+  .touch-actions {
+    grid-template-columns:repeat(3,42px);
+  }
+  .touch-button.interact-touch {
+    grid-column:auto;
+    width:42px;
+    border-radius:50%;
+    font-size:13px;
+  }
+  .touch-button.interact-touch small {
+    display:none;
+  }
+  .sidebar {
+    overflow:visible;
+  }
+}

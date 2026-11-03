@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.0';
 export const WORLD = Object.freeze({ width: 3200, height: 2000, spawn: { x: 300, y: 1060 } });
 export const RULES = Object.freeze({
   fixedStep: 1 / 60, raidSeconds: 420, maxValue: 2048,
@@ -8,6 +8,15 @@ export const RULES = Object.freeze({
   dashSpeed: 660, dashDuration: 0.17, dashCooldown: 2.8,
   divideRange: 215, divideStun: 1.25, extractSeconds: 4,
   startingDividers: 2, startingMedkits: 1, bagCapacity: 8,
+  equalDamageFraction: 0.25, contactCooldown: 0.85,
+});
+export const ENEMY_TYPES = Object.freeze({
+  hunter: { name: '追猎者', pattern: 'strike', windup: 0.72, range: 104, cooldown: 1.3, speed: 90 },
+  sentry: { name: '哨戒炮', pattern: 'shot', windup: 0.9, range: 380, cooldown: 1.9, speed: 0 },
+  gunner: { name: '散射手', pattern: 'fan', windup: 0.95, range: 410, cooldown: 2.1, speed: 62 },
+  charger: { name: '冲锋者', pattern: 'charge', windup: 1, range: 440, cooldown: 2.8, speed: 70 },
+  bomber: { name: '爆破者', pattern: 'blast', windup: 1.35, range: 310, cooldown: 3.1, speed: 48 },
+  sniper: { name: '狙击手', pattern: 'snipe', windup: 1.4, range: 690, cooldown: 2.7, speed: 0 },
 });
 export const ZONES = Object.freeze([
   { id: 0, name: '边缘缓冲区', en: 'THE OUTSKIRTS', from: 0, to: 1050, risk: '低危', color: '#80d9bc', reward: [14, 26], values: [1, 1, 2, 2, 4, 8] },

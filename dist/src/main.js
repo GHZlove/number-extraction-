@@ -22,7 +22,7 @@ function start(){
 function show(kind){
   paused=true;modal=kind;clearInput();
   if(kind==='vault')ui.vault(save,started&&raid.status==='playing',saveAvailable);
-  else if(kind==='help')ui.help();else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();
+  else if(kind==='inventory')ui.inventory(raid);else if(kind==='help')ui.help();else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();
   else if(kind==='result')ui.result(raid.result,save,saveAvailable);else ui.home(saveAvailable);
   if(!document.getElementById('dialog-title'))document.querySelector('#dialog h1')?.setAttribute('id','dialog-title');
 }
@@ -31,12 +31,19 @@ function close(){
   else if(raid.result)show('result');else show('home');
 }
 function pause(){if(!started||raid.status!=='playing')return;if(modal)close();else show('pause');}
-const input=new Input(canvas,pause);
-const ui=new UI({start,close,pause,help:()=>show('help'),vault:()=>show('vault'),abandonAsk:()=>show('abandonAsk'),
+function inventory(){if(!started||raid.status!=='playing')return;if(modal==='inventory')close();else show('inventory');}
+const input=new Input(canvas,pause,inventory);
+const ui=new UI({start,close,pause,inventory,
+  equip0:key=>equip(key,0),equip1:key=>equip(key,1),equip:key=>equip(key),
+  drop:key=>{if(raid.dropItem(Number(key)))show('inventory');},
+  remove:key=>{if(raid.removeEquipment(key))show('inventory');},
+  slot:key=>{if(started&&!paused)raid.switchWeapon(Number(key));},
+  help:()=>show('help'),vault:()=>show('vault'),abandonAsk:()=>show('abandonAsk'),
   abandon:()=>{raid.finish(false,'主动放弃行动');handleEvents();},
   upgrade:key=>{if(started&&raid.status==='playing')return;if(buyUpgrade(save,key)){persist();sound.play('loot');show('vault');ui.update(raid,save,started,paused);}},
   sound:()=>{const enabled=sound.toggle();document.getElementById('sound-state').textContent=enabled?'ON':'OFF';document.getElementById('sound-button').setAttribute('aria-label',enabled?'关闭音效':'开启音效');},
 });
+function equip(key,slot){if(raid.equip(Number(key),slot)){sound.play('loot');show('inventory');ui.update(raid,save,started,paused);}}
 function handleEvents(){
   for(const event of raid.events.splice(0)) {
     if(event.type==='message')ui.toast(event.text);
@@ -56,7 +63,9 @@ function frame(timestamp){
   if(started&&!paused&&raid.status==='playing'){
     accumulator+=dt;
     while(accumulator>=RULES.fixedStep&&!paused&&raid.status==='playing'){
-      raid.update(RULES.fixedStep,input.consume());accumulator-=RULES.fixedStep;handleEvents();
+      const controls=input.consume();
+      if(controls.pointer){const point=renderer.screenToWorld(controls.pointer.x,controls.pointer.y);controls.aimX=point.x;controls.aimY=point.y;}
+      raid.update(RULES.fixedStep,controls);accumulator-=RULES.fixedStep;handleEvents();
     }
   }else accumulator=0;
   renderer.draw(raid,timestamp/1000,dt);

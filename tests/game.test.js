@@ -6,7 +6,7 @@ import { attackDamage, canMerge, distance, isFree, lineOfSight, moveEntity } fro
 import { createEnemy, generateWorld } from '../dist/src/world.js';
 import { buyUpgrade, defaultSave, normalizeSave, readSave, settleRun, writeSave } from '../dist/src/storage.js';
 
-function emptyRaid(){const r=new Raid(defaultSave(),42);Object.assign(r.world,{enemies:[],tiles:[],chests:[],obstacles:[],drops:[],projectiles:[]});return r;}
+function emptyRaid(){const r=new Raid(defaultSave(),42);Object.assign(r.world,{enemies:[],tiles:[],chests:[],obstacles:[],terrain:[],drops:[],projectiles:[]});return r;}
 function advance(raid,seconds,input={}){for(let i=0;i<Math.ceil(seconds/RULES.fixedStep);i++)raid.update(RULES.fixedStep,input);}
 function place(raid,target){raid.player.x=target.x;raid.player.y=target.y;}
 
@@ -25,7 +25,7 @@ test('unequal tiles and living equal enemies cannot auto-merge',()=>{
   r.update(RULES.fixedStep,{});assert.equal(r.player.value,1);assert.equal(r.world.tiles[0].dead,false);assert.equal(r.world.enemies[0].dead,false);
 });
 test('small numbers deal positive damage to larger enemies; division improves it',()=>{
-  assert.equal(attackDamage(1,1),8);assert.equal(attackDamage(1,8),2);assert.equal(attackDamage(1,2),4);
+  assert.equal(attackDamage(1,1),25);assert.equal(attackDamage(1,8),6.25);assert.equal(attackDamage(1,2),25);
   assert.ok(attackDamage(4,4)>attackDamage(4,16));
 });
 test('division consumes one charge, preserves health ratio, interrupts and stuns',()=>{
@@ -38,10 +38,10 @@ test('invalid division does not consume charges, including value one and occlusi
   e.value=8;r.world.obstacles=[{x:r.player.x+50,y:r.player.y-100,w:15,h:200}];r.divide();assert.equal(e.value,8);assert.equal(r.player.dividers,2);
 });
 test('attacks respect walls and cooldown, and enemy kills produce pickups',()=>{
-  const r=emptyRaid(),e=createEnemy('victim',r.player.x+70,r.player.y,1);r.world.enemies=[e];
+  const r=emptyRaid(),e=createEnemy('victim',r.player.x+70,r.player.y,1);r.world.enemies=[e];r.switchWeapon(1);
   r.world.obstacles=[{x:r.player.x+35,y:r.player.y-40,w:10,h:80}];r.attack();assert.equal(e.hp,e.maxHp);
   r.world.obstacles=[];r.player.attackCooldown=0;r.attack();const remaining=e.hp;r.attack();assert.equal(e.hp,remaining);
-  r.player.attackCooldown=0;r.attack();r.player.attackCooldown=0;r.attack();assert.equal(e.dead,true);assert.equal(r.world.tiles[0].value,1);assert.equal(r.world.drops.length,1);
+  for(let i=0;i<3;i++){r.player.attackCooldown=0;r.attack();}assert.equal(e.dead,true);assert.equal(r.world.tiles[0].value,1);assert.equal(r.world.drops.filter(item=>item.kind==='loot').length,1);
 });
 test('dash collision substeps stop at thin obstacles and world bounds',()=>{
   const entity={x:100,y:100,radius:19};moveEntity(entity,600,0,[{x:200,y:50,w:10,h:100}]);assert.ok(entity.x<=181);
