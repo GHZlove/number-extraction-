@@ -1,14 +1,33 @@
 # Number Extraction
 
-**Merge. Overload. Extract. Build your shelter.**
+### A 2048-inspired extraction game with tactical combat and a persistent shelter.
 
-A single-player HTML5 Canvas game combining 2048-style number merging, directional combat and extraction. Start each expedition at **1**, choose when to fight or escape, and invest extracted resources in a persistent shelter.
+**Merge your way up. Choose your fights. Bring something home.**
 
-**Version:** 0.3.0 · **Game UI:** Simplified Chinese · **Hosted demo:** Restricted access
+Start as the number **1** in a procedurally generated combat zone. Merge equal numbers to grow, use division and temporary abilities to challenge stronger enemies, and decide when to extract with your loot. Each successful expedition funds a shelter that improves the next one.
+
+Number Extraction is a game development portfolio project built with **vanilla JavaScript and HTML5 Canvas**. It explores how a simple numerical rule can support combat, exploration and persistent progression, with a modular simulation and automated verification.
+
+| At a glance | |
+| --- | --- |
+| Current version | v0.3.0 · playable single-player prototype |
+| Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
+| Core systems | Number merging, directional combat, procedural worlds, extraction, shelter upgrades |
+| Content | Eight weapon types, six quality tiers, six enemy attack patterns, five difficulties |
+| Verification | 74 automated tests and syntax/reference checks for 14 modules |
+| Game interface | Simplified Chinese; English and Chinese project documentation |
+
+The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
 [简体中文](README.zh-CN.md) · [v0.3 shelter and expeditions](docs/SHELTER_V03.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
+
+## Design idea
+
+The player's number is both a growth target and a combat tier. Equal-number merging makes exploration useful; percentage-based damage makes the relationship between two numbers readable. Limited division charges, telegraphed enemy attacks, armour and temporary buffs give the player several ways to approach a stronger opponent.
+
+Extraction adds a second decision: carry on searching for better loot, or return with resources that permanently improve the shelter. The game connects a short expedition loop with longer-term preparation and progression.
 
 ## Gameplay
 
@@ -41,8 +60,6 @@ Clone the repository, or extract the complete source ZIP:
 git clone https://github.com/GHZlove/number-extraction-.git number-extraction
 cd number-extraction
 ```
-
-Repository access is required while the source remains private.
 
 On **Windows**, double-click `start-windows.bat`, or run:
 
@@ -113,7 +130,10 @@ Shotguns share one attack's base damage across five pellets. Railguns can hit th
 
 Picked-up equipment is converted into resources on extraction. Workshop equipment is issued afresh for each raid and has no salvage value. There is no persistent equipment warehouse. See [v0.3 rules](docs/SHELTER_V03.md) for costs, unlocks and rewards.
 
-## Engineering
+## Engineering highlights
+
+The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
+
 
 The 14 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation, spatial obstacle queries, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
