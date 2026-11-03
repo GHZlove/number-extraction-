@@ -6,7 +6,7 @@ export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export const tier = value => Math.log2(value);
 export const isPowerOfTwo = value => Number.isInteger(value) && value > 0 && Number.isInteger(Math.log2(value));
 export const canMerge = (a, b) => isPowerOfTwo(a) && a === b && a < RULES.maxValue;
-export const zoneAt = x => ZONES.find(z => x >= z.from && x < z.to) || ZONES[2];
+export const zoneAt = (x, zones = ZONES) => zones.find(z => x >= z.from && x < z.to) || zones[zones.length-1];
 export const maxEnemyHealth = () => 100;
 export function damageFraction(attackerValue, defenderValue) {
   if (!isPowerOfTwo(attackerValue) || !isPowerOfTwo(defenderValue)) return 0;
@@ -33,8 +33,8 @@ export function circleRect(x, y, radius, rect) {
   const ny = clamp(y, rect.y, rect.y + rect.h);
   return (x - nx) ** 2 + (y - ny) ** 2 < radius ** 2;
 }
-export function isFree(x, y, radius, obstacles) {
-  return x >= radius && y >= radius && x <= WORLD.width - radius && y <= WORLD.height - radius &&
+export function isFree(x, y, radius, obstacles, bounds = WORLD) {
+  return x >= radius && y >= radius && x <= bounds.width - radius && y <= bounds.height - radius &&
     !obstacles.some(o => circleRect(x, y, radius, o));
 }
 // Segment versus padded AABB: attacks and division cannot pass through walls.
@@ -54,14 +54,14 @@ export function lineOfSight(a, b, obstacles, pad = 0) {
   });
 }
 // Substeps prevent dash movement tunnelling through thin obstacles.
-export function moveEntity(entity, dx, dy, obstacles) {
+export function moveEntity(entity, dx, dy, obstacles, bounds = WORLD) {
   const r = entity.radius || RULES.playerRadius;
   const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / (r / 2)));
   for (let i=0; i<steps; i++) {
-    const x = clamp(entity.x + dx/steps, r, WORLD.width-r);
-    if (isFree(x, entity.y, r, obstacles)) entity.x = x;
-    const y = clamp(entity.y + dy/steps, r, WORLD.height-r);
-    if (isFree(entity.x, y, r, obstacles)) entity.y = y;
+    const x = clamp(entity.x + dx/steps, r, bounds.width-r);
+    if (isFree(x, entity.y, r, obstacles, bounds)) entity.x = x;
+    const y = clamp(entity.y + dy/steps, r, bounds.height-r);
+    if (isFree(entity.x, y, r, obstacles, bounds)) entity.y = y;
   }
 }
 

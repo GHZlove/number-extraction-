@@ -82,11 +82,19 @@ test('HUD and equipment dialog use actual HTML ids and display equipped values a
 
 test('main module starts, routes Start and B inventory controls, and advances a frame without missing DOM contracts', async t => {
   const env = browserStubs(t);
-  await import('../dist/src/main.js?contract-test');
-  const dialog = env.ids.get('dialog');
-  assert.match(dialog.innerHTML, /开始行动/);
-  const start = dialog.children.find(button => button.dataset.action === 'start');
-  dialog.dispatch('click', { target: start });
+  await import('../dist/src/main.js?contract-test-v03');
+  const dialog=env.ids.get('dialog'),shelter=env.ids.get('shelter-screen');
+  assert.match(shelter.innerHTML,/确认出击/);
+  const help=shelter.children.find(button=>button.dataset.action==='help');
+  shelter.dispatch('click',{target:help});
+  assert.equal(env.ids.get('overlay').hidden,false);
+  dialog.dispatch('click',{target:dialog.children.find(button=>button.dataset.action==='close')});
+  assert.equal(env.document.activeElement,help);
+  const start=shelter.children.find(button=>button.dataset.action==='start');
+  shelter.dispatch('click',{target:start});
+  assert.equal(env.document.body.dataset.screen,'raid');
+  assert.equal(shelter.hidden,true);
+  assert.equal(env.ids.get('raid-screen').hidden,false);
   assert.equal(env.ids.get('overlay').hidden, true);
   const frame = env.frames.find(callback => callback.name === 'frame'); assert.ok(frame);
   frame(100); frame(120);
@@ -94,4 +102,42 @@ test('main module starts, routes Start and B inventory controls, and advances a 
   assert.match(dialog.innerHTML, /局内装备/);
   env.window.dispatch('keydown', { code: 'KeyB', target: env.canvas });
   assert.equal(env.ids.get('overlay').hidden, true);
+});
+
+test('shelter difficulty and workshop selections persist and apply to the next expedition', async t => {
+  const env=browserStubs(t),save=defaultSave();save.credits=1000;save.materials={alloy:100,core:10};
+  env.window.localStorage.setItem('number-extraction-v03',JSON.stringify(save));
+  await import('../dist/src/main.js?shelter-flow-v03');
+  const shelter=env.ids.get('shelter-screen');
+  const action=(name,key)=>shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action===name&&(key===undefined||button.dataset.key===key))});
+  action('upgradeFacility','workshop');
+  shelter.dispatch('change',{target:{dataset:{action:'selectWeapon'},value:'smg'}});
+  action('selectDifficulty','nightmare');
+  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v03'));
+  assert.equal(stored.shelter.workshop,1);assert.equal(stored.selectedWeapon,'smg');assert.equal(stored.selectedDifficulty,'nightmare');
+  assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/25600 × 16000/);
+  action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.equal(env.ids.get('mission-name').textContent,'零点噩梦');
+  assert.match(env.ids.get('quick-slot-0').innerHTML,/冲锋枪/);
+});
+
+test('ending a raid returns directly to the shelter and preserves banked resources', async t => {
+  const env=browserStubs(t),save=defaultSave();save.credits=91;save.materials={alloy:8,core:2};
+  env.window.localStorage.setItem('number-extraction-v03',JSON.stringify(save));
+  await import('../dist/src/main.js?return-shelter-v03');
+  const shelter=env.ids.get('shelter-screen'),dialog=env.ids.get('dialog');
+  shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action==='start')});
+  env.window.dispatch('keydown',{code:'Escape',target:env.canvas});
+  dialog.dispatch('click',{target:dialog.children.find(button=>button.dataset.action==='abandonAsk')});
+  dialog.dispatch('click',{target:dialog.children.find(button=>button.dataset.action==='abandon')});
+  assert.equal(env.document.body.dataset.screen,'shelter');assert.equal(env.ids.get('raid-screen').hidden,true);assert.equal(shelter.hidden,false);
+  assert.match(shelter.innerHTML,/已返回庇护所/);assert.equal(env.ids.get('overlay').hidden,true);
+  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v03'));
+  assert.equal(stored.credits,91);assert.deepEqual(stored.materials,{alloy:8,core:2});assert.equal(stored.deaths,1);
+});
+
+test('camera and minimap use the largest expedition bounds rather than the minimum map',t=>{
+  const env=browserStubs(t),renderer=new Renderer(env.canvas,env.ids.get('minimap'));
+  const raid=new Raid(defaultSave(),49,{difficulty:'nightmare'});raid.player.x=24000;raid.player.y=14500;
+  renderer.camera={x:24000,y:14500};renderer.draw(raid,10,1/60);
+  assert.ok(renderer.camera.x>23000);assert.ok(renderer.camera.y>14000);assert.equal(renderer.bounds.width,25600);
 });

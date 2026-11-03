@@ -8,14 +8,16 @@ export const RARITIES = Object.freeze([
 ]);
 
 // White weapons share the same number-based damage rule. Weapon types differ in
-// cadence, range, spread and melee coverage; ammunition is unlimited in v0.2.
+// cadence, range, spread and melee coverage; ammunition is unlimited in this prototype.
 export const WEAPONS = Object.freeze({
-  pistol: { name: '手枪', short: 'PST', mode: 'ranged', interval: 0.46, range: 580, speed: 820, spread: 0.055 },
-  smg: { name: '冲锋枪', short: 'SMG', mode: 'ranged', interval: 0.16, range: 350, speed: 760, spread: 0.19 },
-  rifle: { name: '突击步枪', short: 'AR', mode: 'ranged', interval: 0.29, range: 720, speed: 980, spread: 0.085 },
-  sniper: { name: '狙击枪', short: 'SNP', mode: 'ranged', interval: 1.15, range: 1150, speed: 1600, spread: 0.018 },
-  greatsword: { name: '大剑', short: 'GS', mode: 'melee', interval: 0.85, range: 132, arc: Math.PI * 0.9 },
-  dualblades: { name: '双刀', short: 'DB', mode: 'melee', interval: 0.24, range: 82, arc: Math.PI * 0.6 },
+  pistol: { name: '手枪', short: 'PST', mode: 'ranged', interval: 0.46, range: 580, speed: 820, spread: 0.055, unlock: 0 },
+  smg: { name: '冲锋枪', short: 'SMG', mode: 'ranged', interval: 0.16, range: 350, speed: 760, spread: 0.19, unlock: 1 },
+  rifle: { name: '突击步枪', short: 'AR', mode: 'ranged', interval: 0.29, range: 720, speed: 980, spread: 0.085, unlock: 2 },
+  sniper: { name: '狙击枪', short: 'SNP', mode: 'ranged', interval: 1.15, range: 1150, speed: 1600, spread: 0.018, unlock: 3 },
+  greatsword: { name: '大剑', short: 'GS', mode: 'melee', interval: 0.85, range: 132, arc: Math.PI * 0.9, unlock: 0 },
+  dualblades: { name: '双刀', short: 'DB', mode: 'melee', interval: 0.24, range: 82, arc: Math.PI * 0.6, unlock: 1 },
+  shotgun: { name: '霰弹枪', short: 'SG', mode: 'ranged', interval: 0.88, range: 440, speed: 780, spread: 0.25, pellets: 5, unlock: 2 },
+  railgun: { name: '磁轨步枪', short: 'RAIL', mode: 'ranged', interval: 1.3, range: 1500, speed: 2200, spread: 0.008, pierce: 2, unlock: 4 },
 });
 
 export const rarityOf = id => RARITIES.find(rarity => rarity.id === id) || RARITIES[0];

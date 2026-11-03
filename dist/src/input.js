@@ -5,7 +5,7 @@ export class Input {
     this.pointer = null; this.mouseAttack = false;
     const typing = target => /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName) || target?.isContentEditable;
     const controlled = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2']);
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2']);
     window.addEventListener('keydown', event => {
       if (typing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.code === 'Escape' && !event.repeat) { onPause(); return; }
@@ -78,7 +78,7 @@ export class Input {
       y: (held('KeyS') || held('ArrowDown') ? 1 : 0)-(held('KeyW') || held('ArrowUp') ? 1 : 0)+this.joy.y,
       attack: held('Space') || this.mouseAttack, autoAim: touch('Space'),
       interact: held('KeyE'), divide: this.pressed.has('KeyQ'), heal: this.pressed.has('KeyR'),
-      dash: this.pressed.has('ShiftLeft') || this.pressed.has('ShiftRight'), pickup: this.pressed.has('KeyF'),
+      dash: this.pressed.has('ShiftLeft') || this.pressed.has('ShiftRight'), pickup: this.pressed.has('KeyF'), overload: this.pressed.has('KeyG'),
       slot: this.pressed.has('Digit1') ? 0 : this.pressed.has('Digit2') ? 1 : undefined,
       pointer: this.pointer ? { ...this.pointer } : null,
     };

@@ -1,75 +1,79 @@
-import { RULES } from './config.js';
+import { RULES, difficultyOf } from './config.js';
 import { Raid } from './game.js';
 import { Input } from './input.js';
 import { Renderer } from './renderer.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
-import { buyUpgrade, readSave, settleRun, writeSave } from './storage.js';
+import { readSave,settleRun,writeSave } from './storage.js';
+import { upgradeFacility,unlockedWeapons } from './shelter.js';
 
-let storage=null;try{storage=window.localStorage;}catch{/* Sandboxed contexts may disable local storage. */}
+let storage=null;try{storage=window.localStorage;}catch{}
 const initial=readSave(storage);let save=initial.save,saveAvailable=initial.available;
-let raid=new Raid(save,204801),started=false,paused=true,modal='home',accumulator=0,lastTime=0,lastUI=0;
-const canvas=document.getElementById('game-canvas');
-const renderer=new Renderer(canvas,document.getElementById('minimap'));
-const sound=new Sound();
+if(initial.migrated)saveAvailable=writeSave(storage,save);
+let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null;
+const canvas=document.getElementById('game-canvas'),renderer=new Renderer(canvas,document.getElementById('minimap')),sound=new Sound();
 const persist=()=>{saveAvailable=writeSave(storage,save);};
 function clearInput(){input.active=false;input.clear();accumulator=0;}
+function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable});}
+function enterShelter(){
+  view='shelter';paused=true;modal=null;clearInput();
+  document.body.dataset.screen='shelter';document.getElementById('raid-screen').hidden=true;document.getElementById('shelter-screen').hidden=false;
+  ui.hide(false);refreshShelter();
+}
 function start(){
+  if(view==='raid')return;
   const seed=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(seed);else seed[0]=Date.now();
-  raid=new Raid(save,seed[0]);started=true;paused=false;modal=null;accumulator=0;input.clear();input.active=true;ui.hide();
-  renderer.camera={...raid.player};ui.update(raid,save,started,paused);
+  raid=new Raid(save,seed[0]);view='raid';paused=false;modal=null;accumulator=0;
+  document.body.dataset.screen='raid';document.getElementById('shelter-screen').hidden=true;document.getElementById('raid-screen').hidden=false;
+  renderer.resize();renderer.camera={...raid.player};renderer.lastMapDraw=-Infinity;input.clear();input.active=true;ui.hide();ui.update(raid,save,true,false);
 }
 function show(kind){
-  paused=true;modal=kind;clearInput();
-  if(kind==='vault')ui.vault(save,started&&raid.status==='playing',saveAvailable);
-  else if(kind==='inventory')ui.inventory(raid);else if(kind==='help')ui.help();else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();
-  else if(kind==='result')ui.result(raid.result,save,saveAvailable);else ui.home(saveAvailable);
-  if(!document.getElementById('dialog-title'))document.querySelector('#dialog h1')?.setAttribute('id','dialog-title');
+  if(view==='raid'){paused=true;clearInput();}modal=kind;
+  if(kind==='inventory')ui.inventory(raid);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
 }
 function close(){
-  if(started&&raid.status==='playing'){paused=false;modal=null;input.clear();input.active=true;accumulator=0;ui.hide();}
-  else if(raid.result)show('result');else show('home');
+  modal=null;ui.hide(view==='raid');
+  if(view==='shelter')document.getElementById('shelter-screen').querySelector('[data-action="help"]')?.focus();
+  if(view==='raid'&&raid.status==='playing'){paused=false;input.clear();input.active=true;accumulator=0;}
 }
-function pause(){if(!started||raid.status!=='playing')return;if(modal)close();else show('pause');}
-function inventory(){if(!started||raid.status!=='playing')return;if(modal==='inventory')close();else show('inventory');}
+function pause(){if(modal){close();return;}if(view==='raid'&&raid.status==='playing')show('pause');}
+function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==='inventory')close();else show('inventory');}
 const input=new Input(canvas,pause,inventory);
-const ui=new UI({start,close,pause,inventory,
+const ui=new UI({
+  start,close,pause,inventory,help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
+  abandon:()=>{if(raid?.status==='playing'){raid.finish(false,'主动返回庇护所');handleEvents();}},
+  selectDifficulty:key=>{if(view!=='shelter')return;save.selectedDifficulty=difficultyOf(key).id;persist();refreshShelter();},
+  selectWeapon:key=>{if(view!=='shelter'||!unlockedWeapons(save).includes(key))return;save.selectedWeapon=key;persist();refreshShelter();},
+  upgradeFacility:key=>{if(view==='shelter'&&upgradeFacility(save,key)){persist();sound.play('loot');refreshShelter();ui.toast('设施升级完成，下一次出击即生效。');}},
   equip0:key=>equip(key,0),equip1:key=>equip(key,1),equip:key=>equip(key),
-  drop:key=>{if(raid.dropItem(Number(key)))show('inventory');},
-  remove:key=>{if(raid.removeEquipment(key))show('inventory');},
-  slot:key=>{if(started&&!paused)raid.switchWeapon(Number(key));},
-  help:()=>show('help'),vault:()=>show('vault'),abandonAsk:()=>show('abandonAsk'),
-  abandon:()=>{raid.finish(false,'主动放弃行动');handleEvents();},
-  upgrade:key=>{if(started&&raid.status==='playing')return;if(buyUpgrade(save,key)){persist();sound.play('loot');show('vault');ui.update(raid,save,started,paused);}},
+  drop:key=>{if(raid?.dropItem(Number(key)))show('inventory');},remove:key=>{if(raid?.removeEquipment(key))show('inventory');},
+  slot:key=>{if(view==='raid'&&raid.switchWeapon(Number(key))){if(modal==='inventory')show('inventory');ui.update(raid,save,true,paused);}},
+  overload:()=>{if(view==='raid'&&!paused)raid.activateOverload();},
   sound:()=>{const enabled=sound.toggle();document.getElementById('sound-state').textContent=enabled?'ON':'OFF';document.getElementById('sound-button').setAttribute('aria-label',enabled?'关闭音效':'开启音效');},
 });
-function equip(key,slot){if(raid.equip(Number(key),slot)){sound.play('loot');show('inventory');ui.update(raid,save,started,paused);}}
+function equip(key,slot){if(raid?.equip(Number(key),slot)){sound.play('loot');show('inventory');ui.update(raid,save,true,paused);}}
 function handleEvents(){
-  for(const event of raid.events.splice(0)) {
+  for(const event of raid.events.splice(0)){
     if(event.type==='message')ui.toast(event.text);
-    else if(event.type==='finish'){
-      if(settleRun(save,event.result))persist();
-      sound.play(event.type);show('result');ui.update(raid,save,started,paused);
-    }else {sound.play(event.type);if(event.type==='hurt')renderer.shake=4;}
+    else if(event.type==='finish'){if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
+    else{sound.play(event.type);if(event.type==='hurt')renderer.shake=4;}
   }
 }
-function autoPause(){if(started&&raid.status==='playing'&&!paused)show('pause');}
-window.addEventListener('blur',autoPause);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)autoPause();});
-
-// A fixed simulation step keeps timers, movement and damage independent of FPS.
+function autoPause(){if(view==='raid'&&!paused)show('pause');}
+window.addEventListener('blur',autoPause);document.addEventListener('visibilitychange',()=>{if(document.hidden)autoPause();});
 function frame(timestamp){
   const dt=Math.min((timestamp-lastTime)/1000||0,0.1);lastTime=timestamp;
-  if(started&&!paused&&raid.status==='playing'){
-    accumulator+=dt;
-    while(accumulator>=RULES.fixedStep&&!paused&&raid.status==='playing'){
-      const controls=input.consume();
-      if(controls.pointer){const point=renderer.screenToWorld(controls.pointer.x,controls.pointer.y);controls.aimX=point.x;controls.aimY=point.y;}
-      raid.update(RULES.fixedStep,controls);accumulator-=RULES.fixedStep;handleEvents();
-    }
-  }else accumulator=0;
-  renderer.draw(raid,timestamp/1000,dt);
-  if(timestamp-lastUI>80){ui.update(raid,save,started,paused);lastUI=timestamp;}
-  requestAnimationFrame(frame);
+  if(view==='raid'){
+    if(!paused&&raid.status==='playing'){
+      accumulator+=dt;
+      while(accumulator>=RULES.fixedStep&&!paused&&raid.status==='playing'){
+        const controls=input.consume();
+        if(controls.pointer){const point=renderer.screenToWorld(controls.pointer.x,controls.pointer.y);controls.aimX=point.x;controls.aimY=point.y;}
+        raid.update(RULES.fixedStep,controls);accumulator-=RULES.fixedStep;handleEvents();
+      }
+    }else accumulator=0;
+    if(view==='raid'){renderer.draw(raid,timestamp/1000,dt);if(timestamp-lastUI>80){ui.update(raid,save,true,paused);lastUI=timestamp;}}
+  }
+  ui.tick();requestAnimationFrame(frame);
 }
-show('home');ui.update(raid,save,started,paused);requestAnimationFrame(frame);
+enterShelter();requestAnimationFrame(frame);

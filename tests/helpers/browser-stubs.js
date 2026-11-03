@@ -63,6 +63,8 @@ export function browserStubs(t) {
     }
     querySelector(selector) {
       if (selector === 'button:not(:disabled)') return this.children.find(child => !child.disabled) || null;
+      const action=selector.match(/^\[data-action="([^"]+)"\]$/)?.[1];
+      if(action)return this.children.find(child=>child.dataset.action===action)||null;
       throw new Error(`Unexpected element selector: ${selector}`);
     }
   }
@@ -80,7 +82,7 @@ export function browserStubs(t) {
     const button = new Element('BUTTON'); button.dataset.control = match[2]; button.small = new Element('SMALL');
     button.touch = /touch-button/.test(match[1]); controls.push(button);
   }
-  const document = new Element(); document.hidden = false;
+  const document = new Element(); document.hidden = false;document.body=new Element('BODY');document.body.dataset.screen='shelter';
   document.getElementById = id => ids.get(id) || null;
   document.querySelectorAll = selector => {
     if (selector === '[data-control]') return controls;
@@ -97,7 +99,8 @@ export function browserStubs(t) {
     if (selector === '#dialog h1') return ids.get('dialog').innerHTML.includes('<h1>') ? new Element('H1') : null;
     throw new Error(`Unexpected document selector: ${selector}`);
   };
-  const window = new Element(); window.localStorage = { getItem: () => null, setItem() {} };
+  const storageData=new Map();
+  const window = new Element(); window.localStorage = { getItem: key => storageData.get(key) ?? null, setItem(key,value) {storageData.set(key,String(value));} };
   const canvas = ids.get('game-canvas'); canvas.parentElement = ids.get('arena');
   install('window', window); install('document', document); install('innerWidth', 1280); install('devicePixelRatio', 2);
   install('matchMedia', () => ({ matches: false }));

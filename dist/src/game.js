@@ -1,36 +1,67 @@
-import { RULES, WORLD, ENEMY_TYPES } from './config.js';
+import { RULES, WORLD, ENEMY_TYPES, difficultyOf } from './config.js';
 import {
   attackDamage, bagTotal, canMerge, clamp, distance, lineOfSight, maxEnemyHealth,
   moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed,
 } from './math.js';
 import { createLoot, generateWorld, lootForEnemy } from './world.js';
-import { makeEquipment, randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue } from './equipment.js';
+import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue } from './equipment.js';
+import { facilityLevel, starterLoadout, rewardMultiplier, salvageMaterials } from './shelter.js';
+import { obstaclesFor } from './spatial.js';
 
 export class Raid {
-  constructor(save, seed = Date.now() >>> 0) {
+  constructor(save, seed = Date.now() >>> 0, options = {}) {
     this.id = `${Date.now()}-${seed}`;
     this.random = seededRandom(seed ^ 0x5a91bd);
-    this.world = generateWorld(seed);
+    this.difficulty = difficultyOf(options.difficulty ?? save.selectedDifficulty);
+    this.duration = this.difficulty.seconds;
+    this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id);
+    this.world = generateWorld(seed,this.difficulty.id);
     this.status = 'playing';
     this.elapsed = 0;
     this.result = null;
-    const starter = type => ({ ...makeEquipment('weapon', type, 'white', `starter-${type}`), starter: true, value: 0 });
+    const loadout = starterLoadout(save,options.weapon);
+    const supply = facilityLevel(save,'supply');
     this.player = {
       ...WORLD.spawn, radius: RULES.playerRadius, value: 1, hp: RULES.health, maxHp: RULES.health,
-      dividers: RULES.startingDividers + save.upgrades.divider, medkits: RULES.startingMedkits,
+      dividers: RULES.startingDividers + supply, medkits: RULES.startingMedkits + Math.floor(supply/2),
       attackCooldown: 0, dashCooldown: 0, dashTime: 0, dashX: 1, dashY: 0,
       invulnerable: 0, facingX: 1, facingY: 0, aimAngle: 0,
-      weapons: [starter('pistol'), starter('greatsword')], activeSlot: 0, armor: null, laser: null,
+      ...loadout, activeSlot: 0, energy: 0, overload: 0, buffs: { fury: 0, phase: 0, magnet: 0 },
     };
     this.bag = [];
-    this.capacity = RULES.bagCapacity + save.upgrades.capacity * 2;
+    this.capacity = RULES.bagCapacity + facilityLevel(save,'storage') * 2;
     this.kills = 0; this.merges = 0; this.opened = 0;
-    this.extractProgress = 0; this.searchProgress = 0; this.interactId = null;
+    this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = null;
     this.events = []; this.lastMessage = ''; this.lastMessageTime = -10;
     this.tutorial = { merge: false, chest: false, extraction: false };
-    this.message('向右合成数字。鼠标瞄准，左键射击；1/2 切换武器，F 拾取装备，B 换装。');
+    this.nodesActivated = 0; this.combo = 0; this.lastMerge = -Infinity;
+    this.message('合成积累能量，满能量按 G 过载。E 启用运算节点，F 拾取，B 换装。');
   }
 
+  visible(a,b,pad=0) { return lineOfSight(a,b,obstaclesFor(this.world,a,b,pad),pad); }
+  move(entity,dx,dy) {
+    const end={x:entity.x+dx,y:entity.y+dy};
+    moveEntity(entity,dx,dy,obstaclesFor(this.world,entity,end,entity.radius+1),this.world.bounds);
+  }
+  damagePower() { return (this.player.overload>0?1.25:1)*(this.player.buffs.fury>0?1.35:1); }
+  activateOverload() {
+    const p=this.player;
+    if(this.status!=='playing'||p.energy<100||p.overload>0)return false;
+    p.energy=0;p.overload=RULES.overloadSeconds;
+    for(const enemy of this.world.enemies)if(!enemy.dead&&distance(p,enemy)<260&&this.visible(p,enemy)){
+      enemy.stun=Math.max(enemy.stun,0.9);enemy.state='idle';enemy.chargeTime=0;
+    }
+    this.effect(p.x,p.y,'过载','#d5f59c','overload',0.65,{radius:260});this.event('overload');
+    this.message('过载启动：7 秒内伤害 +25%，攻击速度提升。');return true;
+  }
+  activateNode(node) {
+    if(!node||node.used||!['fury','phase','magnet'].includes(node.kind)||this.status!=='playing')return false;
+    node.used=true;this.nodesActivated++;
+    const durations={fury:20,phase:16,magnet:30};
+    this.player.buffs[node.kind]=durations[node.kind];this.player.energy=Math.min(100,this.player.energy+20);
+    const names={fury:'增幅：伤害 +35%',phase:'相位：承受伤害降低30%',magnet:'牵引：扩大合成和物资拾取范围'};
+    this.effect(node.x,node.y,names[node.kind],'#a5c7ff','text',1.6);this.event('node');this.message(names[node.kind]);return true;
+  }
   event(type, extra = {}) { this.events.push({ type, ...extra }); }
   message(text) {
     if (text !== this.lastMessage || this.elapsed-this.lastMessageTime > 2.5) {
@@ -42,20 +73,22 @@ export class Raid {
   }
   nearestEnemy(range = RULES.divideRange, predicate = () => true) {
     return this.world.enemies.filter(enemy => !enemy.dead && predicate(enemy) &&
-      distance(this.player, enemy) <= range && lineOfSight(this.player, enemy, this.world.obstacles))
+      distance(this.player, enemy) <= range && this.visible(this.player, enemy))
       .sort((a, b) => distance(this.player, a)-distance(this.player, b))[0] || null;
   }
   context() {
     const p = this.player;
     const exit = this.world.exits.find(target => distance(p, target) < target.radius);
     if (exit) return { kind: 'exit', target: exit, progress: this.extractProgress / RULES.extractSeconds };
-    const chest = this.world.chests.filter(target => !target.opened && distance(p, target) < 75 && lineOfSight(p, target, this.world.obstacles))
+    const chest = this.world.chests.filter(target => !target.opened && distance(p, target) < 75 && this.visible(p, target))
       .sort((a, b) => distance(p, a)-distance(p, b))[0];
-    return chest ? { kind: 'chest', target: chest, progress: this.searchProgress / 0.75 } : null;
+    if(chest)return {kind:'chest',target:chest,progress:this.searchProgress/0.75};
+    const node=(this.world.nodes||[]).find(target=>!target.used&&distance(p,target)<85&&this.visible(p,target));
+    return node?{kind:'node',target:node,progress:this.nodeProgress/0.9}:null;
   }
   nearbyGear() {
     return this.world.drops.filter(item => !item.dead && item.kind && item.kind !== 'loot' &&
-      distance(this.player, item) < 75 && lineOfSight(this.player, item, this.world.obstacles))
+      distance(this.player, item) < 75 && this.visible(this.player, item))
       .sort((a, b) => distance(this.player, a)-distance(this.player, b))[0] || null;
   }
   addLoot(item) {
@@ -105,25 +138,29 @@ export class Raid {
   }
   carriedValue() { return bagTotal(this.bag) + equipmentValue(this.player); }
 
-  shoot(origin, angle, speed, range, owner, value, rarity = 'white') {
+  shoot(origin, angle, speed, range, owner, value, rarity = 'white', options = {}) {
     this.world.projectiles.push({ x: origin.x, y: origin.y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-      radius: owner === 'player' ? 3 : 6, life: range/speed, owner, value, rarity, dead: false });
+      radius: owner === 'player' ? 3 : 6, life: range/speed, owner, value, rarity, power: options.power ?? 1, pierce: options.pierce || 0, hitIds: [], dead: false });
   }
   attack() {
     const p = this.player;
     if (p.attackCooldown > 0 || this.status !== 'playing') return false;
     const item = activeWeapon(p), weapon = weaponOf(item);
-    p.attackCooldown = weapon.interval;
+    p.attackCooldown = weapon.interval*(p.overload>0?0.75:1);
     this.event('attack');
     if (weapon.mode === 'ranged') {
-      const angle = p.aimAngle + (this.random()*2-1)*spreadOf(item, p.laser);
-      this.shoot(p, angle, weapon.speed, weapon.range, 'player', p.value, item.rarity);
+      const pellets=weapon.pellets||1;
+      for(let i=0;i<pellets;i++){
+        const offset=pellets===1?this.random()*2-1:(i/(pellets-1)*2-1);
+        const angle=p.aimAngle+offset*spreadOf(item,p.laser);
+        this.shoot(p,angle,weapon.speed,weapon.range,'player',p.value,item.rarity,{power:this.damagePower()/pellets,pierce:weapon.pierce||0});
+      }
       this.effect(p.x, p.y, '', '#fff2c5', 'muzzle', 0.08, { angle: p.aimAngle });
     } else {
       this.effect(p.x, p.y, '', '#cde8e0', 'slash', 0.2, { angle: p.aimAngle, arc: weapon.arc, radius: weapon.range });
       for (const enemy of this.world.enemies) {
-        if (!enemy.dead && inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && lineOfSight(p, enemy, this.world.obstacles)) {
-          this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity));
+        if (!enemy.dead && inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && this.visible(p, enemy)) {
+          this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity)*this.damagePower());
         }
       }
     }
@@ -142,9 +179,9 @@ export class Raid {
     if (enemy.dead) return;
     enemy.dead = true; this.kills++; this.event('kill');
     this.world.tiles.push({ id: `remnant-${enemy.id}`, x: enemy.x, y: enemy.y, value: enemy.value, dead: false });
-    this.world.drops.push(lootForEnemy(enemy));
+    this.world.drops.push(lootForEnemy(enemy,this.world.zones));
     if (this.random() < 0.42) {
-      const gear = randomEquipment(this.random, Math.min(2, Math.floor(enemy.homeX/1067)), `gear-${enemy.id}`);
+      const gear = randomEquipment(this.random, enemy.zone ?? this.world.zones.find(zone=>enemy.homeX>=zone.from&&enemy.homeX<zone.to)?.id ?? 2, `gear-${enemy.id}`);
       this.world.drops.push({ ...gear, x: enemy.x, y: enemy.y, dead: false });
     }
     this.effect(enemy.x, enemy.y, '击破', '#efac8d');
@@ -171,10 +208,10 @@ export class Raid {
   hurt(amount, reason = '遭到敌人击破') {
     const p = this.player;
     if (p.invulnerable > 0 || p.dashTime > 0 || this.status !== 'playing') return false;
-    const hit = absorbDamage(amount, p.armor);
+    const hit = absorbDamage(amount*(p.buffs.phase>0?0.7:1), p.armor);
     if (p.armor) p.armor.durability = hit.durability;
     p.hp = Math.max(0, p.hp-hit.damage); p.invulnerable = 0.65;
-    this.extractProgress = 0; this.searchProgress = 0;
+    this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0;
     this.effect(p.x, p.y-35, `−${Math.round(hit.damage*10)/10}`, '#ef8a7c');
     if (hit.blocked) this.effect(p.x, p.y-58, `护甲 −${Math.round(hit.blocked)}`, '#8fc5ff');
     this.event('hurt');
@@ -184,10 +221,10 @@ export class Raid {
   clash(enemy) {
     const p = this.player;
     if (enemy.dead || enemy.contactCooldown > 0 || distance(p, enemy) > p.radius+enemy.radius ||
-        !lineOfSight(p, enemy, this.world.obstacles) || this.status !== 'playing') return;
+        !this.visible(p, enemy) || this.status !== 'playing') return;
     enemy.contactCooldown = RULES.contactCooldown;
     // Snapshot both attacks so a lethal outgoing contact still has a reciprocal hit.
-    const outgoing = attackDamage(p.value, enemy.value, enemy.maxHp, activeWeapon(p).rarity);
+    const outgoing = attackDamage(p.value, enemy.value, enemy.maxHp, activeWeapon(p).rarity)*this.damagePower();
     const incoming = attackDamage(enemy.value, p.value, p.maxHp, enemy.rarity);
     const canRetaliate = enemy.stun <= 0;
     this.damageEnemy(enemy, outgoing);
@@ -199,7 +236,7 @@ export class Raid {
     if (definition.pattern === 'strike' || definition.pattern === 'blast') {
       const radius = definition.pattern === 'blast' ? 118 : 64;
       this.effect(enemy.aimX, enemy.aimY, '', '#ed8d7e', 'impact', 0.35, { radius });
-      if (distance(p, { x: enemy.aimX, y: enemy.aimY }) < radius+p.radius && lineOfSight(enemy, p, this.world.obstacles)) {
+      if (distance(p, { x: enemy.aimX, y: enemy.aimY }) < radius+p.radius && this.visible(enemy, p)) {
         this.hurt(attackDamage(enemy.value, p.value, p.maxHp, enemy.rarity), definition.pattern === 'blast' ? '被爆破冲击击破' : '被近战攻击击破');
       }
     } else if (definition.pattern === 'charge') {
@@ -219,10 +256,11 @@ export class Raid {
     const definition = ENEMY_TYPES[enemy.type] || ENEMY_TYPES.hunter;
     enemy.cooldown = Math.max(0, enemy.cooldown-dt);
     enemy.contactCooldown = Math.max(0, enemy.contactCooldown-dt);
+    if(distance(enemy,this.player)>RULES.activeEnemyRadius&&enemy.state!=='charge'&&enemy.state!=='windup'){enemy.stun=Math.max(0,enemy.stun-dt);return;}
     if (enemy.stun > 0) { enemy.stun = Math.max(0, enemy.stun-dt); return; }
     if (enemy.state === 'charge') {
       const before = { x: enemy.x, y: enemy.y };
-      moveEntity(enemy, enemy.chargeX*560*dt, enemy.chargeY*560*dt, this.world.obstacles);
+      this.move(enemy, enemy.chargeX*560*dt, enemy.chargeY*560*dt);
       enemy.chargeTime -= dt;
       if (enemy.chargeTime <= 0 || distance(before, enemy) < 0.1) { enemy.state = 'idle'; enemy.cooldown = definition.cooldown; }
       return;
@@ -232,7 +270,7 @@ export class Raid {
       if (enemy.timer <= 0) this.resolveEnemyAttack(enemy, definition);
       return;
     }
-    const p = this.player, d = distance(enemy, p), sight = lineOfSight(enemy, p, this.world.obstacles);
+    const p = this.player, d = distance(enemy, p), sight = this.visible(enemy, p);
     if (d < definition.range && sight && enemy.cooldown === 0) {
       enemy.state = 'windup'; enemy.timer = definition.windup; enemy.aimX = p.x; enemy.aimY = p.y;
       return;
@@ -249,40 +287,46 @@ export class Raid {
       mx = (hx-enemy.x)/length*0.35; my = (hy-enemy.y)/length*0.35;
     }
     const speed = definition.speed*terrainSpeed(enemy, this.world.terrain);
-    moveEntity(enemy, mx*speed*dt, my*speed*dt, this.world.obstacles);
+    this.move(enemy, mx*speed*dt, my*speed*dt);
   }
   updateProjectiles(dt) {
-    for (const bullet of this.world.projectiles) {
-      if (bullet.dead) continue;
-      const step = Math.min(dt, bullet.life);
-      const next = { x: bullet.x+bullet.vx*step, y: bullet.y+bullet.vy*step };
-      const wall = firstWallFraction(bullet, next, this.world.obstacles, bullet.radius);
-      const targets = bullet.owner === 'player' ? this.world.enemies.filter(enemy => !enemy.dead) : [this.player];
-      let victim = null, hitAt = Infinity;
-      for (const target of targets) {
-        const fraction = segmentCircleFraction(bullet, next, target, target.radius+bullet.radius);
-        if (fraction < hitAt) { hitAt = fraction; victim = target; }
+    const bounds=this.world.bounds;
+    for(const bullet of this.world.projectiles){
+      if(bullet.dead)continue;
+      const step=Math.min(dt,bullet.life),next={x:bullet.x+bullet.vx*step,y:bullet.y+bullet.vy*step};
+      const wall=firstWallFraction(bullet,next,obstaclesFor(this.world,bullet,next,bullet.radius),bullet.radius);
+      const targets=bullet.owner==='player'?this.world.enemies.filter(enemy=>!enemy.dead):[this.player];
+      const hits=[];
+      for(const target of targets){
+        const id=target===this.player?'player':target.id;
+        if(bullet.hitIds.includes(id))continue;
+        const at=segmentCircleFraction(bullet,next,target,target.radius+bullet.radius);
+        if(at<wall)hits.push({target,id,at});
       }
-      if (victim && hitAt < wall) {
-        const damage = attackDamage(bullet.value, victim.value, victim.maxHp, bullet.rarity);
-        if (bullet.owner === 'player') this.damageEnemy(victim, damage);
-        else this.hurt(damage, '被敌方弹丸击破');
-        bullet.dead = true;
-      } else if (wall !== Infinity) bullet.dead = true;
-      bullet.x = next.x; bullet.y = next.y; bullet.life -= step;
-      if (bullet.life <= 0 || next.x < 0 || next.y < 0 || next.x > WORLD.width || next.y > WORLD.height) bullet.dead = true;
-      if (this.status !== 'playing') return;
+      hits.sort((a,b)=>a.at-b.at);
+      for(const hit of hits){
+        const damage=attackDamage(bullet.value,hit.target.value,hit.target.maxHp,bullet.rarity)*bullet.power;
+        if(bullet.owner==='player')this.damageEnemy(hit.target,damage);else this.hurt(damage,'被敌方弹丸击破');
+        bullet.hitIds.push(hit.id);
+        if(bullet.pierce>0)bullet.pierce--;else{bullet.dead=true;break;}
+      }
+      if(wall!==Infinity)bullet.dead=true;
+      bullet.x=next.x;bullet.y=next.y;bullet.life-=step;
+      if(bullet.life<=0||next.x<0||next.y<0||next.x>bounds.width||next.y>bounds.height)bullet.dead=true;
+      if(this.status!=='playing')return;
     }
-    this.world.projectiles = this.world.projectiles.filter(bullet => !bullet.dead);
+    this.world.projectiles=this.world.projectiles.filter(bullet=>!bullet.dead);
   }
   updateInteraction(input, dt) {
     const context = this.context();
     const stationary = Math.hypot(input.x || 0, input.y || 0) < 0.15 && this.player.dashTime <= 0;
-    if (!context || !input.interact || !stationary) { this.extractProgress = 0; this.searchProgress = 0; this.interactId = null; return; }
-    if (context.target.id !== this.interactId) { this.extractProgress = 0; this.searchProgress = 0; this.interactId = context.target.id; }
+    if (!context || !input.interact || !stationary) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = null; return; }
+    if (context.target.id !== this.interactId) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = context.target.id; }
     if (context.kind === 'exit') {
       this.extractProgress += dt; this.tutorial.extraction = true;
       if (this.extractProgress >= RULES.extractSeconds) this.finish(true, '成功撤离');
+    } else if(context.kind==='node'){
+      this.nodeProgress+=dt;if(this.nodeProgress>=0.9){this.activateNode(context.target);this.nodeProgress=0;}
     } else {
       if (this.bag.length >= this.capacity) { this.message('背包已满，无法开启补给箱。'); return; }
       this.searchProgress += dt;
@@ -300,7 +344,8 @@ export class Raid {
     if (this.status !== 'playing') return;
     const p = this.player;
     this.elapsed += dt;
-    for (const key of ['attackCooldown', 'dashCooldown', 'invulnerable']) p[key] = Math.max(0, p[key]-dt);
+    for (const key of ['attackCooldown','dashCooldown','invulnerable','overload']) p[key]=Math.max(0,p[key]-dt);
+    for(const key of Object.keys(p.buffs))p.buffs[key]=Math.max(0,p.buffs[key]-dt);
     let mx = input.x || 0, my = input.y || 0;
     const length = Math.hypot(mx, my);
     if (length > 1) { mx /= length; my /= length; }
@@ -316,30 +361,33 @@ export class Raid {
       p.dashX = p.facingX; p.dashY = p.facingY; this.event('dash');
     }
     if (p.dashTime > 0) {
-      moveEntity(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt, this.world.obstacles);
+      this.move(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt);
       p.dashTime = Math.max(0, p.dashTime-dt);
     } else {
       const speed = RULES.speed*terrainSpeed(p, this.world.terrain);
-      moveEntity(p, mx*speed*dt, my*speed*dt, this.world.obstacles);
+      this.move(p, mx*speed*dt, my*speed*dt);
     }
     if (input.autoAim && input.attack) {
       const enemy = this.nearestEnemy(weaponOf(activeWeapon(p)).range);
       if (enemy) p.aimAngle = Math.atan2(enemy.y-p.y, enemy.x-p.x);
     }
+    if (input.overload) this.activateOverload();
     if (input.divide) this.divide();
     if (input.heal) this.heal();
     if (input.attack) this.attack();
     for (const tile of this.world.tiles) {
-      if (!tile.dead && distance(p, tile) < p.radius+17 && canMerge(p.value, tile.value) && lineOfSight(p, tile, this.world.obstacles)) {
+      if (!tile.dead && distance(p, tile) < (p.buffs.magnet>0?135:p.radius+17) && canMerge(p.value, tile.value) && this.visible(p, tile)) {
         tile.dead = true; const old = p.value; p.value *= 2; p.hp = Math.min(p.maxHp, p.hp+8);
         this.merges++; this.tutorial.merge = true;
+        this.combo=this.elapsed-this.lastMerge<4?Math.min(5,this.combo+1):1;this.lastMerge=this.elapsed;
+        p.energy=Math.min(100,p.energy+RULES.energyPerMerge+(this.combo-1)*2);
         this.effect(p.x, p.y-35, `${old} + ${old} = ${p.value}`, '#a9edd1', 'text', 1.1); this.event('merge');
       }
     }
     for (const loot of this.world.drops) {
       if (loot.mustLeave) { if (distance(p, loot) > 70) loot.mustLeave = false; continue; }
-      if (!loot.dead && (!loot.kind || loot.kind === 'loot') && distance(p, loot) < 42 &&
-          lineOfSight(p, loot, this.world.obstacles) && this.addLoot(loot)) loot.dead = true;
+      if (!loot.dead && (!loot.kind || loot.kind === 'loot') && distance(p, loot) < (p.buffs.magnet>0?220:42) &&
+          this.visible(p, loot) && this.addLoot(loot)) loot.dead = true;
     }
     for (const enemy of this.world.enemies) {
       this.updateEnemy(enemy, dt); this.clash(enemy);
@@ -348,16 +396,18 @@ export class Raid {
     this.updateProjectiles(dt);
     if (this.status !== 'playing') return;
     this.world.effects = this.world.effects.filter(effect => (effect.life -= dt) > 0);
-    if (this.elapsed >= RULES.raidSeconds) { this.finish(false, '行动超时，信号失联'); return; }
+    if (this.elapsed >= this.duration) { this.finish(false, '行动超时，信号失联'); return; }
     this.updateInteraction(input, dt);
   }
   finish(success, reason) {
     if (this.result) return;
     this.status = success ? 'success' : 'dead';
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
-    this.result = { id: this.id, success, reason, value: this.carriedValue(), number: this.player.value,
-      seconds: this.elapsed, kills: this.kills, merges: this.merges,
-      loot: [...this.bag, ...equipped].map(item => ({ ...item })) };
+    const items=[...this.bag,...equipped],materials=salvageMaterials(items);
+    this.result = { id:this.id,success,reason,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*this.rewardMultiplier),number:this.player.value,
+      seconds:this.elapsed,kills:this.kills,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,
+      materials:{alloy:Math.round(materials.alloy*this.rewardMultiplier),core:Math.round(materials.core*this.rewardMultiplier)},
+      loot:items.map(item=>({...item})) };
     this.event('finish', { result: this.result });
   }
 }

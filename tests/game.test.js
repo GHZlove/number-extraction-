@@ -4,6 +4,7 @@ import { RULES, WORLD } from '../dist/src/config.js';
 import { Raid } from '../dist/src/game.js';
 import { attackDamage, canMerge, distance, isFree, lineOfSight, moveEntity } from '../dist/src/math.js';
 import { createEnemy, generateWorld } from '../dist/src/world.js';
+import { obstaclesFor } from '../dist/src/spatial.js';
 import { buyUpgrade, defaultSave, normalizeSave, readSave, settleRun, writeSave } from '../dist/src/storage.js';
 
 function emptyRaid(){const r=new Raid(defaultSave(),42);Object.assign(r.world,{enemies:[],tiles:[],chests:[],obstacles:[],terrain:[],drops:[],projectiles:[]});return r;}
@@ -46,7 +47,7 @@ test('attacks respect walls and cooldown, and enemy kills produce pickups',()=>{
 test('dash collision substeps stop at thin obstacles and world bounds',()=>{
   const entity={x:100,y:100,radius:19};moveEntity(entity,600,0,[{x:200,y:50,w:10,h:100}]);assert.ok(entity.x<=181);
   moveEntity(entity,-1000,0,[]);assert.equal(entity.x,19);
-  moveEntity(entity,0,4000,[]);assert.equal(entity.y,WORLD.height-19);
+  moveEntity(entity,0,WORLD.height*2,[]);assert.equal(entity.y,WORLD.height-19);
 });
 test('diagonal movement has the same total speed as straight movement',()=>{
   const a=emptyRaid(),b=emptyRaid(),origin={...a.player};advance(a,1,{x:1});advance(b,1,{x:1,y:1});
@@ -80,7 +81,7 @@ test('a full tutorial loot-extract cycle banks 24 once and carries upgrades next
 test('lethal damage and deadline lose raid loot without consuming existing bank',()=>{
   const save=defaultSave();save.credits=60;const r=emptyRaid();r.bag=[{name:'data',value:90,zone:0}];r.hurt(100);settleRun(save,r.result);
   assert.equal(r.result.success,false);assert.equal(r.result.value,90);assert.equal(save.credits,60);assert.equal(save.deaths,1);
-  const timeout=emptyRaid();timeout.elapsed=RULES.raidSeconds-.01;place(timeout,timeout.world.exits[0]);timeout.extractProgress=3.999;
+  const timeout=emptyRaid();timeout.elapsed=timeout.duration-.01;place(timeout,timeout.world.exits[0]);timeout.extractProgress=3.999;
   timeout.update(RULES.fixedStep,{interact:true});assert.equal(timeout.result.success,false);assert.match(timeout.result.reason,/超时/);
 });
 test('healing at full health does not spend a medkit; damaged health clamps',()=>{
@@ -109,17 +110,17 @@ test('100 seeded maps have safe spawns, unblocked tutorial objects and exits',()
     for(const x of [405,520,655])assert.ok(isFree(x,1060,22,w.obstacles));
   }
 });
-test('both exits remain reachable in 25 random maps using a 40px navigation grid',()=>{
-  const cell=40,cols=WORLD.width/cell,rows=WORLD.height/cell;
+test('both exits remain reachable in 25 random maps using an 80px navigation grid',()=>{
+  const cell=80,cols=WORLD.width/cell,rows=WORLD.height/cell;
   for(let seed=0;seed<25;seed++){
-    const world=generateWorld(seed),queue=[[7,26]],seen=new Set(['7,26']);
+    const world=generateWorld(seed),sx=Math.floor(WORLD.spawn.x/cell),sy=Math.floor(WORLD.spawn.y/cell),queue=[[sx,sy]],seen=new Set([`${sx},${sy}`]);
     for(let head=0;head<queue.length;head++){
       const [x,y]=queue[head];
       for(const [nx,ny] of [[x+1,y],[x-1,y],[x,y+1],[x,y-1]]){
         const key=`${nx},${ny}`;
         if(nx<0||ny<0||nx>=cols||ny>=rows||seen.has(key))continue;
         const a={x:x*cell+20,y:y*cell+20},b={x:nx*cell+20,y:ny*cell+20};
-        if(isFree(b.x,b.y,22,world.obstacles)&&lineOfSight(a,b,world.obstacles,22)){seen.add(key);queue.push([nx,ny]);}
+        if(isFree(b.x,b.y,22,obstaclesFor(world,b,b,22),world.bounds)&&lineOfSight(a,b,obstaclesFor(world,a,b,22),22)){seen.add(key);queue.push([nx,ny]);}
       }
     }
     for(const exit of world.exits)assert.ok(seen.has(`${Math.floor(exit.x/cell)},${Math.floor(exit.y/cell)}`),`unreachable ${exit.id} seed ${seed}`);
