@@ -1,0 +1,12 @@
+{
+  "name": "number-extraction",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "数字进化：Canvas 单机搜打撤原型",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node tools/check.mjs",
+    "start": "python3 -m http.server 8000 --directory dist"
+  }
+}
