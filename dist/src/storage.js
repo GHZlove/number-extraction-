@@ -1,16 +1,17 @@
-import { SAVE_KEY, LEGACY_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf } from './config.js';
+import { SAVE_KEY, PREVIOUS_SAVE_KEY, LEGACY_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { unlockedWeapons } from './shelter.js';
+import { ENCHANTS, WEAPONS, RARITIES } from './equipment.js';
 
 const integer = (value, max = 1e9) => Number.isFinite(value) ? Math.max(0,Math.min(max,Math.floor(value))) : 0;
 export const defaultSave = () => ({
-  version: 2, credits: 0, extractions: 0, deaths: 0, best: 1,
+  version: 3, credits: 0, extractions: 0, deaths: 0, best: 1,
   upgrades: { capacity: 0, divider: 0 }, materials: { alloy: 0, core: 0 },
   shelter: { storage: 0, supply: 0, workshop: 0, recycler: 0 },
-  selectedDifficulty: 'scout', selectedWeapon: 'pistol', lastRuns: [],
+  selectedDifficulty: 'scout', selectedWeapon: 'pistol', selectedMap:'random',selectedEnchant:'leech',forged:{},lastRuns: [],
 });
 
 export function normalizeSave(data) {
-  if (!data || ![1,2].includes(data.version)) return defaultSave();
+  if (!data || ![1,2,3].includes(data.version)) return defaultSave();
   const save = defaultSave();
   for (const key of ['credits','extractions','deaths']) save[key] = integer(data[key]);
   save.best = Math.max(1,integer(data.best,2048));
@@ -22,6 +23,12 @@ export function normalizeSave(data) {
   save.materials.alloy = integer(data.materials?.alloy); save.materials.core = integer(data.materials?.core);
   save.selectedDifficulty = difficultyOf(data.selectedDifficulty).id;
   save.selectedWeapon = unlockedWeapons(save).includes(data.selectedWeapon) ? data.selectedWeapon : 'pistol';
+  save.selectedMap=MAP_LAYOUTS.some(m=>m.id===data.selectedMap)?data.selectedMap:'random';
+  save.selectedEnchant=Object.hasOwn(ENCHANTS,data.selectedEnchant)?data.selectedEnchant:'leech';
+  for(const key of Object.keys(WEAPONS)){
+    const item=data.forged?.[key];if(!item||!Number.isInteger(item.level)||item.level<1||item.level>5)continue;
+    save.forged[key]={level:item.level,rarity:RARITIES[item.level===5?5:item.level-1].id,enchant:Object.hasOwn(ENCHANTS,item.enchant)?item.enchant:'none'};
+  }
   save.lastRuns = Array.isArray(data.lastRuns) ? data.lastRuns.slice(0,6).filter(run => run && typeof run.id === 'string').map(run => ({
     id: run.id.slice(0,100), success: run.success === true, value: integer(run.value),
     number: Math.max(1,integer(run.number,2048)), seconds: integer(run.seconds,1200),
@@ -32,7 +39,7 @@ export function normalizeSave(data) {
 }
 export function readSave(storage) {
   try {
-    const current=storage.getItem(SAVE_KEY),legacy=current===null?storage.getItem(LEGACY_SAVE_KEY):null;
+    const current=storage.getItem(SAVE_KEY),legacy=current===null?(storage.getItem(PREVIOUS_SAVE_KEY)??storage.getItem(LEGACY_SAVE_KEY)):null;
     return { save:normalizeSave(JSON.parse(current??legacy)),available:true,migrated:current===null&&legacy!==null };
   }
   catch { return { save: defaultSave(), available: false }; }

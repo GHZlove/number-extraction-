@@ -29,6 +29,25 @@ export const WEAPONS = Object.freeze({
 export const rarityOf = id => RARITIES.find(rarity => rarity.id === id) || RARITIES[0];
 export const weaponOf = item => WEAPONS[item?.weapon] || WEAPONS.pistol;
 export const spreadOf = (item, laser) => (weaponOf(item).spread || 0) * (laser ? 0.3 : 1);
+export const ENCHANTS = Object.freeze({
+  none:{name:'无附魔',color:'#fffdf0',description:'基础武器。'},
+  leech:{name:'吸血',color:'#ff5c88',description:'回复实际生命伤害的12%，每次命中最多4点。'},
+  lightning:{name:'闪电',color:'#6eefff',description:'向附近最多两个可见目标传导35%伤害，冷却0.65秒。'},
+  stun:{name:'眩晕',color:'#f5da52',description:'命中打断并眩晕，冷却1.1秒；首领抗性更高。'},
+  poison:{name:'毒雾',color:'#b4fa53',description:'落点留下持续3.5秒的毒雾，冷却1.25秒。'},
+});
+export function decorateWeapon(item,enchant='none',level=1){
+  if(item.kind!=='weapon')return item;
+  const effect=Object.hasOwn(ENCHANTS,enchant)?enchant:'none';
+  const next={...item,enchant:effect,level:Math.max(1,Math.min(5,Math.floor(level)||1))};
+  next.name=`${rarityOf(next.rarity).name}品 · ${weaponOf(next).name} Lv.${next.level}${effect==='none'?'':' · '+ENCHANTS[effect].name}`;
+  return next;
+}
+export const weaponPower = item => 1+Math.max(0,(item?.level||1)-1)*.08;
+export function knockbackFor(weapon,attacker,defender,rarity='white',level=1,mass=1){
+  const relative=Math.max(.45,Math.min(1.85,1+Math.log2(Math.max(1,attacker)/Math.max(1,defender))*.13));
+  return (HIT_FEEDBACK[weapon]?.knock||0)*relative*(1+(rarityOf(rarity).multiplier-1)*.4+Math.max(0,Math.min(4,level-1))*.14)*mass;
+}
 
 export function makeEquipment(kind, type = 'pistol', rarity = 'white', id = 'equipment') {
   const grade = rarityOf(rarity);
@@ -36,7 +55,7 @@ export function makeEquipment(kind, type = 'pistol', rarity = 'white', id = 'equ
   const base = { id, kind, rarity: grade.id, value: 28 + rank * 24, zone: 0 };
   if (kind === 'weapon') {
     const weapon = Object.hasOwn(WEAPONS, type) ? type : 'pistol';
-    return { ...base, weapon, name: `${grade.name}品 · ${WEAPONS[weapon].name}` };
+    return { ...base, weapon, level:1,enchant:'none', name: `${grade.name}品 · ${WEAPONS[weapon].name}` };
   }
   if (kind === 'armor') {
     const maxDurability = 40 + rank * 20;
@@ -53,7 +72,8 @@ export function randomEquipment(random, zone, id) {
   if (kind < 0.25) return { ...makeEquipment('armor', '', rarity, id), zone };
   if (kind < 0.38) return { ...makeEquipment('laser', '', 'white', id), zone };
   const types = Object.keys(WEAPONS);
-  return { ...makeEquipment('weapon', types[Math.floor(random() * types.length)], rarity, id), zone };
+  const item={...makeEquipment('weapon', types[Math.floor(random() * types.length)], rarity, id),zone};
+  return random()<.16+zone*.12?decorateWeapon(item,['leech','lightning','stun','poison'][Math.floor(random()*4)],1+Math.floor(zone/2)):item;
 }
 
 export function absorbDamage(amount, armor) {
@@ -76,9 +96,9 @@ export function activeWeapon(player) {
 
 // Feedback affects displacement and presentation, never the number damage formula.
 export const HIT_FEEDBACK = Object.freeze({
-  contact:{knock:0,strength:.35,stop:0},pistol:{knock:95,strength:.45,stop:0},smg:{knock:42,strength:.3,stop:0},
-  rifle:{knock:80,strength:.5,stop:0},carbine:{knock:50,strength:.4,stop:0},lmg:{knock:65,strength:.5,stop:0},
-  sniper:{knock:240,strength:1.05,stop:.025},shotgun:{knock:48,strength:.9,stop:.025},railgun:{knock:240,strength:1.1,stop:.03},
+  contact:{knock:0,strength:.35,stop:0},pistol:{knock:150,strength:.45,stop:0},smg:{knock:85,strength:.3,stop:0},
+  rifle:{knock:180,strength:.5,stop:0},carbine:{knock:130,strength:.4,stop:0},lmg:{knock:140,strength:.5,stop:0},
+  sniper:{knock:420,strength:1.05,stop:.025},shotgun:{knock:90,strength:.9,stop:.025},railgun:{knock:440,strength:1.1,stop:.03},
   crossbow:{knock:170,strength:.65,stop:0},grenade:{knock:260,strength:1.2,stop:.03},
   greatsword:{knock:250,strength:1,stop:.03},dualblades:{knock:75,strength:.55,stop:0},spear:{knock:180,strength:.7,stop:.016},
   warhammer:{knock:350,strength:1.35,stop:.03},

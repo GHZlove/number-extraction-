@@ -1,5 +1,9 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.6.0';
+export const VERSION = '0.7.0';
+export const MAP_LAYOUTS = Object.freeze([
+  {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
+  {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
+]);
 export const LEGACY_WORLD = Object.freeze({ width: 3200, height: 2000 });
 export const WORLD = Object.freeze({ width: 6400, height: 4000, spawn: { x: 300, y: 1060 } });
 export const RULES = Object.freeze({
@@ -13,11 +17,11 @@ export const RULES = Object.freeze({
   energyPerMerge: 25, overloadSeconds: 7, activeEnemyRadius: 1800, summonBudget: 48,
 });
 export const DIFFICULTIES = Object.freeze([
-  { id: 'scout', name: '边境巡查', rank: 1, color: '#b5f93b', width: 6400, height: 4000, enemyShift: 0, reward: 1, seconds: 240, extractAt: 45, description: '紧凑战区，先备战，再迎接持续追击。' },
-  { id: 'standard', name: '失序探索', rank: 2, color: '#20d7e8', width: 7680, height: 4800, enemyShift: 1, reward: 1.6, seconds: 300, extractAt: 60, description: '更密的敌群，更快的进攻节奏。' },
+  { id: 'scout', name: '边境巡查', rank: 1, color: '#b5f93b', width: 6400, height: 4000, enemyShift: 0, reward: 1, seconds: 240, extractAt: 45, description: '低风险成长，探索据点与安全屋。' },
+  { id: 'standard', name: '失序探索', rank: 2, color: '#20d7e8', width: 7680, height: 4800, enemyShift: 1, reward: 1.6, seconds: 300, extractAt: 60, description: '据点守卫增强，物资收益提高。' },
   { id: 'hard', name: '深层突袭', rank: 3, color: '#ffdc43', width: 8960, height: 5600, enemyShift: 2, reward: 2.4, seconds: 360, extractAt: 75, description: '强敌守护高价值合金与核心。' },
   { id: 'severe', name: '核心危机', rank: 4, color: '#b280ff', width: 10240, height: 6400, enemyShift: 3, reward: 3.6, seconds: 420, extractAt: 90, description: '利用运算节点与过载寻找突破口。' },
-  { id: 'nightmare', name: '零点噩梦', rank: 5, color: '#ff5ca8', width: 12800, height: 8000, enemyShift: 4, reward: 5.2, seconds: 480, extractAt: 105, description: '高密度围攻与最快的进攻节奏。' },
+  { id: 'nightmare', name: '零点噩梦', rank: 5, color: '#ff5ca8', width: 12800, height: 8000, enemyShift: 4, reward: 5.2, seconds: 480, extractAt: 105, description: '精锐据点与狂暴首领，高风险高收益。' },
 ]);
 export const difficultyOf = id => DIFFICULTIES.find(item => item.id === id) || DIFFICULTIES[0];
 export const FACILITIES = Object.freeze({
@@ -55,7 +59,8 @@ export const UPGRADES = Object.freeze({
   divider: { name: '运算工具包', max: 2, cost: level => 120 + level * 120 },
 });
 export const LEGACY_SAVE_KEY = 'number-extraction-v01';
-export const SAVE_KEY = 'number-extraction-v03';
+export const PREVIOUS_SAVE_KEY = 'number-extraction-v03';
+export const SAVE_KEY = 'number-extraction-v07';
 
 export const TERRAIN = Object.freeze({
   water: { name: '浅水', speed: 0.58, color: '#50bed5', line: '#d3fbff', priority: 1 },
@@ -77,5 +82,5 @@ export const PAINT = Object.freeze({
 
 export const PRESSURE = Object.freeze({
   graceSeconds:6, warningSeconds:0.9, spawnMin:650, spawnMax:1000,
-  safetyRadius:240, surgeEvery:35, surgeSeconds:8, cleanupSeconds:4, maxChaseSpeed:300,
+  safetyRadius:240, surgeEvery:60, surgeSeconds:8, cleanupSeconds:4, maxChaseSpeed:300,
 });

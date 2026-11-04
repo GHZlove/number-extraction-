@@ -31,7 +31,7 @@ test('compact difficulty maps and enemy tiers grow monotonically',()=>{
     assert.equal(world.bounds.width,mission.width);assert.equal(world.difficulty.id,mission.id);
     for(const item of [...world.tiles,...world.chests,...world.nodes,...world.enemies])assert.ok(isFree(item.x,item.y,22,obstaclesFor(world,item,item,22),world.bounds),`${mission.id}: ${item.id}`);
   }
-  assert.equal(area,12800*8000);assert.equal(maxEnemy,8192);
+  assert.equal(area,12800*8000);assert.equal(maxEnemy,2048);
 });
 
 test('both extraction points remain reachable across all five map sizes',()=>{
@@ -76,7 +76,7 @@ test('v1 saves migrate currency, upgrades and history without overwriting the le
   const stored=new Map([[LEGACY_SAVE_KEY,JSON.stringify(original)]]);
   const storage={getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)};
   const loaded=readSave(storage).save;
-  assert.equal(loaded.version,2);assert.equal(loaded.credits,432);assert.equal(loaded.best,128);
+  assert.equal(loaded.version,3);assert.equal(loaded.credits,432);assert.equal(loaded.best,128);
   assert.equal(loaded.shelter.storage,2);assert.equal(loaded.shelter.supply,1);assert.deepEqual(loaded.materials,{alloy:0,core:0});
   assert.equal(loaded.lastRuns[0].id,'old');writeSave(storage,loaded);assert.equal(JSON.parse(stored.get(SAVE_KEY)).credits,432);assert.deepEqual(JSON.parse(stored.get(LEGACY_SAVE_KEY)),original);
 });

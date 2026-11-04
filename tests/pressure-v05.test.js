@@ -18,14 +18,14 @@ function monster(r,x=200,type='hunter',id='target'){
   const e=createEnemy(id,r.player.x+x,r.player.y,1,type);e.cooldown=999;r.world.enemies.push(e);return e;
 }
 
-test('compact arenas retain increasing difficulty while packing more enemies near the player',()=>{
+test('compact arenas retain dimensions with guards concentrated at resource sites',()=>{
   assert.deepEqual(DIFFICULTIES.map(d=>[d.width,d.height]),[[6400,4000],[7680,4800],[8960,5600],[10240,6400],[12800,8000]]);
   let totalNear=0;
   for(let seed=0;seed<10;seed++){
     const w=generateWorld(seed);totalNear+=w.enemies.filter(e=>distance(e,w.spawn)<1200).length;
     assert.ok(w.enemies.length>=90);assert.ok(w.sites.length>=12);
   }
-  assert.ok(totalNear/10>=8);
+  assert.ok(totalNear/10>=4&&totalNear/10<12);
 });
 
 test('time and difficulty increase wave size, movement pressure and attack cadence within caps',()=>{
@@ -41,7 +41,7 @@ test('waves give a preparation window and visible spawn warnings before material
   const r=empty();advance(r,PRESSURE.graceSeconds-.1);assert.equal(r.world.enemies.length,0);assert.equal(r.world.spawnWarnings.length,0);
   advance(r,.2);assert.ok(r.world.spawnWarnings.length>0);assert.equal(r.world.enemies.length,0);
   for(const mark of r.world.spawnWarnings){assert.ok(distance(mark,r.player)>=PRESSURE.spawnMin);assert.ok(isFree(mark.x,mark.y,30,r.world.obstacles,r.world.bounds));}
-  advance(r,1);assert.ok(r.world.enemies.length>=3);assert.equal(r.director.wave,1);assert.ok(r.world.enemies.every(e=>e.horde));
+  advance(r,1);assert.ok(r.world.enemies.length>=1&&r.world.enemies.length<=2);assert.equal(r.director.wave,1);assert.ok(r.world.enemies.every(e=>e.horde));
 });
 
 test('walking onto a warned location cancels that spawn rather than creating an enemy on the player',()=>{
@@ -63,14 +63,16 @@ test('nearby population and pending warnings obey the stage cap during long dire
     const nearby=r.world.enemies.filter(e=>!e.dead&&distance(e,r.player)<1500).length;
     assert.ok(nearby<=r.director.profile(r.elapsed).nearCap);assert.ok(nearby+r.world.spawnWarnings.length<=r.director.profile(r.elapsed).nearCap);
   }
-  assert.ok(r.director.spawned>100);assert.ok(r.world.enemies.length<=240);
+  assert.ok(r.director.spawned>=8&&r.director.spawned<=10);assert.ok(r.world.enemies.length<=10);
 });
 
-test('surges announce pressure every 35 seconds and speed returns to normal afterwards',()=>{
-  const r=empty();r.elapsed=35;r.director.update(r,.1);
-  assert.equal(r.director.lastSurge,1);assert.ok(r.events.some(e=>e.type==='message'&&e.text.includes('围攻爆发')));
-  assert.ok(r.director.profile(35).speed>pressureProfile(r.difficulty,35).speed);
-  assert.equal(r.director.profile(44).speed,pressureProfile(r.difficulty,44).speed);
+test('reinforcement surges are limited to occupied resource sites and expire',()=>{
+  const r=empty(),site={x:r.player.x,y:r.player.y};r.world.sites=[site];const e=monster(r,300);e.guard=true;
+  r.elapsed=60;r.director.update(r,.1);
+  assert.equal(r.director.lastSurge,1);assert.ok(r.events.some(e=>e.type==='message'&&e.text.includes('据点呼叫增援')));
+  assert.ok(r.director.profile(60).speed>pressureProfile(r.difficulty,60).speed);
+  assert.equal(r.director.profile(69).speed,pressureProfile(r.difficulty,69).speed);
+  const wilderness=empty();wilderness.world.sites=[];wilderness.elapsed=60;wilderness.director.update(wilderness,.1);assert.equal(wilderness.director.lastSurge,0);
 });
 
 test('wave composition starts with pursuers and adds ranged, support and elite enemies later',()=>{

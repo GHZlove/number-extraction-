@@ -6,7 +6,7 @@ export function buildLandscapes(world,rand,addObstacle){
   let index=0;
     for(let cy=900;cy<height-550;cy+=spacing){
       for(let cx=650;cx<width-450;cx+=spacing){
-        const x=cx+rand(-130,130),y=cy+rand(-130,130),sector=zoneAt({x,y},world.zones),kind=serial++%6,cluster=`site-${sector.id}-${index++}`;
+        const x=cx+rand(-130,130),y=cy+rand(-130,130),sector=zoneAt({x,y},world.zones),offset={tangram:0,blocks:1,fracture:2,wilds:4}[world.layout]||0,kind=(serial++ + offset)%6,cluster=`site-${sector.id}-${index++}`;
         const place=(dx,dy,w,h,material)=>addObstacle({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,material,cluster});
         const patch=(dx,dy,w,h,ground)=>world.terrain.push({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,kind:ground});
         let name;
@@ -40,8 +40,9 @@ export function buildLandscapes(world,rand,addObstacle){
       }
     }
   // Two winding waterways cross polygon sectors instead of defining fixed strips.
-  for(let river=0;river<2;river++){
-    const riverX=width*(.25+river*.5);
+  const rivers=world.layout==='blocks'?1:world.layout==='wilds'?3:2;
+  for(let river=0;river<rivers;river++){
+    const riverX=width*(river+1)/(rivers+1);
     for(let y=350;y<height-400;y+=1100){
       const x=riverX+(y/height-.5)*width*.18+Math.sin(y/1200+river)*160;
       world.terrain.push({x,y,w:210,h:1080,kind:'water'});

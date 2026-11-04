@@ -1,7 +1,9 @@
 import { createSectors, sampleSector, containsPoint } from './regions.js';
-import { WORLD, ZONES, LOOT, ENEMY_TYPES, difficultyOf } from './config.js';
+import { WORLD, ZONES, LOOT, ENEMY_TYPES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { seededRandom, isFree, distance, zoneAt, maxEnemyHealth } from './math.js';
-import { makeEquipment, randomEquipment } from './equipment.js';
+import { makeEquipment, randomEquipment, decorateWeapon } from './equipment.js';
+import { empowerBoss, BOSSES } from './bosses.js';
+import { SHOP } from './commerce.js';
 import { buildLandscapes } from './landscapes.js';
 import { SpatialGrid } from './spatial.js';
 
@@ -15,17 +17,19 @@ export function createEnemy(id, x, y, value, type = 'hunter') {
 }
 const overlap = (a,b,pad=0) => a.x < b.x+b.w+pad && a.x+a.w > b.x-pad && a.y < b.y+b.h+pad && a.y+a.h > b.y-pad;
 
-export function generateWorld(seed, difficulty = 'scout') {
+export function generateWorld(seed, difficulty = 'scout', options={}) {
   const mission = difficultyOf(typeof difficulty === 'string' ? difficulty : difficulty?.id);
   const bounds = { width: mission.width, height: mission.height };
   const random = seededRandom(seed), rand = (a,b) => a+random()*(b-a), pick = list => list[Math.floor(random()*list.length)];
-  const protectedPoints=[WORLD.spawn,{x:405,y:1060},{x:790,y:1060},{x:485,y:1190},{x:620,y:1260},{x:1500,y:1420},{x:1900,y:1450},{x:1180,y:1270}];
-  const zones=createSectors(bounds,random,protectedPoints);
+  const choices=MAP_LAYOUTS.slice(1),requested=choices.find(m=>m.id===options.layout);
+  const layout=requested||choices[Math.floor(random()*choices.length)];
+  const protectedPoints=[WORLD.spawn,{x:310,y:530},{x:405,y:1060},{x:790,y:1060},{x:485,y:1190},{x:620,y:1260},{x:1500,y:1420},{x:1900,y:1450},{x:1180,y:1270}];
+  const zones=createSectors(bounds,random,protectedPoints,layout.id);
   const east = { x: bounds.width-400, y: Math.round(bounds.height*0.72) };
   const world = {
     seed, difficulty: mission, bounds, zones, sectors:zones, spawn: { ...WORLD.spawn },
-    theme: pick(['雨后废墟','断层工业区','荒原补给线']),
-    spawnWarnings: [], obstacles: [], terrain: [], landmarks: [], tiles: [], chests: [], nodes: [], enemies: [], drops: [], projectiles: [], effects: [],
+    theme:layout.name,layout:layout.id,
+    spawnWarnings: [], obstacles: [], terrain: [], landmarks: [], tiles: [], chests: [], nodes: [], enemies: [], drops: [], projectiles: [], effects: [],hazards:[],merchants:[],
     exits: [{ id:'west',x:310,y:530,radius:80,name:'西侧闸门',label:'EXIT A' },
       { id:'east',...east,radius:90,name:'核心升降梯',label:'EXIT B' },
       { id:'field',x:Math.round(bounds.width*.36),y:Math.round(bounds.height*.32),radius:85,name:'野外接应点',label:'EXIT C' },
@@ -35,6 +39,7 @@ export function generateWorld(seed, difficulty = 'scout') {
       {x:1770,y:bounds.height*.32-100,w:bounds.width-2100,h:200},
       {x:bounds.width*.72-100,y:bounds.height*.18-160,w:200,h:bounds.height*.54+260}],
   };
+  for(const exit of world.exits){exit.safehouse=zoneAt(exit,zones).risk===0;exit.safetyRadius=170;exit.serviced=false;}
   const reserved = rect => overlap(rect,{x:100,y:860,w:800,h:500},40) ||
     overlap(rect,{x:1060,y:1150,w:240,h:240},35) ||
     overlap(rect,{x:1320,y:1240,w:450,h:400},40) ||
@@ -79,7 +84,7 @@ export function generateWorld(seed, difficulty = 'scout') {
       const p=center?{x:rand(center.x-350,center.x+350),y:rand(center.y-300,center.y+300)}:sampleSector(zone,random);
       const inTutorial=p.x<1400&&p.y>800&&p.y<1450;
       const nearby=world.obstacleGrid.query(p,p,radius);
-      if(containsPoint(p,zone.vertices)&&isFree(p.x,p.y,radius,nearby,bounds)&&!inTutorial&&occupiedGrid.query(p,p,90).every(other=>distance(other,p)>90)&&(!enemy||distance(p,WORLD.spawn)>700)){
+      if(containsPoint(p,zone.vertices)&&isFree(p.x,p.y,radius,nearby,bounds)&&!inTutorial&&occupiedGrid.query(p,p,90).every(other=>distance(other,p)>90)&&(!enemy||(distance(p,WORLD.spawn)>700&&!world.exits.some(e=>e.safehouse&&distance(p,e)<e.safetyRadius+100)))){
         occupied.push(p);occupiedGrid.insert(p);return p;
       }
     }
@@ -94,9 +99,9 @@ export function generateWorld(seed, difficulty = 'scout') {
       const p=spot(zone,40);if(p)world.chests.push({...p,id:`chest-${zone.id}-${i}`,zone:zone.risk,sectorId:zone.id,value:Math.round(rand(...zone.reward)),opened:false,
         dividers:random()<0.6?1:0,medkits:random()<0.3?1:0,gear:[randomEquipment(random,zone.risk,`chest-gear-${zone.id}-${i}`)]});
     }
-    for(let i=0;i<Math.max(2,Math.round((40+rank*10)*enemyShare(zone)));i++){
+    for(let i=0;i<Math.max(1,Math.round((3+rank)*enemyShare(zone)));i++){
       const p=spot(zone,35,true);if(!p)continue;
-      const elite=i===0;
+      const elite=false;
       const value=elite?Math.max(...zone.values)*scale*4:pick(zone.values.filter(value=>value>=2))*scale;
       const enemy=createEnemy(`enemy-${zone.id}-${i}`,p.x,p.y,value,types[(i+zone.id*2+rank)%types.length]);
       enemy.moveScale=rand(.88,1.12)*(1+rank*.04);
@@ -117,8 +122,12 @@ export function generateWorld(seed, difficulty = 'scout') {
     for(let i=0;i<3;i++){const p=spot(zone,35,false,site);if(p)world.tiles.push({...p,id:`site-tile-${index}-${i}`,value:Math.min(2048,pick(zone.values)*scale),dead:false});}
     const p=spot(zone,40,false,site);
     if(p)world.chests.push({...p,id:`site-chest-${index}`,zone:zone.risk,sectorId:zone.id,value:Math.round(rand(...zone.reward)*1.15),opened:false,dividers:1,medkits:index%3===0?1:0,gear:[randomEquipment(random,zone.risk,`site-gear-${index}`)]});
-    const ep=spot(zone,40,true,site);
-    if(ep){const e=createEnemy(`site-enemy-${index}`,ep.x,ep.y,pick(zone.values.filter(n=>n>=2))*scale,types[index%types.length]);e.zone=zone.risk;e.sectorId=zone.id;e.moveScale=rand(.88,1.12)*(1+rank*.04);if(e.type==='brute')e.armor=makeEquipment('armor','','blue',`site-armor-${index}`);world.enemies.push(e);}
+    for(let guardIndex=0;guardIndex<4+zone.risk*2+rank;guardIndex++){
+      const ep=spot(zone,35,true,site);if(!ep)continue;
+      const e=createEnemy(`site-enemy-${index}-${guardIndex}`,ep.x,ep.y,pick(zone.values.filter(n=>n>=2))*scale,types[(index+guardIndex)%types.length]);
+      Object.assign(e,{zone:zone.risk,sectorId:zone.id,guard:true,siteId:index,leash:850,moveScale:rand(.88,1.12)*(1+rank*.04)});
+      if(e.type==='brute')e.armor=makeEquipment('armor','','blue',`site-armor-${index}-${guardIndex}`);world.enemies.push(e);
+    }
     if(index%4===0){const np=spot(zone,45,false,site);if(np)world.nodes.push({...np,id:`site-node-${index}`,kind:pick(['fury','phase','magnet']),used:false});}
   }
   world.summonedCount=0;
@@ -127,10 +136,19 @@ export function generateWorld(seed, difficulty = 'scout') {
   world.chests.push({id:'starter-armory',x:620,y:1260,zone:0,value:12,opened:false,dividers:0,medkits:0,armory:true,
     gear:[makeEquipment('weapon','rifle','yellow','tutorial-rifle'),makeEquipment('armor','','white','tutorial-armor'),makeEquipment('laser','','white','tutorial-laser')]});
   world.chests.push({id:'expansion-cache',x:1500,y:1420,zone:0,value:18,opened:false,dividers:1,medkits:1,armory:true,
-    gear:['carbine','grenade','spear','warhammer'].map((type,i)=>makeEquipment('weapon',type,i<2?'yellow':'white',`expansion-weapon-${type}`))});
+    gear:['carbine','grenade','spear','warhammer'].map((type,i)=>decorateWeapon(makeEquipment('weapon',type,i<2?'yellow':'white',`expansion-weapon-${type}`),['leech','poison','lightning','stun'][i]))});
   const scout=createEnemy('frontier-scout',1900,1450,4*scale,'scout');scout.zone=0;world.enemies.push(scout);
   const guard=createEnemy('tutorial-guard',900,1280,8*scale,'hunter');guard.zone=0;world.enemies.push(guard);
   world.nodes.push({id:'tutorial-node',x:1180,y:1270,kind:'fury',used:false});
+  const bossKinds=Object.keys(BOSSES),bossAnchors=world.exits.filter(e=>!e.safehouse&&zoneAt(e,zones).risk===2).map(exit=>({exit,point:exit}));
+  for(const site of sites.filter(s=>s.zone===2&&distance(s,WORLD.spawn)>1600))if(bossAnchors.length<2+Math.floor(rank/2))bossAnchors.push({point:site});
+  if(!bossAnchors.length)bossAnchors.push({point:zones.find(z=>z.risk===2).center});
+  for(const[index,anchor]of bossAnchors.slice(0,3).entries()){
+    const zone=zoneAt(anchor.point,zones),p=spot(zone,52,true,anchor.point);if(!p)continue;
+    const kind=bossKinds[(index+(seed>>>0)%3)%bossKinds.length],boss=empowerBoss(createEnemy(`boss-${index}`,p.x,p.y,64*scale,{titan:'brute',prism:'orbiter',venom:'summoner'}[kind]),kind,mission.rank);
+    boss.zone=zone.risk;boss.sectorId=zone.id;world.enemies.push(boss);if(anchor.exit)anchor.exit.bossId=boss.id;
+  }
+  const west=world.exits[0];world.merchants.push({id:'trader-west',x:west.x+110,y:west.y+30,name:'边境行商',stock:Object.fromEntries(Object.entries(SHOP).map(([key,v])=>[key,v.stock]))});
   for(const item of [...world.tiles,...world.chests,...world.nodes,...world.enemies,...world.drops]){const sector=zoneAt(item,zones);item.sectorId=sector.id;}
   return world;
 }

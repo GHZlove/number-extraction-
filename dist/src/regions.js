@@ -30,9 +30,50 @@ export function sampleSector(sector,random){
   }
   return {...sector.center};
 }
-export function createSectors(bounds,random,protectedPoints=[]){
+function clipPolygon(vertices,nx,ny,limit){
+  const out=[];
+  for(let i=0;i<vertices.length;i++){
+    const a=vertices[i],b=vertices[(i+1)%vertices.length],da=a[0]*nx+a[1]*ny-limit,db=b[0]*nx+b[1]*ny-limit;
+    if(da<=1e-9)out.push(a);
+    if((da<0&&db>0)||(da>0&&db<0)){const t=da/(da-db);out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
+  }
+  return out;
+}
+function layoutPieces(layout,random){
+  if(layout==='tangram')return PIECES;
+  let shapes=[];
+  if(layout==='blocks'){
+    shapes=[[[0,0],[1,0],[1,1],[0,1]]];
+    const count=7+Math.floor(random()*5);
+    while(shapes.length<count){
+      const index=shapes.reduce((best,s,i)=>polygonArea(s.map(([x,y])=>({x,y})))>polygonArea(shapes[best].map(([x,y])=>({x,y})))?i:best,0);
+      const piece=shapes.splice(index,1)[0],xs=piece.map(p=>p[0]),ys=piece.map(p=>p[1]);
+      const vertical=random()<.5,from=Math.min(...(vertical?xs:ys)),to=Math.max(...(vertical?xs:ys)),cut=from+(to-from)*(.35+random()*.3);
+      shapes.push(clipPolygon(piece,vertical?1:0,vertical?0:1,cut),clipPolygon(piece,vertical?-1:0,vertical?0:-1,-cut));
+    }
+  }else if(layout==='fracture'){
+    const center=[.35+random()*.3,.35+random()*.3],edge=[];
+    for(let side=0;side<4;side++){
+      const stops=[0,.25+random()*.5];if(random()<.65)stops.push(.78+random()*.12);
+      for(const t of stops.sort((a,b)=>a-b))edge.push(side===0?[t,0]:side===1?[1,t]:side===2?[1-t,1]:[0,1-t]);
+    }
+    shapes=edge.map((p,i)=>[center,p,edge[(i+1)%edge.length]]);
+  }else{
+    const centers=[];
+    for(let row=0;row<3;row++)for(let col=0;col<3;col++)centers.push([(col+.25+random()*.5)/3,(row+.25+random()*.5)/3]);
+    if(random()<.6)centers.push([.3+random()*.4,.3+random()*.4]);
+    shapes=centers.map((a,index)=>{
+      let poly=[[0,0],[1,0],[1,1],[0,1]];
+      for(const[bIndex,b]of centers.entries())if(index!==bIndex)poly=clipPolygon(poly,b[0]-a[0],b[1]-a[1],(b[0]*b[0]+b[1]*b[1]-a[0]*a[0]-a[1]*a[1])/2);
+      return poly;
+    });
+  }
+  const names=layout==='blocks'?['补给街坊','集装箱区','仓储广场']:layout==='fracture'?['裂谷坡地','扇形高地','断层营区']:['荒野盆地','林间前哨','资源群落'];
+  return shapes.map((points,i)=>({points,shape:layout,name:names[i%names.length]+(Math.floor(i/3)+1)}));
+}
+export function createSectors(bounds,random,protectedPoints=[],layout='tangram'){
   const orientation=Math.floor(random()*8),rotate=orientation%4,mirror=orientation>=4;
-  const sectors=PIECES.map((piece,id)=>{
+  const sectors=layoutPieces(layout,random).map((piece,id)=>{
     const vertices=piece.points.map(([px,py])=>{
       let x=mirror?1-px:px,y=py;for(let i=0;i<rotate;i++){const nx=1-y;y=x;x=nx;}
       return{x:x*bounds.width,y:y*bounds.height};
@@ -46,7 +87,7 @@ export function createSectors(bounds,random,protectedPoints=[]){
   const high=remaining.length>=4?2:1,medium=remaining.length>=4?2:Math.max(0,remaining.length-high);
   const risks=[...Array(high).fill(2),...Array(medium).fill(1),...Array(Math.max(0,remaining.length-high-medium)).fill(0)];
   for(let i=risks.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[risks[i],risks[j]]=[risks[j],risks[i]];}
-  const tones=[['#c2edda','#cceac4','#bde8ee'],['#f6e0ad','#f6d0a4'],['#e6c4ef','#f4c4dc']];let index=0;
+  const tones=[['#c2edda','#cceac4','#bde8ee','#cbd8f2'],['#f6e0ad','#f6d0a4','#ebdcbd','#dbe5bb'],['#e6c4ef','#f4c4dc','#d1c8ee','#f0c9c0']];let index=0;
   for(const sector of sectors){
     const risk=safe.has(sector.id)?0:risks[index++],definition=ZONES[risk];
     Object.assign(sector,{risk,riskLabel:definition.riskLabel,color:definition.color,reward:definition.reward,values:definition.values,

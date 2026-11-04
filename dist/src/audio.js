@@ -48,7 +48,7 @@ export class Sound {
       }else if(type==='kill'){
         this.noise(.055,.055,2600);this.tone(250,.09,'triangle',.035,520);
       }else{
-        const settings={merge:[600,.18,'sine'],loot:[740,.09,'sine'],divide:[320,.2,'triangle'],hurt:[75,.12,'sawtooth'],dash:[210,.05,'sine'],heal:[500,.15,'sine'],finish:[850,.25,'sine'],node:[440,.18,'sine'],overload:[160,.2,'sawtooth']};
+        const settings={merge:[600,.18,'sine'],loot:[740,.09,'sine'],divide:[320,.2,'triangle'],hurt:[75,.12,'sawtooth'],dash:[210,.05,'sine'],heal:[500,.15,'sine'],finish:[850,.25,'sine'],node:[440,.18,'sine'],overload:[160,.2,'sawtooth'],parry:[1200,.14,'sine'],guard:[440,.05,'triangle']};
         const setting=settings[type];if(setting)this.tone(setting[0],setting[1],setting[2],.035,setting[0]*(type==='hurt'?.5:1.35));
       }
     }catch{/* Audio support must never block the game. */}

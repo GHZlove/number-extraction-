@@ -1,16 +1,18 @@
-import { RULES, difficultyOf } from './config.js';
+import { RULES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { Raid } from './game.js';
 import { Input } from './input.js';
 import { Renderer } from './renderer.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
 import { readSave,settleRun,writeSave } from './storage.js';
-import { upgradeFacility,unlockedWeapons } from './shelter.js';
+import { upgradeFacility,unlockedWeapons,forgeWeapon } from './shelter.js';
+import { ENCHANTS } from './equipment.js';
+import { buyFromMerchant } from './commerce.js';
 
 let storage=null;try{storage=window.localStorage;}catch{}
 const initial=readSave(storage);let save=initial.save,saveAvailable=initial.available;
 if(initial.migrated)saveAvailable=writeSave(storage,save);
-let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null;
+let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null;
 const canvas=document.getElementById('game-canvas'),renderer=new Renderer(canvas,document.getElementById('minimap')),sound=new Sound();
 const persist=()=>{saveAvailable=writeSave(storage,save);};
 function clearInput(){input.active=false;input.clear();accumulator=0;}
@@ -29,7 +31,7 @@ function start(){
 }
 function show(kind){
   if(view==='raid'){paused=true;clearInput();}modal=kind;
-  if(kind==='inventory')ui.inventory(raid);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
+  if(kind==='inventory')ui.inventory(raid);else if(kind==='merchant')ui.shop(raid,merchantId);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
 }
 function close(){
   modal=null;ui.hide(view==='raid');
@@ -44,6 +46,10 @@ const ui=new UI({
   abandon:()=>{if(raid?.status==='playing'){raid.finish(false,'主动返回庇护所');handleEvents();}},
   selectDifficulty:key=>{if(view!=='shelter')return;save.selectedDifficulty=difficultyOf(key).id;persist();refreshShelter();},
   selectWeapon:key=>{if(view!=='shelter'||!unlockedWeapons(save).includes(key))return;save.selectedWeapon=key;persist();refreshShelter();},
+  selectMap:key=>{if(view!=='shelter'||!MAP_LAYOUTS.some(m=>m.id===key))return;save.selectedMap=key;persist();refreshShelter();},
+  selectEnchant:key=>{if(view!=='shelter'||!Object.hasOwn(ENCHANTS,key))return;save.selectedEnchant=key;persist();refreshShelter();},
+  forge:()=>{if(view==='shelter'&&forgeWeapon(save)){persist();refreshShelter();ui.toast('武器打造完成，之后每次出击自动发放。');}},
+  buy:key=>{if(view==='raid'&&modal==='merchant'&&buyFromMerchant(raid,merchantId,key)){ui.shop(raid,merchantId);ui.update(raid,save,true,true);sound.play('loot');}},
   upgradeFacility:key=>{if(view==='shelter'&&upgradeFacility(save,key)){persist();sound.play('loot');refreshShelter();ui.toast('设施升级完成，下一次出击即生效。');}},
   equip0:key=>equip(key,0),equip1:key=>equip(key,1),equip:key=>equip(key),
   drop:key=>{if(raid?.dropItem(Number(key)))show('inventory');},remove:key=>{if(raid?.removeEquipment(key))show('inventory');},
@@ -55,6 +61,7 @@ function equip(key,slot){if(raid?.equip(Number(key),slot)){sound.play('loot');sh
 function handleEvents(){
   for(const event of raid.events.splice(0)){
     if(event.type==='message')ui.toast(event.text);
+    else if(event.type==='trade'){merchantId=event.id;show('merchant');}
     else if(event.type==='finish'){if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
     else{sound.play(event.type,event);renderer.feedback(event);}
   }

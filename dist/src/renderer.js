@@ -1,7 +1,8 @@
 import { RULES, WORLD, ZONES, ENEMY_TYPES, TERRAIN, PAINT } from './config.js';
 import { clamp, distance, tier, zoneAt, firstWallFraction } from './math.js';
-import { activeWeapon, weaponOf, spreadOf, rarityOf } from './equipment.js';
+import { activeWeapon, weaponOf, spreadOf, rarityOf, ENCHANTS } from './equipment.js';
 import { obstaclesFor, terrainFor } from './spatial.js';
+import { BOSSES } from './bosses.js';
 
 const TAU=Math.PI*2;
 function polygon(c,vertices,sx=1,sy=1){
@@ -22,6 +23,7 @@ export class Renderer {
     if(event.type==='armorbreak')this.shake=Math.max(this.shake,3.5);
     if(event.type==='explosion')this.shake=Math.max(this.shake,5);
     if(event.type==='hurt')this.shake=Math.max(this.shake,5);
+    if(event.type==='parry')this.shake=Math.max(this.shake,4.5);
   }
   resize() {
     this.width=Math.max(1,this.canvas.parentElement.clientWidth);this.height=Math.max(1,this.canvas.parentElement.clientHeight);
@@ -57,6 +59,11 @@ export class Renderer {
     const left=this.camera.x-halfW,top=this.camera.y-halfH,right=left+2*halfW,bottom=top+2*halfH;
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
     this.drawTerrain(w,time);
+    for(const cloud of w.hazards||[])if(this.visible(cloud.x,cloud.y,cloud.radius+30)){
+      c.fillStyle=cloud.owner==='player'?'#a8f43255':'#a849cf66';c.strokeStyle=cloud.owner==='player'?'#4c8c20':'#9d2eaa';c.lineWidth=2;
+      c.beginPath();c.arc(cloud.x,cloud.y,cloud.radius,0,TAU);c.fill();c.stroke();
+      this.text(cloud.owner==='player'?'附魔毒雾':'危险毒雾',cloud.x,cloud.y+5,11,PAINT.ink,'800');
+    }
     this.drawPaint(w,{left,top,right,bottom});
     // A surveying grid and hand-placed route make the map readable at a glance.
     c.lineWidth=1;
@@ -83,6 +90,10 @@ export class Renderer {
       c.beginPath();c.arc(mark.x,mark.y,38*(1-progress),0,TAU);c.stroke();this.text('!',mark.x,mark.y+7,22,PAINT.ink,'900');
     }
     for(const exit of w.exits)if(this.visible(exit.x,exit.y,140))this.drawExit(exit,raid,time);
+    for(const merchant of w.merchants||[])if(this.visible(merchant.x,merchant.y,130)){
+      this.rect(merchant.x-28,merchant.y-25,56,48,8,PAINT.yellow,PAINT.ink);this.text('◇',merchant.x,merchant.y+8,28,PAINT.ink,'900');
+      this.text(distance(merchant,p)<120?'E · 与商人交易':merchant.name,merchant.x,merchant.y+44,12,PAINT.ink,'800');
+    }
     for(const obstacle of obstaclesFor(w,{x:left,y:top},{x:right,y:bottom},20))if(this.rectVisible(obstacle))this.drawObstacle(obstacle);
     for(const chest of w.chests)if(this.visible(chest.x,chest.y))this.drawChest(chest,p,time);
     for(const node of w.nodes||[])if(this.visible(node.x,node.y,140))this.drawNode(node,p,time);
@@ -103,7 +114,11 @@ export class Renderer {
         this.text(e.text,e.x+1,e.y-progress*25+1,14,PAINT.ink,'800');
         this.text(e.text,e.x,e.y-progress*25,e.heavy?18:14,e.color,'900');
       }
-      else if(e.kind==='hit-spark'){
+      else if(e.kind==='lightning'){
+        c.strokeStyle='#dbfbff';c.lineWidth=4;c.beginPath();c.moveTo(e.x,e.y);
+        for(let i=1;i<5;i++){const t=i/5;c.lineTo(e.x+(e.endX-e.x)*t+(i%2?10:-10),e.y+(e.endY-e.y)*t+(i%2?-10:10));}
+        c.lineTo(e.endX,e.endY);c.stroke();
+      }else if(e.kind==='hit-spark'){
         const count=e.strength>=.9?10:6;c.strokeStyle=e.color;c.lineWidth=e.strength>=.9?3:2;
         for(let i=0;i<count;i++){
           const a=(e.angle||0)+i*TAU/count+(e.seed||0)*.017,r=(e.radius||30)*progress;
@@ -206,7 +221,11 @@ export class Renderer {
     if(o.w>90)this.text(o.material==='barricade'?'掩体':'B—'+Math.floor(o.x/50),o.x+10,o.y+o.h-12,8,'#31223dcc','400','left');
   }
   drawExit(e,raid,time) {
-    const c=this.ctx,active=distance(e,raid.player)<e.radius,phase=this.reduced?0:time,ready=raid.extractionReady();
+    const c=this.ctx,active=distance(e,raid.player)<e.radius,phase=this.reduced?0:time,ready=raid.extractionReady(e),bossLocked=!!e.bossId&&raid.world.enemies.some(b=>b.id===e.bossId&&!b.dead);
+    if(e.safehouse){
+      c.fillStyle='#21dfd32b';c.strokeStyle=PAINT.cyan;c.lineWidth=3;c.beginPath();c.arc(e.x,e.y,e.safetyRadius,0,TAU);c.fill();c.stroke();
+      this.rect(e.x-60,e.y-48,120,92,14,'#d9fff044',PAINT.ink);this.text('安全屋 / SAFE',e.x,e.y-e.safetyRadius-40,14,PAINT.ink,'900');
+    }
     c.fillStyle='#b7ff3b33';c.beginPath();c.arc(e.x,e.y,e.radius+22,0,TAU);c.fill();
     c.strokeStyle=ready?(active?PAINT.lime:'#408b27dd'):PAINT.orange;c.lineWidth=active?2.5:1.5;
     c.setLineDash([9,7]);c.lineDashOffset=-phase*10;c.beginPath();c.arc(e.x,e.y,e.radius,0,TAU);c.stroke();c.setLineDash([]);c.lineDashOffset=0;
@@ -214,7 +233,7 @@ export class Renderer {
     this.rect(e.x-22,e.y-25,44,44,5,ready?PAINT.lime:PAINT.orange,PAINT.ink);
     this.text('↑',e.x,e.y+5,28,PAINT.ink);this.text(e.label,e.x,e.y+40,9,PAINT.ink);
     this.text(e.name,e.x,e.y-e.radius-20,13,PAINT.ink,'500','center','sans-serif');
-    if(active)this.text(ready?'静止 · 按住 E 4 秒':`撤离校准 · ${Math.ceil(raid.difficulty.extractAt-raid.elapsed)} 秒`,e.x,e.y+e.radius+25,11,'#234e19','400','center','sans-serif');
+    if(active)this.text(bossLocked?'击败首领，解除封锁':ready?'静止 · 按住 E 4 秒':`撤离校准 · ${Math.max(0,Math.ceil(raid.difficulty.extractAt-raid.elapsed))} 秒`,e.x,e.y+e.radius+25,11,'#234e19','400','center','sans-serif');
     for(const [x,y] of [[-1,-1],[1,-1],[-1,1],[1,1]])this.rect(e.x+x*82-3,e.y+y*82-3,6,6,1,PAINT.lime);
   }
   drawChest(chest,p,time) {
@@ -255,6 +274,7 @@ export class Renderer {
   }
   drawTelegraph(e,time) {
     const c=this.ctx,definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
+    if(e.boss){this.drawBossTelegraph(e);return;}
     const progress=clamp(1-e.timer/(e.windup||definition.windup),0,1),angle=Math.atan2(e.aimY-e.y,e.aimX-e.x);
     c.lineWidth=2;c.strokeStyle=definition.pattern==='snipe'?'#ee005fff':'#e94009ff';c.fillStyle=`rgba(255,72,60,${0.13+progress*.2})`;
     if(['strike','blast','slam'].includes(definition.pattern)){
@@ -271,6 +291,21 @@ export class Renderer {
       for(const offset of offsets){c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(angle+offset)*definition.range,e.y+Math.sin(angle+offset)*definition.range);c.stroke();}c.setLineDash([]);
     }
   }
+  drawBossTelegraph(e){
+    const c=this.ctx,progress=clamp(1-e.timer/e.windup,0,1),a=Math.atan2(e.aimY-e.y,e.aimX-e.x);
+    c.lineWidth=3;c.strokeStyle='#e92c57';c.fillStyle='#ff406733';
+    if(['slam','poison'].includes(e.bossMove)){
+      const r=e.bossMove==='poison'?205:e.bossPhase===2?220:175;
+      c.beginPath();c.arc(e.aimX,e.aimY,r,0,TAU);c.fill();c.stroke();c.beginPath();c.arc(e.aimX,e.aimY,r*(1-progress),0,TAU);c.stroke();
+      this.text(e.bossMove==='poison'?'毒雾 · 离开红圈':'震地 · 闪避 / 弹反',e.aimX,e.aimY,12,PAINT.ink,'900');
+    }else if(e.bossMove==='dash'){
+      c.save();c.translate(e.x,e.y);c.rotate(a);c.fillRect(0,-48,430,96);c.strokeRect(0,-48,430,96);c.restore();
+    }else{
+      c.setLineDash([8,7]);
+      const count=e.bossMove==='ring'?12:e.bossMove==='fan'?7:3;
+      for(let i=0;i<count;i++){const angle=a+(e.bossMove==='ring'?i*TAU/count:(i-(count-1)/2)*.14);c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(angle)*450,e.y+Math.sin(angle)*450);c.stroke();}c.setLineDash([]);
+    }
+  }
   drawEnemy(e,p,time,selected) {
     const c=this.ctx,strong=e.value>p.value,s=(e.radius||21)*2-1;
     const fills={hunter:PAINT.orange,scout:PAINT.pink,brute:PAINT.purple,sentry:'#ffbf42',gunner:'#fd70b3',charger:'#ff795b',bomber:PAINT.yellow,sniper:'#ab79ff',skirmisher:'#ea69ed',medic:'#65e398',summoner:'#b895ff',orbiter:'#ff9e4a'};
@@ -282,17 +317,24 @@ export class Renderer {
     this.text(String(e.value),e.x,e.y+7,e.value>=100?16:21,PAINT.ink,'900');
     const definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
     if(strong){this.rect(e.x-29,e.y-s/2-27,58,16,3,PAINT.ink);}
-    this.text((e.state==='windup'?'! ':'')+definition.name,e.x,e.y-s/2-14,10,strong?PAINT.paper:PAINT.ink,'700','center','sans-serif');
+    this.text((e.state==='windup'?'! ':'')+(e.bossName||definition.name),e.x,e.y-s/2-14,10,strong?PAINT.paper:PAINT.ink,'700','center','sans-serif');
+    if(e.boss){
+      c.strokeStyle=BOSSES[e.boss].color;c.lineWidth=4;c.strokeRect(e.x-s/2-6,e.y-s/2-6,s+12,s+12);
+      this.rect(e.x-75,e.y-s/2-52,150,10,4,PAINT.ink);this.rect(e.x-75,e.y-s/2-52,150*e.hp/e.maxHp,10,4,BOSSES[e.boss].color);
+      this.text(`BOSS / 阶段 ${e.bossPhase}`,e.x,e.y+s/2+48,12,PAINT.ink,'900');
+    }
+    if(e.poisoned>0)this.text('毒',e.x+s/2+12,e.y-16,14,'#467b12','900');
     if(definition.glyph)this.text(definition.glyph,e.x+s/2+12,e.y+5,16,PAINT.ink,'900');
     if(definition.speed)this.text(`${Math.round(e.chaseSpeed??definition.speed*(e.moveScale||1))}速`,e.x,e.y+s/2+27,8,'#423753cc','500','center','sans-serif');
     if(['sentry','gunner','sniper'].includes(e.type)){c.fillStyle=stroke;c.fillRect(e.x-3,e.y-28,6,10);}
     if(e.armor?.durability>0){this.rect(e.x-20,e.y+36,40,3,1,'#142c3f');this.rect(e.x-20,e.y+36,40*e.armor.durability/e.armor.maxDurability,3,1,'#25bdff');}
     if(e.hp<e.maxHp){this.rect(e.x-20,e.y+30,40,3,1,'#0f1c16');this.rect(e.x-20,e.y+30,40*e.hp/e.maxHp,3,1,PAINT.pink);}
-    if(e.stun>0)this.text('÷2',e.x,e.y-42,12,'#681eb8');
+    if(e.stun>0)this.text('眩晕',e.x,e.y-42,12,'#681eb8');
     if(selected){c.strokeStyle='#7021cbbb';c.lineWidth=1;for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){c.beginPath();c.moveTo(e.x+sx*30,e.y+sy*20);c.lineTo(e.x+sx*30,e.y+sy*30);c.lineTo(e.x+sx*20,e.y+sy*30);c.stroke();}}
   }
   drawPlayer(p,time) {
     const c=this.ctx,t=tier(p.value),size=40;
+    if(p.parryWindow>0){c.strokeStyle='#e9fdff';c.lineWidth=7;c.beginPath();c.arc(p.x,p.y,48,p.aimAngle-1.42,p.aimAngle+1.42);c.stroke();}
     if(p.overload>0||p.energy>=100){c.strokeStyle=p.overload>0?'#edcf8bbb':'#edcf8b55';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,34+(this.reduced?0:Math.sin(time*6)*2),0,TAU);c.stroke();}
     if(p.buffs.phase>0){c.strokeStyle='#8bbcf488';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,42,0,TAU);c.stroke();}
     if(p.buffs.magnet>0){c.strokeStyle='#c1a5f025';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,135,0,TAU);c.stroke();}const tint=t>=6?PAINT.yellow:t>=3?PAINT.lime:PAINT.cyan;
@@ -308,7 +350,7 @@ export class Renderer {
     if(weapon.mode==='ranged'){
       const length={pistol:20,smg:25,rifle:33,sniper:44,shotgun:31,railgun:48,carbine:32,lmg:40,crossbow:34,grenade:26}[equipped.weapon]||25;
       this.rect(14,-5,length,10,2,'#302541',rarityOf(equipped.rarity).color);
-      c.fillStyle=equipped.weapon==='railgun'?PAINT.cyan:'#ff7bc0';c.fillRect(17,-3,length-8,3);
+      c.fillStyle=equipped.enchant&&equipped.enchant!=='none'?ENCHANTS[equipped.enchant].color:equipped.weapon==='railgun'?PAINT.cyan:'#ff7bc0';c.fillRect(17,-3,length-8,3);
       if(equipped.weapon==='crossbow'){c.strokeStyle='#b3d3db';c.lineWidth=3;c.beginPath();c.moveTo(45,-21);c.lineTo(30,0);c.lineTo(45,21);c.stroke();}
       if(equipped.weapon==='grenade')this.rect(22,-9,24,18,5,'#615945','#f5c47e');
       if(equipped.weapon==='lmg')this.rect(20,6,19,14,3,'#34495b','#90a7b3');
@@ -342,7 +384,9 @@ export class Renderer {
     for(const chest of raid.world.chests)if(!chest.opened){c.fillStyle='#c68a00cc';c.fillRect(chest.x*sx-1,chest.y*sy-1,2,2);}
     for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(enemy,raid.player)<450){c.fillStyle='#ef228d';c.fillRect(enemy.x*sx-1.5,enemy.y*sy-1.5,3,3);}
     for(const node of raid.world.nodes||[])if(!node.used&&distance(node,raid.player)<2000){c.fillStyle='#7d2ad2';c.fillRect(node.x*sx-1,node.y*sy-1,2,2);}
-    for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle=raid.extractionReady()?'#52a80c':'#df8517';c.fillRect(-3,-3,6,6);c.restore();}
+    for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle=e.safehouse?PAINT.cyan:raid.extractionReady(e)?'#52a80c':'#df8517';c.fillRect(-4,-4,8,8);c.restore();}
+    for(const merchant of raid.world.merchants||[]){c.fillStyle='#ffe64d';c.strokeStyle=PAINT.ink;c.lineWidth=1;c.fillRect(merchant.x*sx-3,merchant.y*sy-3,6,6);c.strokeRect(merchant.x*sx-3,merchant.y*sy-3,6,6);}
+    for(const boss of raid.world.enemies.filter(e=>e.boss&&!e.dead)){c.fillStyle='#ee126c';c.beginPath();c.arc(boss.x*sx,boss.y*sy,4,0,TAU);c.fill();}
     const p=raid.player;c.fillStyle=PAINT.ink;c.beginPath();c.arc(p.x*sx,p.y*sy,4,0,TAU);c.fill();c.fillStyle=PAINT.cyan;c.beginPath();c.arc(p.x*sx,p.y*sy,2.5,0,TAU);c.fill();
     c.strokeStyle='#30234599';c.lineWidth=.6;c.strokeRect((this.camera.x-this.width/this.scale/2)*sx,(this.camera.y-this.height/this.scale/2)*sy,this.width/this.scale*sx,this.height/this.scale*sy);
   }

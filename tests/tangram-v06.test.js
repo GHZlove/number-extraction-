@@ -56,7 +56,7 @@ test('sector lookup uses both coordinates rather than a three-column x lookup',(
 test('generated entities retain sector membership and risk rewards across all difficulties',()=>{
   for(const difficulty of DIFFICULTIES)for(let seed=0;seed<8;seed++){
     const w=generateWorld(seed,difficulty.id);
-    assert.equal(w.sectors.length,7);assert.deepEqual([...new Set(w.sectors.map(s=>s.risk))].sort(),[0,1,2]);
+    assert.ok(w.sectors.length>=7&&w.sectors.length<=12);assert.deepEqual([...new Set(w.sectors.map(s=>s.risk))].sort(),[0,1,2]);
     assert.equal(zoneAt(w.spawn,w.sectors).risk,0);
     for(const item of [...w.tiles,...w.chests,...w.nodes,...w.enemies,...w.drops]){
       const sector=zoneAt(item,w.sectors);assert.equal(item.sectorId,sector.id);
@@ -69,14 +69,14 @@ test('generated entities retain sector membership and risk rewards across all di
 test('higher-risk pieces generate larger and faster waves and preserve spawn metadata',()=>{
   const waves=[];
   for(const risk of [0,1,2]){
-    const r=empty(true),sector=r.world.sectors.find(s=>s.risk===risk);Object.assign(r.player,sector.center);
+    const r=empty(true),sector=r.world.sectors.find(s=>s.risk===risk);Object.assign(r.player,sector.center);r.world.sites=[{...sector.center}];const guard=target(r);guard.guard=true;
     r.elapsed=10;r.director.update(r,.1);
     const marks=[...r.world.spawnWarnings];assert.ok(marks.length>0);
     waves.push({count:marks.length,wait:r.director.nextPulse-r.elapsed});
     for(const mark of marks){const actual=zoneAt(mark,r.world.sectors);assert.equal(mark.zone,actual.risk);assert.equal(mark.sectorId,actual.id);}
     r.elapsed=11;r.director.update(r,.1);
-    assert.equal(r.world.enemies.length,marks.length);
-    for(const enemy of r.world.enemies){const mark=marks.find(m=>m.id===enemy.id);assert.equal(enemy.zone,mark.zone);assert.equal(enemy.sectorId,mark.sectorId);}
+    assert.equal(r.world.enemies.filter(e=>e.horde).length,marks.length);
+    for(const enemy of r.world.enemies.filter(e=>e.horde)){const mark=marks.find(m=>m.id===enemy.id);assert.equal(enemy.zone,mark.zone);assert.equal(enemy.sectorId,mark.sectorId);}
   }
   assert.ok(waves[2].count>waves[0].count);assert.ok(waves[2].wait<waves[1].wait&&waves[1].wait<waves[0].wait);
 });

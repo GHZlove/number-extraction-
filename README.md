@@ -10,18 +10,18 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.6.0 · playable single-player prototype |
+| Current version | v0.7.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
-| Core systems | Number merging, directional combat, tangram sectors, horde pressure, extraction, shelter upgrades |
-| Content | Fourteen weapon types, six quality tiers, twelve enemy types, five difficulties |
-| Verification | 118 automated tests and syntax/reference checks for 18 modules |
+| Core systems | Number merging, resource strongholds, crafting, enchantments, parries, bosses and extraction |
+| Content | 14 weapons, 4 enchantments, 12 enemy types, 3 bosses, 4 map families, 5 difficulties |
+| Verification | 147 automated tests and syntax/reference checks for 21 modules |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-This version is available on the `feature/tangram-impact-v06` playtest branch: [download the complete v0.6 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/tangram-impact-v06.zip). The default branch and hosted demo follow separate release schedules.
+This version is available on the `feature/strongholds-forge-v07` playtest branch: [download the complete v0.7 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/strongholds-forge-v07.zip). The default branch and hosted demo follow separate release schedules.
 
-[简体中文](README.zh-CN.md) · [v0.6 tangram sectors and impact](docs/TANGRAM_V06.md) · [Horde rules](docs/PRESSURE_V05.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
@@ -36,12 +36,16 @@ Extraction adds a second decision: carry on searching for better loot, or return
 **Prepare at the shelter → Deploy → Merge and explore → Fight or evade → Extract → Upgrade**
 
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
-- **Tangram-style sectors:** seven connected polygon pieces replace three vertical bands. Seeded rotations, reflections and risk assignments change the route each raid. A piece's risk governs enemy numbers, guard density, horde cadence and loot; the teaching area stays low risk. Seams are traversable, with matching minimap shapes and entry notices.
+- **Four map families:** tangram ruins, radial fractures, split city blocks and clipped Voronoi wilderness. Select a family or randomise it. Maps contain 7–12 connected sectors with seeded shapes and risks, different landmark sequences and waterways, matching minimap boundaries and safe teaching anchors.
+- **Resource strongholds:** most enemies defend resource sites. Small wilderness patrols have their own cap; occupied sites can call limited reinforcements. Guards return when pulled too far away.
+- **Enchanted loadouts:** lifesteal, chain lightning, stun and poison clouds. Forge a permanent starter weapon up to Lv.5 and choose an enchantment; levels improve damage and knockback, while gun type, quality and number advantage also affect pushback.
+- **Reactive defence:** aim toward an incoming attack and right-click for a short parry window. Reflect bullets or interrupt melee attackers, including bosses. Poison and ordinary explosions require movement.
+- **Traders, shelters and bosses:** spend carried loot at a field merchant; low-risk exits offer protective safehouses. Three boss archetypes cycle telegraphed moves and enter a second phase below half health. Some high-risk exits remain locked until their guardian falls.
 - **Combat impact:** directional hit sparks, enemy hit flashes, recoil, armour-break cues and shattering defeats. Heavy weapons add collision-safe knockback and a brief, throttled hit-stop with buffered controls. Synthesised weapon and impact sounds are opt-in; reduced-motion preferences suppress camera shake and hit deformation.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
 - **Fourteen weapons:** the original eight weapon types plus a burst carbine, LMG, crossbow, grenade launcher, spear and warhammer. Equip two slots, six quality tiers, durability-based armour and a laser sight.
 - **Compact expeditions:** five arenas from 6,400 × 4,000 to 12,800 × 8,000. Each map has 1/25 the area of its v0.4.1 counterpart, with tighter landmark layouts and more concentrated encounters.
-- **Persistent horde pressure:** repeated groups spawn around the player after a short preparation window, with visible warnings, escalating cadence, local navigation and eight-second surges every 35 seconds.
+- **Controlled reinforcements:** visible spawn warnings, a preparation window, local navigation and population budgets retain combat pressure around occupied sites while keeping wilderness encounters sparse.
 - **Terrain and enemies:** navigate open industrial compounds, container lanes, rock ridges, river bridges and brush. Twelve enemy types include fast scouts, slow armoured giants, strafing burst shooters, medics, summoners and radial-fire guards.
 - **Ink-style visuals:** fluorescent pink, cyan, lime and violet, original paint splashes, bright terrain and sticker-style shelter cards. Dark outlines and HUD panels keep combat information distinct.
 - **Fullscreen raids:** the world fills the screen, with a compact HUD and minimap. Shelter facilities and deployment controls appear outside the raid.
@@ -49,13 +53,13 @@ Extraction adds a second decision: carry on searching for better loot, or return
 
 | Difficulty | World size | Area vs v0.2 | Time limit | Fixed enemy numbers* | Base reward |
 | --- | --- | --- | --- | --- | --- |
-| 边境巡查 / Scout | 6,400 × 4,000 | 4× | 4:00 | 2–512 | 1× |
-| 失序探索 / Standard | 7,680 × 4,800 | 5.76× | 5:00 | 4–1,024 | 1.6× |
-| 深层突袭 / Hard | 8,960 × 5,600 | 7.84× | 6:00 | 8–2,048 | 2.4× |
-| 核心危机 / Severe | 10,240 × 6,400 | 10.24× | 7:00 | 16–4,096 | 3.6× |
-| 零点噩梦 / Nightmare | 12,800 × 8,000 | 16× | 8:00 | 32–8,192 | 5.2× |
+| 边境巡查 / Scout | 6,400 × 4,000 | 4× | 4:00 | 2–128 | 1× |
+| 失序探索 / Standard | 7,680 × 4,800 | 5.76× | 5:00 | 4–256 | 1.6× |
+| 深层突袭 / Hard | 8,960 × 5,600 | 7.84× | 6:00 | 8–512 | 2.4× |
+| 核心危机 / Severe | 10,240 × 6,400 | 10.24× | 7:00 | 16–1,024 | 3.6× |
+| 零点噩梦 / Nightmare | 12,800 × 8,000 | 16× | 8:00 | 32–2,048 | 5.2× |
 
-*Horde numbers also grow with elapsed time. Fixed ranges include elite enemies; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
+*Horde numbers also grow with elapsed time. Fixed ranges include bosses; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
 
 ## Run locally
 
@@ -64,7 +68,7 @@ Requirements: **Python 3**, a modern browser with JavaScript enabled, and option
 Clone the repository, or extract the complete source ZIP:
 
 ```bash
-git clone --branch feature/tangram-impact-v06 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
+git clone --branch feature/strongholds-forge-v07 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
 cd number-extraction
 ```
 
@@ -93,6 +97,7 @@ ES modules require an HTTP server; opening `dist/index.html` as a local file is 
 | WASD / arrow keys | Move |
 | Mouse movement | Aim |
 | Left mouse button / Space | Fire or swing; hold to repeat |
+| Right mouse button / C | Timed, directional parry |
 | 1 / 2 | Switch weapon slots |
 | F | Pick up nearby equipment |
 | B | Open the backpack, equip, switch or drop items; pauses the raid |
@@ -119,7 +124,7 @@ Exits open after **45/60/75/90/105 seconds**, depending on difficulty. Survive u
 
 ## Combat and progression
 
-White weapons use a fraction of the target's maximum health. Equal numbers deal **25%**. With `d = log2(attacker / defender)`, higher numbers deal `1 - 2^(-d)` and lower numbers deal `2^(d-1)`.
+White Lv.1 weapons without enchantments or buffs use a fraction of the target's maximum health. Equal numbers deal **25%**. With `d = log2(attacker / defender)`, higher numbers deal `1 - 2^(-d)` and lower numbers deal `2^(d-1)`.
 
 | Match-up | Higher number deals | Lower number deals |
 | --- | --- | --- |
@@ -142,11 +147,19 @@ Railguns can hit three distinct targets before stopping; walls block projectiles
 
 Picked-up equipment is converted into resources on extraction. Workshop equipment is issued afresh for each raid and has no salvage value. There is no persistent equipment warehouse. See [v0.3 rules](docs/SHELTER_V03.md) for costs, unlocks and rewards.
 
+## Forge, trade and return
+
+Forge the selected starter weapon at the shelter using credits, alloy and cores. Each additional level adds 8% damage and increases knockback; choose one of four enchantments on forging or upgrading. A Lv.5 weapon can be re-enchanted for a separate cost. Crafted loadouts are reissued each raid, survive failed runs as a saved blueprint, and have no salvage value.
+
+The western safehouse has a merchant. Spend carried loot value on repair kits (24), division charges (30), green armour (65), a laser (36), or a green Lv.2 lightning rifle (110). Stock is limited per raid and equipment requires backpack space. Shelter savings are separate from raid trading.
+
+Safehouse circles block incoming damage, provide one treatment per location and prohibit attacks from inside. Extraction still requires the survival deadline. Boss caches contain valuable loot, a purple Lv.3 enchanted weapon and supplies; their currency, alloy and bonus cores are banked only on successful extraction. Detailed costs and encounter rules are in [v0.7 design notes](docs/STRONGHOLDS_V07.md).
+
 ## Engineering highlights
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 18 JavaScript ES modules separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 21 JavaScript ES modules separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
@@ -163,19 +176,20 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **18 modules passing syntax/reference checks and 118 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion, 16 pressure, 12 tangram/impact/audio and 10 browser-contract tests.
+No `npm install` is required. The current verification has **21 modules passing syntax/reference checks and 147 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion, 16 encounter-director, 12 tangram/impact/audio, 29 stronghold/forge/boss/parry and 10 browser-contract tests.
 
-Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover polygon tiling, sector risk and entity membership, knockback collisions, hit-stop input retention, effect rendering and rate-limited audio scheduling. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
+Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
-Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
+v0.7 migrates v0.3–v0.6 progression into a separate save key, leaving the original intact. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
 
 This is a single-player prototype with no multiplayer, cloud synchronisation, application-level network requests or telemetry. Enemies share a local navigation field and use crowd separation; full navigation meshes and globally optimal routes are not implemented. Real-browser layout, mobile devices, Safari, long sessions, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.7 strongholds, forge, enchantments, parry and bosses](docs/STRONGHOLDS_V07.md)
 - [v0.6 tangram sectors and combat impact](docs/TANGRAM_V06.md)
 - [v0.5 compact arenas and horde pressure](docs/PRESSURE_V05.md)
 - [v0.4 maps, terrain, enemy and weapon rules](docs/EXPANSION_V04.md)
