@@ -90,7 +90,8 @@ button:active:not(:disabled) { transform:translateY(1px); }
 #game-canvas { display:block;width:100%;height:100%;cursor:crosshair;outline:none;touch-action:none; }
 .hud-top { position:absolute;top:22px;left:26px;right:26px;display:flex;align-items:start;justify-content:space-between;gap:15px;pointer-events:none; }
 .mission-chip { display:flex;gap:11px;align-items:center;padding:12px 15px;background:#241c38dc;border:1px solid #3b515d88;backdrop-filter:blur(10px);border-radius:10px;min-width:180px; }
-.mission-chip b { display:block;font-size:13px;font-weight:500; }.mission-chip small { display:block;color:#8fa5b2;font:9px monospace;margin-top:6px; }
+.mission-chip b { display:block;font-size:13px;font-weight:500; }#pressure-readout { color:var(--pink);font-weight:800; }
+.mission-chip small { display:block;color:#8fa5b2;font:9px monospace;margin-top:6px; }
 .raid-timer { position:absolute;left:50%;transform:translateX(-50%);text-align:center;padding:9px 24px;background:#241c38bd;border:1px solid #3b515d66;border-radius:10px; }
 .raid-timer small { display:block;color:#9cb2bd;font-size:9px;margin-bottom:4px;letter-spacing:3px; }.raid-timer b { font:500 25px ui-monospace,monospace;letter-spacing:1px; }
 .hud-actions { display:flex;gap:8px;align-items:center;pointer-events:auto; }.carried-chip { padding:9px 13px;border:1px solid #48625766;border-radius:9px;background:#241c38d9;text-align:right; }.carried-chip small { font-size:8px;color:#8ca69c;display:block;margin-bottom:5px; }.carried-chip b { font:15px monospace;color:#bee4ce; }

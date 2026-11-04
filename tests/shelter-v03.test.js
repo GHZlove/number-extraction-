@@ -11,7 +11,7 @@ import { makeEquipment } from '../dist/src/equipment.js';
 
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 function empty(save=defaultSave(),options={}){
-  const raid=new Raid(save,1234,options);
+  const raid=new Raid(save,1234,{pressure:false,...options});
   Object.assign(raid.world,{obstacles:[],terrain:[],enemies:[],tiles:[],chests:[],nodes:[],drops:[],projectiles:[]});
   raid.random=()=>0.5;return raid;
 }
@@ -20,18 +20,18 @@ function target(raid,x=180,id='target'){
   const enemy=createEnemy(id,raid.player.x+x,raid.player.y,raid.player.value);enemy.cooldown=999;raid.world.enemies.push(enemy);return enemy;
 }
 
-test('minimum map is ten times wider and taller; all five difficulty scales grow monotonically',()=>{
-  assert.equal(WORLD.width,LEGACY_WORLD.width*10);assert.equal(WORLD.height,LEGACY_WORLD.height*10);
+test('compact difficulty maps and enemy tiers grow monotonically',()=>{
+  assert.equal(WORLD.width,LEGACY_WORLD.width*2);assert.equal(WORLD.height,LEGACY_WORLD.height*2);
   let area=0,maxEnemy=0;
   for(const mission of DIFFICULTIES){
     const world=generateWorld(42,mission.id),current=world.bounds.width*world.bounds.height;
-    assert.ok(current>area);assert.ok(current>=LEGACY_WORLD.width*LEGACY_WORLD.height*100);
+    assert.ok(current>area);assert.ok(current>=LEGACY_WORLD.width*LEGACY_WORLD.height*4);
     const ceiling=Math.max(...world.enemies.map(enemy=>enemy.value));assert.ok(ceiling>maxEnemy);
     area=current;maxEnemy=ceiling;
     assert.equal(world.bounds.width,mission.width);assert.equal(world.difficulty.id,mission.id);
     for(const item of [...world.tiles,...world.chests,...world.nodes,...world.enemies])assert.ok(isFree(item.x,item.y,22,obstaclesFor(world,item,item,22),world.bounds),`${mission.id}: ${item.id}`);
   }
-  assert.equal(area,64000*40000);assert.equal(maxEnemy,8192);
+  assert.equal(area,12800*8000);assert.equal(maxEnemy,8192);
 });
 
 test('both extraction points remain reachable across all five map sizes',()=>{
@@ -52,10 +52,10 @@ test('both extraction points remain reachable across all five map sizes',()=>{
 });
 
 test('movement and bullets use the selected map bounds beyond the old global boundary',()=>{
-  const r=empty(defaultSave(),{difficulty:'nightmare'});r.player.x=62000;r.player.y=4000;
-  r.update(0.1,{x:1});assert.ok(r.player.x>62000);
+  const r=empty(defaultSave(),{difficulty:'nightmare'});r.player.x=12000;r.player.y=4000;
+  r.update(0.1,{x:1});assert.ok(r.player.x>12000);
   const enemy=target(r,140);r.attack();r.updateProjectiles(0.3);near(enemy.hp,75);
-  r.player.x=63990;r.update(1,{x:1});assert.equal(r.player.x,64000-r.player.radius);
+  r.player.x=12790;r.update(1,{x:1});assert.equal(r.player.x,12800-r.player.radius);
 });
 
 test('spatial obstacle queries preserve full-scan line and projectile intersections',()=>{

@@ -1,7 +1,7 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.4.1';
+export const VERSION = '0.5.0';
 export const LEGACY_WORLD = Object.freeze({ width: 3200, height: 2000 });
-export const WORLD = Object.freeze({ width: 32000, height: 20000, spawn: { x: 300, y: 1060 } });
+export const WORLD = Object.freeze({ width: 6400, height: 4000, spawn: { x: 300, y: 1060 } });
 export const RULES = Object.freeze({
   fixedStep: 1 / 60, raidSeconds: 420, maxValue: 2048,
   playerRadius: 19, speed: 215, health: 100,
@@ -10,14 +10,14 @@ export const RULES = Object.freeze({
   divideRange: 215, divideStun: 1.25, extractSeconds: 4,
   startingDividers: 2, startingMedkits: 1, bagCapacity: 8,
   equalDamageFraction: 0.25, contactCooldown: 0.85,
-  energyPerMerge: 25, overloadSeconds: 7, activeEnemyRadius: 1500, summonBudget: 48,
+  energyPerMerge: 25, overloadSeconds: 7, activeEnemyRadius: 1800, summonBudget: 48,
 });
 export const DIFFICULTIES = Object.freeze([
-  { id: 'scout', name: '边境巡查', rank: 1, color: '#b5f93b', width: 32000, height: 20000, enemyShift: 0, reward: 1, seconds: 600, description: '熟悉地形，积累第一批庇护所资源。' },
-  { id: 'standard', name: '失序探索', rank: 2, color: '#20d7e8', width: 40000, height: 25000, enemyShift: 1, reward: 1.6, seconds: 720, description: '更大的区域，更高数字的守卫。' },
-  { id: 'hard', name: '深层突袭', rank: 3, color: '#ffdc43', width: 48000, height: 30000, enemyShift: 2, reward: 2.4, seconds: 840, description: '强敌守护高价值合金与核心。' },
-  { id: 'severe', name: '核心危机', rank: 4, color: '#b280ff', width: 56000, height: 35000, enemyShift: 3, reward: 3.6, seconds: 960, description: '利用运算节点与过载寻找突破口。' },
-  { id: 'nightmare', name: '零点噩梦', rank: 5, color: '#ff5ca8', width: 64000, height: 40000, enemyShift: 4, reward: 5.2, seconds: 1080, description: '最大战区，最危险的数字与最高收益。' },
+  { id: 'scout', name: '边境巡查', rank: 1, color: '#b5f93b', width: 6400, height: 4000, enemyShift: 0, reward: 1, seconds: 240, extractAt: 45, description: '紧凑战区，先备战，再迎接持续追击。' },
+  { id: 'standard', name: '失序探索', rank: 2, color: '#20d7e8', width: 7680, height: 4800, enemyShift: 1, reward: 1.6, seconds: 300, extractAt: 60, description: '更密的敌群，更快的进攻节奏。' },
+  { id: 'hard', name: '深层突袭', rank: 3, color: '#ffdc43', width: 8960, height: 5600, enemyShift: 2, reward: 2.4, seconds: 360, extractAt: 75, description: '强敌守护高价值合金与核心。' },
+  { id: 'severe', name: '核心危机', rank: 4, color: '#b280ff', width: 10240, height: 6400, enemyShift: 3, reward: 3.6, seconds: 420, extractAt: 90, description: '利用运算节点与过载寻找突破口。' },
+  { id: 'nightmare', name: '零点噩梦', rank: 5, color: '#ff5ca8', width: 12800, height: 8000, enemyShift: 4, reward: 5.2, seconds: 480, extractAt: 105, description: '高密度围攻与最快的进攻节奏。' },
 ]);
 export const difficultyOf = id => DIFFICULTIES.find(item => item.id === id) || DIFFICULTIES[0];
 export const FACILITIES = Object.freeze({
@@ -27,18 +27,18 @@ export const FACILITIES = Object.freeze({
   recycler: { name: '回收中心', en: 'RECYCLER', icon: 'core', max: 20, base: 100, alloy: 4, description: '每级提高 5% 撤离资源收益。' },
 });
 export const ENEMY_TYPES = Object.freeze({
-  hunter: { name: '追猎者', pattern: 'strike', windup: 0.72, range: 104, cooldown: 1.3, speed: 90 },
-  sentry: { name: '哨戒炮', pattern: 'shot', windup: 0.9, range: 380, cooldown: 1.9, speed: 0 },
-  gunner: { name: '散射手', pattern: 'fan', windup: 0.95, range: 410, cooldown: 2.1, speed: 62 },
-  charger: { name: '冲锋者', pattern: 'charge', windup: 1, range: 440, cooldown: 2.8, speed: 70 },
-  bomber: { name: '爆破者', pattern: 'blast', windup: 1.35, range: 310, cooldown: 3.1, speed: 48 },
-  scout: { name: '疾行斥候', pattern: 'strike', windup: 0.48, range: 92, cooldown: 0.95, speed: 175, glyph: '»' },
-  brute: { name: '重装巨像', pattern: 'slam', windup: 1.5, range: 160, cooldown: 3.2, speed: 38, radius: 29, glyph: '▰' },
-  skirmisher: { name: '游击射手', pattern: 'burst', windup: 0.65, range: 520, cooldown: 2.4, speed: 120, glyph: '≋' },
-  medic: { name: '修复者', pattern: 'heal', windup: 1.25, range: 480, cooldown: 4, speed: 60, glyph: '+' },
-  summoner: { name: '孵化者', pattern: 'summon', windup: 1.8, range: 650, cooldown: 7, speed: 32, glyph: '✧' },
-  orbiter: { name: '环射守卫', pattern: 'ring', windup: 1.15, range: 420, cooldown: 2.7, speed: 74, glyph: '⊙' },
-  sniper: { name: '狙击手', pattern: 'snipe', windup: 1.4, range: 690, cooldown: 2.7, speed: 0 },
+  hunter: { name: '追猎者', pattern: 'strike', windup: 0.46, range: 104, cooldown: 0.8, speed: 170 },
+  sentry: { name: '哨戒炮', pattern: 'shot', windup: 0.6, range: 380, cooldown: 1.15, speed: 0 },
+  gunner: { name: '散射手', pattern: 'fan', windup: 0.62, range: 410, cooldown: 1.2, speed: 115 },
+  charger: { name: '冲锋者', pattern: 'charge', windup: 0.68, range: 440, cooldown: 1.7, speed: 150 },
+  bomber: { name: '爆破者', pattern: 'blast', windup: 0.85, range: 310, cooldown: 1.9, speed: 105 },
+  scout: { name: '疾行斥候', pattern: 'strike', windup: 0.32, range: 92, cooldown: 0.58, speed: 235, glyph: '»' },
+  brute: { name: '重装巨像', pattern: 'slam', windup: 1.05, range: 160, cooldown: 2, speed: 90, radius: 29, glyph: '▰' },
+  skirmisher: { name: '游击射手', pattern: 'burst', windup: 0.45, range: 520, cooldown: 1.5, speed: 170, glyph: '≋' },
+  medic: { name: '修复者', pattern: 'heal', windup: 0.9, range: 480, cooldown: 2.8, speed: 100, glyph: '+' },
+  summoner: { name: '孵化者', pattern: 'summon', windup: 1.2, range: 650, cooldown: 4.8, speed: 78, glyph: '✧' },
+  orbiter: { name: '环射守卫', pattern: 'ring', windup: 0.75, range: 420, cooldown: 1.7, speed: 130, glyph: '⊙' },
+  sniper: { name: '狙击手', pattern: 'snipe', windup: 0.95, range: 690, cooldown: 1.8, speed: 0 },
 });
 export const ZONES = Object.freeze([
   { id: 0, name: '边缘缓冲区', en: 'THE OUTSKIRTS', from: 0, to: WORLD.width/3, risk: '低危', color: '#00c9bd', reward: [14, 26], values: [1, 1, 2, 2, 4, 8] },
@@ -73,4 +73,9 @@ export const PAINT = Object.freeze({
   yellow:'#ffe64d', purple:'#ac7aff', orange:'#ff944b',
   ground:['#d5e4dc','#e5dfcd','#e1d9ec'],
   stains:['#fc52ad','#11d9d0','#b4ee2d','#8d6bf6','#ffac4b'],
+});
+
+export const PRESSURE = Object.freeze({
+  graceSeconds:6, warningSeconds:0.9, spawnMin:650, spawnMax:1000,
+  safetyRadius:240, surgeEvery:35, surgeSeconds:8, cleanupSeconds:4, maxChaseSpeed:300,
 });

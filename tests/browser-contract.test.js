@@ -61,6 +61,7 @@ test('render paths cover all weapon types, enemy warnings and white/red aim guid
     raid.player.weapons[0] = makeEquipment('weapon', type, 'red'); raid.player.activeSlot = 0;
     renderer.draw(raid, 1, 1/60);
   }
+  raid.world.spawnWarnings=[{x:raid.player.x+250,y:raid.player.y+80,readyAt:.8,duration:.9}];
   raid.player.weapons[0] = makeEquipment('weapon', 'rifle'); raid.player.laser = makeEquipment('laser');
   renderer.draw(raid, 1, 1/60);
   assert.ok(env.drawCalls.some(call => call.method === 'stroke' && call.strokeStyle === '#ffffff66'));
@@ -119,7 +120,7 @@ test('shelter difficulty and workshop selections persist and apply to the next e
   action('selectDifficulty','nightmare');
   const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v03'));
   assert.equal(stored.shelter.workshop,1);assert.equal(stored.selectedWeapon,'smg');assert.equal(stored.selectedDifficulty,'nightmare');
-  assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/64000 × 40000/);
+  assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/12800 × 8000/);
   action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.equal(env.ids.get('mission-name').textContent,'零点噩梦');
   assert.match(env.ids.get('quick-slot-0').innerHTML,/冲锋枪/);
 });
@@ -141,7 +142,7 @@ test('ending a raid returns directly to the shelter and preserves banked resourc
 
 test('camera and minimap use the largest expedition bounds rather than the minimum map',t=>{
   const env=browserStubs(t),renderer=new Renderer(env.canvas,env.ids.get('minimap'));
-  const raid=new Raid(defaultSave(),49,{difficulty:'nightmare'});raid.player.x=62000;raid.player.y=38500;
-  renderer.camera={x:62000,y:38500};renderer.draw(raid,10,1/60);
-  assert.ok(renderer.camera.x>61000);assert.ok(renderer.camera.y>38000);assert.equal(renderer.bounds.width,64000);
+  const raid=new Raid(defaultSave(),49,{difficulty:'nightmare'});raid.player.x=12000;raid.player.y=7400;
+  renderer.camera={x:12000,y:7400};renderer.draw(raid,10,1/60);
+  assert.ok(renderer.camera.x>11000);assert.ok(renderer.camera.y>7000);assert.equal(renderer.bounds.width,12800);
 });

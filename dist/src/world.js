@@ -23,7 +23,7 @@ export function generateWorld(seed, difficulty = 'scout') {
   const world = {
     seed, difficulty: mission, bounds, zones, spawn: { ...WORLD.spawn },
     theme: pick(['雨后废墟','断层工业区','荒原补给线']),
-    obstacles: [], terrain: [], landmarks: [], tiles: [], chests: [], nodes: [], enemies: [], drops: [], projectiles: [], effects: [],
+    spawnWarnings: [], obstacles: [], terrain: [], landmarks: [], tiles: [], chests: [], nodes: [], enemies: [], drops: [], projectiles: [], effects: [],
     exits: [{ id:'west',x:310,y:530,radius:80,name:'西侧闸门',label:'EXIT A' },
       { id:'east',...east,radius:90,name:'核心升降梯',label:'EXIT B' },
       { id:'field',x:Math.round(bounds.width*.36),y:Math.round(bounds.height*.32),radius:85,name:'野外接应点',label:'EXIT C' },
@@ -46,7 +46,7 @@ export function generateWorld(seed, difficulty = 'scout') {
   }
   const rank = mission.rank-1;
   for (const zone of zones) {
-    for (let group=0;group<12+rank*3;group++) {
+    for (let group=0;group<5+rank*2;group++) {
       const x=rand(zone.from+160,zone.to-460),y=rand(160,bounds.height-520);
       const width=rand(200,340),height=rand(160,280),material=group%2?'ruin':'warehouse',cluster=`${zone.id}-${group}`;
       const pieces=[{x,y,w:width,h:26,material,cluster},{x,y:y+26,w:26,h:height,material,cluster},
@@ -54,9 +54,9 @@ export function generateWorld(seed, difficulty = 'scout') {
       let placed=0;for(const piece of pieces)if(addObstacle(piece))placed++;
       if(placed)world.landmarks.push({x:x+width/2,y:y+height/2,name:material==='ruin'?'破碎庭院':'废弃仓储'});
     }
-    for(let i=0;i<55+rank*16;i++) addObstacle({x:rand(zone.from+90,zone.to-180),y:rand(90,bounds.height-200),
+    for(let i=0;i<18+rank*6;i++) addObstacle({x:rand(zone.from+90,zone.to-180),y:rand(90,bounds.height-200),
       w:rand(55,140),h:rand(45,120),material:pick(['rock','container','barricade'])});
-    for(let i=0;i<16+rank*5;i++){
+    for(let i=0;i<9+rank*3;i++){
       const patch={x:rand(zone.from+80,zone.to-320),y:rand(100,bounds.height-360),w:rand(150,350),h:rand(100,260),kind:i%2?'mud':'water'};
       if(!reserved(patch))world.terrain.push(patch);
     }
@@ -71,7 +71,7 @@ export function generateWorld(seed, difficulty = 'scout') {
   const occupied=[],occupiedGrid=new SpatialGrid(occupied,100);
   function spot(zone,radius=35,enemy=false,center=null){
     for(let i=0;i<500;i++){
-      const p=center?{x:rand(center.x-650,center.x+650),y:rand(center.y-550,center.y+550)}:{x:rand(zone.from+100,zone.to-100),y:rand(100,bounds.height-100)};
+      const p=center?{x:rand(Math.max(zone.from+80,center.x-350),Math.min(zone.to-80,center.x+350)),y:rand(center.y-300,center.y+300)}:{x:rand(zone.from+100,zone.to-100),y:rand(100,bounds.height-100)};
       const inTutorial=p.x<1400&&p.y>800&&p.y<1450;
       const nearby=world.obstacleGrid.query(p,p,radius);
       if(isFree(p.x,p.y,radius,nearby,bounds)&&!inTutorial&&occupiedGrid.query(p,p,90).every(other=>distance(other,p)>90)&&(!enemy||distance(p,WORLD.spawn)>700)){
@@ -82,14 +82,14 @@ export function generateWorld(seed, difficulty = 'scout') {
   }
   const types=Object.keys(ENEMY_TYPES),scale=2**mission.enemyShift;
   for(const zone of zones){
-    for(let i=0;i<240+rank*70;i++){
+    for(let i=0;i<120+rank*32;i++){
       const p=spot(zone,30);if(p)world.tiles.push({...p,id:`tile-${zone.id}-${i}`,value:Math.min(2048,pick(zone.values)*scale),dead:false});
     }
-    for(let i=0;i<28+rank*7;i++){
+    for(let i=0;i<12+rank*4;i++){
       const p=spot(zone,40);if(p)world.chests.push({...p,id:`chest-${zone.id}-${i}`,zone:zone.id,value:Math.round(rand(...zone.reward)),opened:false,
         dividers:random()<0.6?1:0,medkits:random()<0.3?1:0,gear:[randomEquipment(random,zone.id,`chest-gear-${zone.id}-${i}`)]});
     }
-    for(let i=0;i<42+rank*18;i++){
+    for(let i=0;i<40+rank*10;i++){
       const p=spot(zone,35,true);if(!p)continue;
       const elite=i===0;
       const value=elite?Math.max(...zone.values)*scale*4:pick(zone.values.filter(value=>value>=2))*scale;
@@ -99,10 +99,10 @@ export function generateWorld(seed, difficulty = 'scout') {
       if(enemy.type==='brute'||((zone.id===2||rank>=2)&&i%3===0))enemy.armor=makeEquipment('armor','',rank>=3?'green':'yellow',`armor-${enemy.id}`);
       world.enemies.push(enemy);
     }
-    for(let i=0;i<14+rank*4;i++){
+    for(let i=0;i<8+rank*2;i++){
       const p=spot(zone,30);if(p)world.drops.push({...randomEquipment(random,zone.id,`field-gear-${zone.id}-${i}`),...p,dead:false});
     }
-    for(let i=0;i<6+rank*3;i++){
+    for(let i=0;i<4+rank*2;i++){
       const p=spot(zone,45);if(p)world.nodes.push({...p,id:`node-${zone.id}-${i}`,kind:pick(['fury','phase','magnet']),used:false});
     }
   }

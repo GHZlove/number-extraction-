@@ -8,7 +8,7 @@ import { makeEquipment,WEAPONS } from '../dist/src/equipment.js';
 import { terrainSpeed,terrainAt,distance,isFree,seededRandom } from '../dist/src/math.js';
 import { terrainFor,obstaclesFor } from '../dist/src/spatial.js';
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
-function empty(){const r=new Raid(defaultSave(),29);Object.assign(r.world,{enemies:[],obstacles:[],terrain:[],tiles:[],chests:[],nodes:[],drops:[],projectiles:[],effects:[]});r.random=()=>.5;return r;}
+function empty(){const r=new Raid(defaultSave(),29,{pressure:false});Object.assign(r.world,{enemies:[],obstacles:[],terrain:[],tiles:[],chests:[],nodes:[],drops:[],projectiles:[],effects:[]});r.random=()=>.5;return r;}
 function target(r,x=150,type='hunter',id=type){const e=createEnemy(id,r.player.x+x,r.player.y,1,type);e.hp=e.maxHp=100;e.cooldown=999;r.world.enemies.push(e);return e;}
 function weapon(r,key){r.player.weapons[0]=makeEquipment('weapon',key,'white',key);}
 
@@ -17,7 +17,7 @@ test('large worlds contain six kinds of landmark, seven functional surfaces and 
     const w=generateWorld(51,difficulty);
     assert.equal(new Set(w.sites.map(s=>s.kind)).size,6);
     assert.deepEqual([...new Set(w.terrain.map(t=>t.kind))].sort(),Object.keys(TERRAIN).sort());
-    assert.ok(w.sites.length>=80);assert.equal(w.exits.length,4);
+    assert.ok(w.sites.length>=6);assert.equal(w.exits.length,4);
     for(const e of w.exits)assert.ok(isFree(e.x,e.y,50,obstaclesFor(w,e,e,50),w.bounds));
     assert.ok(w.chests.filter(c=>c.id.startsWith('site-')).length>=w.sites.length*.9);
     for(const p of w.terrain)assert.ok(p.x>=0&&p.y>=0&&p.x+p.w<=w.bounds.width&&p.y+p.h<=w.bounds.height);
@@ -44,14 +44,14 @@ test('scouts and giants move at distinct speeds, with seeded variation among gen
   for(const type of ['scout','hunter','brute']){
     const r=empty(),e=target(r,300,type);const x=e.x;r.updateEnemy(e,.1);moved[type]=x-e.x;
   }
-  near(moved.scout,17.5);near(moved.hunter,9);near(moved.brute,3.8);
+  near(moved.scout,23.5);near(moved.hunter,17);near(moved.brute,9);
   const w=generateWorld(42);assert.equal(new Set(w.enemies.map(e=>e.type)).size,12);
   assert.ok(new Set(w.enemies.filter(e=>e.type==='hunter').map(e=>e.moveScale)).size>1);
 });
 
 test('bush concealment reduces distant detection but does not make nearby players invisible',()=>{
   for(const concealed of [false,true]){
-    const r=empty(),e=target(r,300);e.phase=0;e.homeX=e.x+100;
+    const r=empty(),e=target(r,700);e.phase=0;e.homeX=e.x+100;
     if(concealed)r.world.terrain=[{x:r.player.x-80,y:r.player.y-80,w:160,h:160,kind:'brush'}];
     const x=e.x;r.updateEnemy(e,.1);assert.equal(e.x>x,concealed);
     e.x=r.player.x+80;e.cooldown=0;r.updateEnemy(e,.01);assert.equal(e.state,'windup');

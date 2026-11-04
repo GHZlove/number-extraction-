@@ -60,6 +60,12 @@ export class Renderer {
     for(const zone of this.zones){if(this.visible(zone.from+250,850,400)){this.text(`0${zone.id+1} / ${zone.en}`,zone.from+100,820,20,zone.color+'88','500','left');this.text('NO SIGNAL BEYOND THE BORDER',zone.from+100,841,8,PAINT.ink+'77','400','left');}}
     c.setLineDash([3,9]);c.strokeStyle='#36274688';c.lineWidth=1;c.beginPath();c.moveTo(260,1060);c.lineTo(655,1060);c.stroke();c.setLineDash([]);
     this.text('ENTRY / 001',245,1120,9,'#362746aa','400','left');
+    for(const mark of w.spawnWarnings||[]){
+      if(!this.visible(mark.x,mark.y,90))continue;
+      const progress=clamp(1-(mark.readyAt-raid.elapsed)/mark.duration,0,1);
+      c.fillStyle='#ff42a233';c.strokeStyle=PAINT.pink;c.lineWidth=3;c.beginPath();c.arc(mark.x,mark.y,38,0,TAU);c.fill();c.stroke();
+      c.beginPath();c.arc(mark.x,mark.y,38*(1-progress),0,TAU);c.stroke();this.text('!',mark.x,mark.y+7,22,PAINT.ink,'900');
+    }
     for(const exit of w.exits)if(this.visible(exit.x,exit.y,140))this.drawExit(exit,raid,time);
     for(const obstacle of obstaclesFor(w,{x:left,y:top},{x:right,y:bottom},20))if(this.rectVisible(obstacle))this.drawObstacle(obstacle);
     for(const chest of w.chests)if(this.visible(chest.x,chest.y))this.drawChest(chest,p,time);
@@ -172,15 +178,15 @@ export class Renderer {
     if(o.w>90)this.text(o.material==='barricade'?'掩体':'B—'+Math.floor(o.x/50),o.x+10,o.y+o.h-12,8,'#31223dcc','400','left');
   }
   drawExit(e,raid,time) {
-    const c=this.ctx,active=distance(e,raid.player)<e.radius,phase=this.reduced?0:time;
+    const c=this.ctx,active=distance(e,raid.player)<e.radius,phase=this.reduced?0:time,ready=raid.extractionReady();
     c.fillStyle='#b7ff3b33';c.beginPath();c.arc(e.x,e.y,e.radius+22,0,TAU);c.fill();
-    c.strokeStyle=active?PAINT.lime:'#408b27dd';c.lineWidth=active?2.5:1.5;
+    c.strokeStyle=ready?(active?PAINT.lime:'#408b27dd'):PAINT.orange;c.lineWidth=active?2.5:1.5;
     c.setLineDash([9,7]);c.lineDashOffset=-phase*10;c.beginPath();c.arc(e.x,e.y,e.radius,0,TAU);c.stroke();c.setLineDash([]);c.lineDashOffset=0;
     c.strokeStyle='#3f822877';c.lineWidth=1;c.beginPath();c.arc(e.x,e.y,e.radius-10,0,TAU);c.stroke();
-    this.rect(e.x-22,e.y-25,44,44,5,PAINT.lime,PAINT.ink);
+    this.rect(e.x-22,e.y-25,44,44,5,ready?PAINT.lime:PAINT.orange,PAINT.ink);
     this.text('↑',e.x,e.y+5,28,PAINT.ink);this.text(e.label,e.x,e.y+40,9,PAINT.ink);
     this.text(e.name,e.x,e.y-e.radius-20,13,PAINT.ink,'500','center','sans-serif');
-    if(active)this.text('静止 · 按住 E 4 秒',e.x,e.y+e.radius+25,11,'#234e19','400','center','sans-serif');
+    if(active)this.text(ready?'静止 · 按住 E 4 秒':`撤离校准 · ${Math.ceil(raid.difficulty.extractAt-raid.elapsed)} 秒`,e.x,e.y+e.radius+25,11,'#234e19','400','center','sans-serif');
     for(const [x,y] of [[-1,-1],[1,-1],[-1,1],[1,1]])this.rect(e.x+x*82-3,e.y+y*82-3,6,6,1,PAINT.lime);
   }
   drawChest(chest,p,time) {
@@ -221,7 +227,7 @@ export class Renderer {
   }
   drawTelegraph(e,time) {
     const c=this.ctx,definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
-    const progress=clamp(1-e.timer/definition.windup,0,1),angle=Math.atan2(e.aimY-e.y,e.aimX-e.x);
+    const progress=clamp(1-e.timer/(e.windup||definition.windup),0,1),angle=Math.atan2(e.aimY-e.y,e.aimX-e.x);
     c.lineWidth=2;c.strokeStyle=definition.pattern==='snipe'?'#ee005fff':'#e94009ff';c.fillStyle=`rgba(255,72,60,${0.13+progress*.2})`;
     if(['strike','blast','slam'].includes(definition.pattern)){
       const radius=definition.pattern==='slam'?175:definition.pattern==='blast'?118:64;
@@ -249,7 +255,7 @@ export class Renderer {
     if(strong){this.rect(e.x-29,e.y-s/2-27,58,16,3,PAINT.ink);}
     this.text((e.state==='windup'?'! ':'')+definition.name,e.x,e.y-s/2-14,10,strong?PAINT.paper:PAINT.ink,'700','center','sans-serif');
     if(definition.glyph)this.text(definition.glyph,e.x+s/2+12,e.y+5,16,PAINT.ink,'900');
-    if(definition.speed)this.text(`${Math.round(definition.speed*(e.moveScale||1))}速`,e.x,e.y+s/2+27,8,'#423753cc','500','center','sans-serif');
+    if(definition.speed)this.text(`${Math.round(e.chaseSpeed??definition.speed*(e.moveScale||1))}速`,e.x,e.y+s/2+27,8,'#423753cc','500','center','sans-serif');
     if(['sentry','gunner','sniper'].includes(e.type)){c.fillStyle=stroke;c.fillRect(e.x-3,e.y-28,6,10);}
     if(e.armor?.durability>0){this.rect(e.x-20,e.y+36,40,3,1,'#142c3f');this.rect(e.x-20,e.y+36,40*e.armor.durability/e.armor.maxDurability,3,1,'#25bdff');}
     if(e.hp<e.maxHp){this.rect(e.x-20,e.y+30,40,3,1,'#0f1c16');this.rect(e.x-20,e.y+30,40*e.hp/e.maxHp,3,1,PAINT.pink);}
@@ -305,7 +311,7 @@ export class Renderer {
     for(const chest of raid.world.chests)if(!chest.opened){c.fillStyle='#c68a00cc';c.fillRect(chest.x*sx-1,chest.y*sy-1,2,2);}
     for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(enemy,raid.player)<450){c.fillStyle='#ef228d';c.fillRect(enemy.x*sx-1.5,enemy.y*sy-1.5,3,3);}
     for(const node of raid.world.nodes||[])if(!node.used&&distance(node,raid.player)<2000){c.fillStyle='#7d2ad2';c.fillRect(node.x*sx-1,node.y*sy-1,2,2);}
-    for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle='#52a80c';c.fillRect(-3,-3,6,6);c.restore();}
+    for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle=raid.extractionReady()?'#52a80c':'#df8517';c.fillRect(-3,-3,6,6);c.restore();}
     const p=raid.player;c.fillStyle=PAINT.ink;c.beginPath();c.arc(p.x*sx,p.y*sy,4,0,TAU);c.fill();c.fillStyle=PAINT.cyan;c.beginPath();c.arc(p.x*sx,p.y*sy,2.5,0,TAU);c.fill();
     c.strokeStyle='#30234599';c.lineWidth=.6;c.strokeRect((this.camera.x-this.width/this.scale/2)*sx,(this.camera.y-this.height/this.scale/2)*sy,this.width/this.scale*sx,this.height/this.scale*sy);
   }

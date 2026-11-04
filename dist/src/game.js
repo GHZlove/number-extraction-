@@ -1,4 +1,6 @@
-import { RULES, WORLD, ENEMY_TYPES, difficultyOf } from './config.js';
+import { PressureDirector } from './pressure.js';
+import { NavigationField } from './navigation.js';
+import { RULES, WORLD, ENEMY_TYPES, PRESSURE, difficultyOf } from './config.js';
 import {
   attackDamage, bagTotal, canMerge, clamp, distance, lineOfSight, maxEnemyHealth,
   moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree,
@@ -6,7 +8,7 @@ import {
 import { createLoot, createEnemy, generateWorld, lootForEnemy } from './world.js';
 import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue } from './equipment.js';
 import { facilityLevel, starterLoadout, rewardMultiplier, salvageMaterials } from './shelter.js';
-import { obstaclesFor, terrainFor } from './spatial.js';
+import { SpatialGrid, obstaclesFor, terrainFor } from './spatial.js';
 
 export class Raid {
   constructor(save, seed = Date.now() >>> 0, options = {}) {
@@ -18,6 +20,10 @@ export class Raid {
     this.world = generateWorld(seed,this.difficulty.id);
     this.status = 'playing';this.bursts=[];
     this.elapsed = 0;
+    this.director=options.pressure===false?null:new PressureDirector(seed,this.difficulty);
+    this.navigation=new NavigationField(this.world);
+    this.pressureState=this.director?.profile(0)||{speed:1,cooldown:1,windup:1};
+    this.crowdGrid=null;this.hordeKills=0;
     this.result = null;
     const loadout = starterLoadout(save,options.weapon);
     const supply = facilityLevel(save,'supply');
@@ -35,7 +41,7 @@ export class Raid {
     this.events = []; this.lastMessage = ''; this.lastMessageTime = -10;
     this.tutorial = { merge: false, chest: false, extraction: false };
     this.nodesActivated = 0; this.combo = 0; this.lastMerge = -Infinity;
-    this.message('合成积累能量，满能量按 G 过载。E 启用运算节点，F 拾取，B 换装。');
+    this.message(`怪潮即将来袭！撤离点在 ${this.difficulty.extractAt} 秒后开放，合成与击杀积累过载能量。`);
   }
 
   visible(a,b,pad=0) { return lineOfSight(a,b,obstaclesFor(this.world,a,b,pad),pad); }
@@ -44,6 +50,12 @@ export class Raid {
     moveEntity(entity,dx,dy,obstaclesFor(this.world,entity,end,entity.radius+1),this.world.bounds);
   }
   ground(entity=this.player){return terrainAt(entity,terrainFor(this.world,entity));}
+  extractionReady(){return this.elapsed>=this.difficulty.extractAt;}
+  pressureInfo(){
+    const profile=this.director?.profile(this.elapsed)||{stage:1,label:'独立模拟'};
+    return {...profile,wave:this.director?.wave||0,near:this.world.enemies.filter(e=>!e.dead&&distance(e,this.player)<1000).length,next:Math.max(0,(this.director?.nextPulse||this.elapsed)-this.elapsed)};
+  }
+  enemyCooldown(definition){return definition.cooldown*this.pressureState.cooldown;}
   damagePower() { return (this.player.overload>0?1.25:1)*(this.player.buffs.fury>0?1.35:1); }
   activateOverload() {
     const p=this.player;
@@ -80,7 +92,7 @@ export class Raid {
   context() {
     const p = this.player;
     const exit = this.world.exits.find(target => distance(p, target) < target.radius);
-    if (exit) return { kind: 'exit', target: exit, progress: this.extractProgress / RULES.extractSeconds };
+    if (exit) return { kind: 'exit', target: exit, locked:!this.extractionReady(), progress: this.extractProgress / RULES.extractSeconds };
     const chest = this.world.chests.filter(target => !target.opened && distance(p, target) < 75 && this.visible(p, target))
       .sort((a, b) => distance(p, a)-distance(p, b))[0];
     if(chest)return {kind:'chest',target:chest,progress:this.searchProgress/0.75};
@@ -193,8 +205,10 @@ export class Raid {
     if (enemy.dead) return;
     enemy.dead = true; this.kills++; this.event('kill');
     this.world.tiles.push({ id: `remnant-${enemy.id}`, x: enemy.x, y: enemy.y, value: enemy.value, dead: false });
-    this.world.drops.push(lootForEnemy(enemy,this.world.zones));
-    if (this.random() < 0.42) {
+    this.player.energy=Math.min(100,this.player.energy+(enemy.elite?8:enemy.horde?4:2));
+    if(enemy.horde)this.hordeKills++;
+    if(!enemy.horde||this.random()<.35)this.world.drops.push(lootForEnemy(enemy,this.world.zones));
+    if (this.random() < (enemy.horde?.08:.42)) {
       const gear = randomEquipment(this.random, enemy.zone ?? this.world.zones.find(zone=>enemy.homeX>=zone.from&&enemy.homeX<zone.to)?.id ?? 2, `gear-${enemy.id}`);
       this.world.drops.push({ ...gear, x: enemy.x, y: enemy.y, dead: false });
     }
@@ -261,14 +275,15 @@ export class Raid {
     }else if(pattern==='summon'){
       const living=this.world.enemies.filter(e=>!e.dead&&e.summonerId===enemy.id).length;
       for(let i=0;i<Math.min(2,4-living);i++){
-        if((this.world.summonedCount||0)>=RULES.summonBudget)break;
+        if((this.world.summonedCount||0)>=RULES.summonBudget||this.world.enemies.filter(e=>!e.dead).length>=640)break;
+        if(this.director&&this.world.enemies.filter(e=>!e.dead&&distance(e,p)<1500).length>=this.director.profile(this.elapsed).nearCap)break;
         let child=null;
         for(let j=0;j<12;j++){
           const a=j*Math.PI/6+i*.4,point={x:enemy.x+Math.cos(a)*100,y:enemy.y+Math.sin(a)*100};
-          if(isFree(point.x,point.y,24,obstaclesFor(this.world,point,point,24),this.world.bounds)&&this.world.enemies.every(e=>e.dead||distance(e,point)>50)){
+          if(distance(point,p)>p.radius+35&&isFree(point.x,point.y,24,obstaclesFor(this.world,point,point,24),this.world.bounds)&&this.world.enemies.every(e=>e.dead||distance(e,point)>50)){
             const count=(this.world.summonedCount||0)+1;this.world.summonedCount=count;
             child=createEnemy(`summoned-${count}`,point.x,point.y,Math.max(1,enemy.value/2),'scout');
-            Object.assign(child,{summonerId:enemy.id,zone:enemy.zone,moveScale:enemy.moveScale||1,cooldown:1.2});this.world.enemies.push(child);break;
+            Object.assign(child,{summonerId:enemy.id,zone:enemy.zone,horde:!!enemy.horde,aggro:8,moveScale:enemy.moveScale||1,cooldown:1.2});this.world.enemies.push(child);break;
           }
         }
         if(child)this.effect(child.x,child.y,'孵化','#c4a1f2','pulse',.6);
@@ -277,9 +292,9 @@ export class Raid {
       enemy.state='burst';enemy.burstLeft=3;enemy.burstTimer=0;return;
     }else{
       const offsets=pattern==='ring'?Array.from({length:8},(_,i)=>i*Math.PI/4):pattern==='fan'?[-.24,0,.24]:[0];
-      for(const offset of offsets)this.shoot(enemy,angle+offset,pattern==='snipe'?1350:pattern==='ring'?270:330,pattern==='snipe'?1150:800,'enemy',enemy.value,enemy.rarity);
+      for(const offset of offsets)this.shoot(enemy,angle+offset,pattern==='snipe'?1350:pattern==='ring'?330:460,pattern==='snipe'?1150:800,'enemy',enemy.value,enemy.rarity);
     }
-    enemy.state='idle';enemy.cooldown=definition.cooldown;
+    enemy.state='idle';enemy.cooldown=this.enemyCooldown(definition);
   }
   updateEnemy(enemy,dt){
     if(enemy.dead)return;
@@ -289,31 +304,35 @@ export class Raid {
     if(enemy.stun>0){enemy.stun=Math.max(0,enemy.stun-dt);return;}
     if(enemy.state==='charge'){
       const before={x:enemy.x,y:enemy.y};this.move(enemy,enemy.chargeX*560*dt,enemy.chargeY*560*dt);enemy.chargeTime-=dt;
-      if(enemy.chargeTime<=0||distance(before,enemy)<.1){enemy.state='idle';enemy.cooldown=definition.cooldown;}return;
+      if(enemy.chargeTime<=0||distance(before,enemy)<.1){enemy.state='idle';enemy.cooldown=this.enemyCooldown(definition);}return;
     }
     if(enemy.state==='burst'){
       enemy.burstTimer-=dt;
       while(enemy.burstLeft>0&&enemy.burstTimer<=0){
         const angle=Math.atan2(enemy.aimY-enemy.y,enemy.aimX-enemy.x)+(enemy.burstLeft-2)*.065;
-        this.shoot(enemy,angle,610,950,'enemy',enemy.value,enemy.rarity);enemy.burstLeft--;enemy.burstTimer+=.12;
+        this.shoot(enemy,angle,700,950,'enemy',enemy.value,enemy.rarity);enemy.burstLeft--;enemy.burstTimer+=.12;
       }
-      if(enemy.burstLeft===0){enemy.state='idle';enemy.cooldown=definition.cooldown;}return;
+      if(enemy.burstLeft===0){enemy.state='idle';enemy.cooldown=this.enemyCooldown(definition);}return;
     }
     if(enemy.state==='windup'){enemy.timer-=dt;if(enemy.timer<=0)this.resolveEnemyAttack(enemy,definition);return;}
     const p=this.player,d=distance(enemy,p),conceal=d>160?(this.ground(p)?.concealment||1):1;
-    const sight=d<Math.max(380,definition.range+100)*conceal&&this.visible(enemy,p);
+    const visible=this.visible(enemy,p),sight=d<Math.max(850,definition.range+180)*conceal&&visible;
+    enemy.aggro=Math.max(0,(enemy.aggro||0)-dt);if(sight)enemy.aggro=5;
+    const pursuing=enemy.horde||enemy.aggro>0;
+    const beginWindup=()=>{enemy.state='windup';enemy.windup=Math.max(.28,definition.windup*this.pressureState.windup);enemy.timer=enemy.windup;};
     if(pattern==='heal'&&enemy.cooldown===0){
       const ally=this.world.enemies.filter(e=>e!==enemy&&!e.dead&&e.hp<e.maxHp&&distance(enemy,e)<=definition.range&&this.visible(enemy,e)).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
-      if(ally){enemy.healTarget=ally.id;enemy.aimX=ally.x;enemy.aimY=ally.y;enemy.state='windup';enemy.timer=definition.windup;return;}
-    }else if(pattern!=='heal'&&d<definition.range*conceal&&sight&&enemy.cooldown===0){
-      enemy.state='windup';enemy.timer=definition.windup;enemy.aimX=p.x;enemy.aimY=p.y;return;
+      if(ally){enemy.healTarget=ally.id;enemy.aimX=ally.x;enemy.aimY=ally.y;beginWindup();return;}
+    }else if(pattern!=='heal'&&d<definition.range*conceal&&visible&&enemy.cooldown===0){
+      enemy.aimX=p.x;enemy.aimY=p.y;beginWindup();return;
     }
     if(!definition.speed)return;
     let mx,my;
-    if(sight&&pattern!=='heal'){
-      const ranged=['fan','burst'].includes(pattern),sign=ranged&&d<190?-1:d>(['strike','slam'].includes(pattern)?65:240)?1:0;
+    if(pursuing){
+      const ranged=['fan','burst','heal','summon','ring'].includes(pattern),sign=ranged&&d<185?-1:d>(['strike','slam'].includes(pattern)?38:pattern==='heal'?330:240)?1:0;
       mx=(p.x-enemy.x)/Math.max(d,1)*sign;my=(p.y-enemy.y)/Math.max(d,1)*sign;
-      if(pattern==='burst'){
+      if(!visible){const route=this.navigation.direction(enemy,p);if(route){mx=route.x;my=route.y;}}
+      if(pattern==='burst'&&visible){
         const side=Math.sin(this.elapsed*1.4+enemy.phase)>.0?1:-1;
         mx+=-(p.y-enemy.y)/Math.max(d,1)*side*.7;my+=(p.x-enemy.x)/Math.max(d,1)*side*.7;
         const norm=Math.max(1,Math.hypot(mx,my));mx/=norm;my/=norm;
@@ -322,7 +341,15 @@ export class Raid {
       const hx=enemy.homeX+Math.cos(this.elapsed*.5+enemy.phase)*48,hy=enemy.homeY+Math.sin(this.elapsed*.45+enemy.phase)*48;
       const length=Math.hypot(hx-enemy.x,hy-enemy.y)||1;mx=(hx-enemy.x)/length*.35;my=(hy-enemy.y)/length*.35;
     }
-    const speed=definition.speed*(enemy.moveScale||1)*terrainSpeed(enemy,terrainFor(this.world,enemy));this.move(enemy,mx*speed*dt,my*speed*dt);
+    if(this.crowdGrid){
+      let sx=0,sy=0;
+      for(const other of this.crowdGrid.query(enemy,enemy,75)){
+        if(other===enemy||other.dead)continue;const d=distance(enemy,other),wanted=enemy.radius+other.radius+12;
+        if(d<wanted){const angle=d<.01?enemy.phase+other.phase:0,side=enemy.id<other.id?1:-1;sx+=(d<.01?Math.cos(angle)*side:(enemy.x-other.x)/d)*(1-d/wanted);sy+=(d<.01?Math.sin(angle)*side:(enemy.y-other.y)/d)*(1-d/wanted);}
+      }
+      mx+=sx*.9;my+=sy*.9;const norm=Math.max(1,Math.hypot(mx,my));mx/=norm;my/=norm;
+    }
+    const speed=Math.min(PRESSURE.maxChaseSpeed,definition.speed*(enemy.moveScale||1)*this.pressureState.speed)*terrainSpeed(enemy,terrainFor(this.world,enemy));enemy.chaseSpeed=speed;this.move(enemy,mx*speed*dt,my*speed*dt);
   }
   explode(bullet,point){
     if(bullet.exploded)return;bullet.exploded=true;bullet.dead=true;
@@ -376,6 +403,7 @@ export class Raid {
     if (!context || !input.interact || !stationary) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = null; return; }
     if (context.target.id !== this.interactId) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = context.target.id; }
     if (context.kind === 'exit') {
+      if(context.locked){this.extractProgress=0;return;}
       this.extractProgress += dt; this.tutorial.extraction = true;
       if (this.extractProgress >= RULES.extractSeconds) this.finish(true, '成功撤离');
     } else if(context.kind==='node'){
@@ -443,6 +471,9 @@ export class Raid {
       if (!loot.dead && (!loot.kind || loot.kind === 'loot') && distance(p, loot) < (p.buffs.magnet>0?220:42) &&
           this.visible(p, loot) && this.addLoot(loot)) loot.dead = true;
     }
+    this.navigation.update(p,dt);
+    this.director?.update(this,dt);this.pressureState=this.director?.profile(this.elapsed)||this.pressureState;
+    this.crowdGrid=new SpatialGrid(this.world.enemies.filter(e=>!e.dead&&distance(e,p)<RULES.activeEnemyRadius),96);
     for (const enemy of this.world.enemies) {
       this.updateEnemy(enemy, dt); this.clash(enemy);
       if (this.status !== 'playing') return;
@@ -459,7 +490,7 @@ export class Raid {
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
     const items=[...this.bag,...equipped],materials=salvageMaterials(items);
     this.result = { id:this.id,success,reason,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*this.rewardMultiplier),number:this.player.value,
-      seconds:this.elapsed,kills:this.kills,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,
+      seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,
       materials:{alloy:Math.round(materials.alloy*this.rewardMultiplier),core:Math.round(materials.core*this.rewardMultiplier)},
       loot:items.map(item=>({...item})) };
     this.event('finish', { result: this.result });

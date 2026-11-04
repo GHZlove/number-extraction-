@@ -7,7 +7,7 @@ import { createEnemy, generateWorld } from '../dist/src/world.js';
 import { obstaclesFor } from '../dist/src/spatial.js';
 import { buyUpgrade, defaultSave, normalizeSave, readSave, settleRun, writeSave } from '../dist/src/storage.js';
 
-function emptyRaid(){const r=new Raid(defaultSave(),42);Object.assign(r.world,{enemies:[],tiles:[],chests:[],obstacles:[],terrain:[],drops:[],projectiles:[]});return r;}
+function emptyRaid(){const r=new Raid(defaultSave(),42,{pressure:false});Object.assign(r.world,{enemies:[],tiles:[],chests:[],obstacles:[],terrain:[],drops:[],projectiles:[]});return r;}
 function advance(raid,seconds,input={}){for(let i=0;i<Math.ceil(seconds/RULES.fixedStep);i++)raid.update(RULES.fixedStep,input);}
 function place(raid,target){raid.player.x=target.x;raid.player.y=target.y;}
 
@@ -64,16 +64,16 @@ test('chest grants fixed loot once; full bags cannot consume a chest',()=>{
   c.opened=false;r.capacity=1;advance(r,1,{interact:true});assert.equal(c.opened,false);assert.equal(r.bag.length,1);
 });
 test('extraction needs four continuous stationary seconds; release resets it',()=>{
-  const r=emptyRaid();place(r,r.world.exits[0]);advance(r,2,{interact:true});assert.equal(r.result,null);
+  const r=emptyRaid();r.elapsed=r.difficulty.extractAt;place(r,r.world.exits[0]);advance(r,2,{interact:true});assert.equal(r.result,null);
   r.update(RULES.fixedStep,{});assert.equal(r.extractProgress,0);
   advance(r,2,{interact:true});r.update(RULES.fixedStep,{interact:true,x:1});assert.equal(r.extractProgress,0);
   advance(r,4.1,{interact:true});assert.equal(r.result.success,true);
 });
 test('a full tutorial loot-extract cycle banks 24 once and carries upgrades next raid',()=>{
-  const save=defaultSave(),r=new Raid(save,99);r.world.enemies=[];
+  const save=defaultSave(),r=new Raid(save,99,{pressure:false});r.world.enemies=[];
   for(const id of ['tutorial-0','tutorial-1','tutorial-2']){place(r,r.world.tiles.find(t=>t.id===id));r.update(RULES.fixedStep,{});}
   assert.equal(r.player.value,8);
-  place(r,r.world.chests.find(c=>c.id==='starter-chest'));advance(r,1,{interact:true});place(r,r.world.exits[0]);advance(r,4.1,{interact:true});
+  place(r,r.world.chests.find(c=>c.id==='starter-chest'));advance(r,1,{interact:true});r.elapsed=r.difficulty.extractAt;place(r,r.world.exits[0]);advance(r,4.1,{interact:true});
   assert.equal(r.result.value,24);assert.equal(settleRun(save,r.result),true);assert.equal(save.credits,24);assert.equal(settleRun(save,r.result),false);assert.equal(save.credits,24);
   save.credits=200;assert.equal(buyUpgrade(save,'capacity'),true);assert.equal(save.credits,120);
   const next=new Raid(save,100);assert.equal(next.capacity,10);assert.equal(next.player.value,1);assert.equal(next.bag.length,0);

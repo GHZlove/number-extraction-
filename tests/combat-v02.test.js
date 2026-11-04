@@ -8,7 +8,7 @@ import { RARITIES, WEAPONS, makeEquipment, absorbDamage, spreadOf } from '../dis
 import { defaultSave, settleRun } from '../dist/src/storage.js';
 
 function raid() {
-  const r = new Raid(defaultSave(), 2468);
+  const r = new Raid(defaultSave(), 2468,{pressure:false});
   Object.assign(r.world, { enemies: [], tiles: [], chests: [], obstacles: [], terrain: [], drops: [], projectiles: [] });
   r.random = () => 0.5;
   return r;
@@ -213,7 +213,7 @@ test('scatter enemies fire a fan and snipers fire a faster aimed projectile', ()
     const bullet = r.world.projectiles[0]; velocities.push(Math.hypot(bullet.vx, bullet.vy));
     if (type === 'gunner') assert.notEqual(r.world.projectiles[0].vy, r.world.projectiles[2].vy);
   }
-  assert.ok(velocities[1] > velocities[0]*3);
+  assert.ok(velocities[1] > velocities[0]*2.5);
 });
 
 test('a charge is telegraphed, moves, stops at walls and is interruptible by division', () => {

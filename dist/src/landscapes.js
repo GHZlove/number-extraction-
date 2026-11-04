@@ -1,14 +1,14 @@
 // Open structures and terrain pockets give large maps places to navigate toward.
 export function buildLandscapes(world,rand,addObstacle){
   const {width,height}=world.bounds,rank=world.difficulty.rank-1,sites=[];
-  const spacing=2600+rank*200;
+  const spacing=1000+rank*100,scale=.6;let serial=0;
   for(const zone of world.zones){
     let index=0;
-    for(let cy=1600;cy<height-1100;cy+=spacing){
-      for(let cx=zone.from+1400;cx<zone.to-1000;cx+=spacing){
-        const x=cx+rand(-260,260),y=cy+rand(-260,260),kind=index++%6,cluster=`site-${zone.id}-${index}`;
-        const place=(dx,dy,w,h,material)=>addObstacle({x:x+dx,y:y+dy,w,h,material,cluster});
-        const patch=(dx,dy,w,h,ground)=>world.terrain.push({x:x+dx,y:y+dy,w,h,kind:ground});
+    for(let cy=900;cy<height-550;cy+=spacing){
+      for(let cx=zone.from+650;cx<zone.to-450;cx+=spacing){
+        const x=cx+rand(-130,130),y=cy+rand(-130,130),kind=serial++%6,cluster=`site-${zone.id}-${index++}`;
+        const place=(dx,dy,w,h,material)=>addObstacle({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,material,cluster});
+        const patch=(dx,dy,w,h,ground)=>world.terrain.push({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,kind:ground});
         let name;
         if(kind===0){
           name='工业庭院';
@@ -36,7 +36,7 @@ export function buildLandscapes(world,rand,addObstacle){
           for(const[dx,dy]of[[-260,-210],[140,-210],[-260,170],[140,170]])place(dx,dy,120,40,'barricade');
           patch(-360,-280,720,560,'mud');
         }
-        sites.push({x,y,zone:zone.id,kind,name});world.landmarks.push({x,y:y-350,name,kind});
+        sites.push({x,y,zone:zone.id,kind,name});world.landmarks.push({x,y:y-230,name,kind});
       }
     }
     // Rivers have frequent plank crossings, including each main-road intersection.
