@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.4.0';
+export const VERSION = '0.4.1';
 export const LEGACY_WORLD = Object.freeze({ width: 3200, height: 2000 });
 export const WORLD = Object.freeze({ width: 32000, height: 20000, spawn: { x: 300, y: 1060 } });
 export const RULES = Object.freeze({
@@ -13,11 +13,11 @@ export const RULES = Object.freeze({
   energyPerMerge: 25, overloadSeconds: 7, activeEnemyRadius: 1500, summonBudget: 48,
 });
 export const DIFFICULTIES = Object.freeze([
-  { id: 'scout', name: '边境巡查', rank: 1, color: '#9cddb7', width: 32000, height: 20000, enemyShift: 0, reward: 1, seconds: 600, description: '熟悉地形，积累第一批庇护所资源。' },
-  { id: 'standard', name: '失序探索', rank: 2, color: '#7cbef2', width: 40000, height: 25000, enemyShift: 1, reward: 1.6, seconds: 720, description: '更大的区域，更高数字的守卫。' },
-  { id: 'hard', name: '深层突袭', rank: 3, color: '#edc47a', width: 48000, height: 30000, enemyShift: 2, reward: 2.4, seconds: 840, description: '强敌守护高价值合金与核心。' },
-  { id: 'severe', name: '核心危机', rank: 4, color: '#be9cf4', width: 56000, height: 35000, enemyShift: 3, reward: 3.6, seconds: 960, description: '利用运算节点与过载寻找突破口。' },
-  { id: 'nightmare', name: '零点噩梦', rank: 5, color: '#f18f94', width: 64000, height: 40000, enemyShift: 4, reward: 5.2, seconds: 1080, description: '最大战区，最危险的数字与最高收益。' },
+  { id: 'scout', name: '边境巡查', rank: 1, color: '#b5f93b', width: 32000, height: 20000, enemyShift: 0, reward: 1, seconds: 600, description: '熟悉地形，积累第一批庇护所资源。' },
+  { id: 'standard', name: '失序探索', rank: 2, color: '#20d7e8', width: 40000, height: 25000, enemyShift: 1, reward: 1.6, seconds: 720, description: '更大的区域，更高数字的守卫。' },
+  { id: 'hard', name: '深层突袭', rank: 3, color: '#ffdc43', width: 48000, height: 30000, enemyShift: 2, reward: 2.4, seconds: 840, description: '强敌守护高价值合金与核心。' },
+  { id: 'severe', name: '核心危机', rank: 4, color: '#b280ff', width: 56000, height: 35000, enemyShift: 3, reward: 3.6, seconds: 960, description: '利用运算节点与过载寻找突破口。' },
+  { id: 'nightmare', name: '零点噩梦', rank: 5, color: '#ff5ca8', width: 64000, height: 40000, enemyShift: 4, reward: 5.2, seconds: 1080, description: '最大战区，最危险的数字与最高收益。' },
 ]);
 export const difficultyOf = id => DIFFICULTIES.find(item => item.id === id) || DIFFICULTIES[0];
 export const FACILITIES = Object.freeze({
@@ -41,14 +41,14 @@ export const ENEMY_TYPES = Object.freeze({
   sniper: { name: '狙击手', pattern: 'snipe', windup: 1.4, range: 690, cooldown: 2.7, speed: 0 },
 });
 export const ZONES = Object.freeze([
-  { id: 0, name: '边缘缓冲区', en: 'THE OUTSKIRTS', from: 0, to: WORLD.width/3, risk: '低危', color: '#80d9bc', reward: [14, 26], values: [1, 1, 2, 2, 4, 8] },
-  { id: 1, name: '失序工业带', en: 'THE FRACTURE', from: WORLD.width/3, to: WORLD.width*2/3, risk: '中危', color: '#e6bb72', reward: [35, 65], values: [2, 4, 4, 8, 16, 32] },
-  { id: 2, name: '零点核心', en: 'ZERO CORE', from: WORLD.width*2/3, to: WORLD.width, risk: '高危', color: '#ec8d80', reward: [80, 130], values: [8, 16, 16, 32, 64, 128] },
+  { id: 0, name: '边缘缓冲区', en: 'THE OUTSKIRTS', from: 0, to: WORLD.width/3, risk: '低危', color: '#00c9bd', reward: [14, 26], values: [1, 1, 2, 2, 4, 8] },
+  { id: 1, name: '失序工业带', en: 'THE FRACTURE', from: WORLD.width/3, to: WORLD.width*2/3, risk: '中危', color: '#ebbc10', reward: [35, 65], values: [2, 4, 4, 8, 16, 32] },
+  { id: 2, name: '零点核心', en: 'ZERO CORE', from: WORLD.width*2/3, to: WORLD.width, risk: '高危', color: '#e72b8d', reward: [80, 130], values: [8, 16, 16, 32, 64, 128] },
 ]);
 export const LOOT = Object.freeze([
-  { name: '数据碎片', short: 'DATA', color: '#80d9bc' },
-  { name: '运算晶体', short: 'CRYSTAL', color: '#e6bb72' },
-  { name: '零点核心', short: 'CORE', color: '#ec8d80' },
+  { name: '数据碎片', short: 'DATA', color: '#00c9bd' },
+  { name: '运算晶体', short: 'CRYSTAL', color: '#ebbc10' },
+  { name: '零点核心', short: 'CORE', color: '#e72b8d' },
 ]);
 export const UPGRADES = Object.freeze({
   capacity: { name: '扩容背包', max: 3, cost: level => 80 + level * 80 },
@@ -58,11 +58,19 @@ export const LEGACY_SAVE_KEY = 'number-extraction-v01';
 export const SAVE_KEY = 'number-extraction-v03';
 
 export const TERRAIN = Object.freeze({
-  water: { name: '浅水', speed: 0.58, color: '#285565', line: '#7bbbc8', priority: 1 },
-  mud: { name: '泥地', speed: 0.72, color: '#594b36', line: '#a38d62', priority: 1 },
-  rubble: { name: '碎石', speed: 0.82, color: '#424956', line: '#9298a5', priority: 1 },
-  brush: { name: '灌木掩护', speed: 0.9, color: '#284b3e', line: '#7cae82', priority: 1, concealment: 0.6 },
-  ice: { name: '冰原', speed: 1.18, color: '#496a80', line: '#acd3e5', priority: 1 },
-  road: { name: '公路', speed: 1.12, color: '#323d49', line: '#9baaa4', priority: 0 },
-  bridge: { name: '桥面', speed: 1.12, color: '#6b5a40', line: '#d2ba87', priority: 10 },
+  water: { name: '浅水', speed: 0.58, color: '#50bed5', line: '#d3fbff', priority: 1 },
+  mud: { name: '泥地', speed: 0.72, color: '#9d74ad', line: '#e8b9ef', priority: 1 },
+  rubble: { name: '碎石', speed: 0.82, color: '#899db3', line: '#dfe5ff', priority: 1 },
+  brush: { name: '灌木掩护', speed: 0.9, color: '#4ebd80', line: '#c0ff77', priority: 1, concealment: 0.6 },
+  ice: { name: '冰原', speed: 1.18, color: '#9addec', line: '#effdff', priority: 1 },
+  road: { name: '公路', speed: 1.12, color: '#596384', line: '#fff181', priority: 0 },
+  bridge: { name: '桥面', speed: 1.12, color: '#e8a05c', line: '#ffedb8', priority: 10 },
+});
+
+// Presentation-only palette. Paint never changes collision, damage or progression.
+export const PAINT = Object.freeze({
+  ink:'#221a3a', paper:'#fffbee', cyan:'#12ded4', pink:'#ff42a2', lime:'#bdff36',
+  yellow:'#ffe64d', purple:'#ac7aff', orange:'#ff944b',
+  ground:['#d5e4dc','#e5dfcd','#e1d9ec'],
+  stains:['#fc52ad','#11d9d0','#b4ee2d','#8d6bf6','#ffac4b'],
 });

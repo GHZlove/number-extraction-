@@ -21,7 +21,7 @@ export function icon(name, className = '') {
 }
 
 export function shelterArt(save) {
-  const level = shelterLevel(save), colors = ['#83dec6','#87bff2','#eac37d','#bb9ee8'];
+  const level = shelterLevel(save), colors = ['#bbff36','#13ded3','#ff5aa8','#a571ff'], faces=['#ddf6a1','#a9f0df','#ffd0e4','#dfcaff'];
   const modules = [
     { key:'storage',x:150,y:226,w:116,h:69,label:'储备仓' },
     { key:'supply',x:490,y:238,w:118,h:70,label:'补给站' },
@@ -29,38 +29,39 @@ export function shelterArt(save) {
     { key:'recycler',x:505,y:117,w:105,h:67,label:'回收中心' },
   ];
   const module = (item,index) => {
-    const active = facilityLevel(save,item.key)>0, color=active?colors[index]:'#5b7784';
+    const active = facilityLevel(save,item.key)>0, color=colors[index];
     const {x,y,w,h}=item;
-    return `<g><path d="M${x},${y}l${w},-26 42,25v${h}l-${w},26-42-25Z" fill="#101e29" stroke="#3b5362"/>
-      <path d="M${x},${y}l${w},-26 42,25-${w},26Z" fill="${active?'#213746':'#172936'}" stroke="#45616e"/>
+    return `<g><path d="M${x},${y}l${w},-26 42,25v${h}l-${w},26-42-25Z" fill="${faces[index]}" stroke="#2b1e42" stroke-width="2.5"/>
+      <path d="M${x},${y}l${w},-26 42,25-${w},26Z" fill="${colors[index]}" stroke="#2b1e42" stroke-width="2.5"/>
       <path d="M${x+10},${y+7}l${w-10},-23" stroke="${color}" stroke-width="3" opacity=".8"/>
-      <path d="M${x+16},${y+20}v${h-25}m13-${h-18}v${h-25}m13-${h-18}v${h-25}" stroke="#304956"/>
-      <rect x="${x+w-6}" y="${y+17}" width="28" height="24" rx="3" fill="#0a141e" stroke="${color}"/>
-      <circle cx="${x+w+8}" cy="${y+29}" r="4" fill="${color}"/>
-      <text x="${x+w/2+17}" y="${y+h+42}" fill="#91a8b3" text-anchor="middle" font-size="11">${item.label} · ${facilityLevel(save,item.key)}</text></g>`;
+      <path d="M${x+16},${y+20}v${h-25}m13-${h-18}v${h-25}m13-${h-18}v${h-25}" stroke="#69467c"/>
+      <rect x="${x+w-6}" y="${y+17}" width="28" height="24" rx="3" fill="#342343" stroke="${color}"/>
+      <circle cx="${x+w+8}" cy="${y+29}" r="4" fill="${active?color:'#fff6dc'}"/>
+      <text x="${x+w/2+17}" y="${y+h+42}" fill="#4c315f" font-weight="700" text-anchor="middle" font-size="11">${item.label} · ${facilityLevel(save,item.key)}</text></g>`;
   };
-  return `<svg class="shelter-art" viewBox="0 0 800 420" role="img" aria-label="庇护所示意图，当前等级${level}">
-    <defs><radialGradient id="station-light"><stop stop-color="#53bda7" stop-opacity=".17"/><stop offset="1" stop-color="#0a141d" stop-opacity="0"/></radialGradient>
-    <pattern id="station-grid" width="38" height="22" patternUnits="userSpaceOnUse"><path d="m0 11 19-11 19 11-19 11Z" fill="none" stroke="#557380" stroke-opacity=".13" stroke-width=".6"/></pattern></defs>
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="shelter-art" font-family="Segoe UI,Microsoft YaHei,sans-serif" viewBox="0 0 800 420" role="img" aria-label="庇护所示意图，当前等级${level}">
+    <defs><radialGradient id="station-light"><stop stop-color="#13ded3" stop-opacity=".17"/><stop offset="1" stop-color="#e9d6fc" stop-opacity="0"/></radialGradient>
+    <pattern id="station-grid" width="38" height="22" patternUnits="userSpaceOnUse"><path d="m0 11 19-11 19 11-19 11Z" fill="none" stroke="#6b3994" stroke-opacity=".13" stroke-width=".6"/></pattern></defs>
     <ellipse cx="400" cy="230" rx="350" ry="185" fill="url(#station-light)"/>
+    <g opacity=".65"><path d="M70 260c-26-42 20-70 60-48s62 4 74 38-43 56-61 33-49 15-73-23Z" fill="#ff49ac"/><circle cx="78" cy="206" r="9" fill="#ff49ac"/><circle cx="207" cy="282" r="7" fill="#ff49ac"/><path d="M602 312c-18-40 22-65 58-40s62-1 76 30-27 53-53 38-60 9-81-28Z" fill="#13ded3"/><circle cx="748" cy="304" r="10" fill="#13ded3"/></g>
     <path d="m65 250 365-170 315 170-365 160Z" fill="url(#station-grid)"/>
-    <path d="m100 265 322-151 277 150-322 139Z" fill="#0e1b25" fill-opacity=".65" stroke="#2a424e"/>
-    <path d="m140 265 276-125 239 128-277 119Z" fill="none" stroke="#5b7e8c" stroke-opacity=".25" stroke-dasharray="5 9"/>
-    <path d="M270 285 365 244 520 285M306 160l81 47 154-52" fill="none" stroke="#66b9b0" stroke-opacity=".32" stroke-width="4"/>
+    <path d="m100 265 322-151 277 150-322 139Z" fill="#fff2ce" fill-opacity=".72" stroke="#6f428b" stroke-width="2"/>
+    <path d="m140 265 276-125 239 128-277 119Z" fill="none" stroke="#813bb1" stroke-opacity=".25" stroke-dasharray="5 9"/>
+    <path d="M270 285 365 244 520 285M306 160l81 47 154-52" fill="none" stroke="#a23bd2" stroke-opacity=".32" stroke-width="4"/>
     ${modules.slice(2).map((item,index)=>module(item,index+2)).join('')}
-    <g><path d="m303 236 83-42 94 43v84l-89 43-88-43Z" fill="#102631" stroke="#547785"/>
-    <path d="m303 236 83-42 94 43-88 43Z" fill="#284753" stroke="#658d96"/>
-    <path d="m319 234 67-31 76 34-70 33Z" fill="#153b42" stroke="#91dcc9"/>
-    <path d="m349 236 37-17 42 19-38 18Z" fill="#8ddac5" fill-opacity=".65"/>
-    <path d="M390 281v80M315 252v58M469 251v60" stroke="#88ccbd" stroke-opacity=".55"/>
-    <path d="m346 316 28 14v24l-28-14Z" fill="#07141e" stroke="#5b9496"/>
-    <path d="m410 312 43-20v12l-43 20Z" fill="#82d9c4" fill-opacity=".5"/>
-    <path d="M385 194v-63m-18 12 18-12 19 12" fill="none" stroke="#7798a2" stroke-width="3"/>
-    <circle cx="385" cy="126" r="4" fill="#eac27a"/><circle cx="385" cy="126" r="13" fill="none" stroke="#eac27a" stroke-opacity=".25"/>
-    <text x="390" y="295" fill="#d5eee7" font-size="13" text-anchor="middle" font-family="monospace">N / 0${level}</text></g>
+    <g><path d="m303 236 83-42 94 43v84l-89 43-88-43Z" fill="#90e5e4" stroke="#382347"/>
+    <path d="m303 236 83-42 94 43-88 43Z" fill="#16ddd0" stroke="#382347"/>
+    <path d="m319 234 67-31 76 34-70 33Z" fill="#f6ffad" stroke="#382347"/>
+    <path d="m349 236 37-17 42 19-38 18Z" fill="#ff54a5" fill-opacity=".95"/>
+    <path d="M390 281v80M315 252v58M469 251v60" stroke="#527297" stroke-opacity=".55"/>
+    <path d="m346 316 28 14v24l-28-14Z" fill="#3b2450" stroke="#ed57a8"/>
+    <path d="m410 312 43-20v12l-43 20Z" fill="#ffda48" fill-opacity=".5"/>
+    <path d="M385 194v-63m-18 12 18-12 19 12" fill="none" stroke="#57335f" stroke-width="3"/>
+    <circle cx="385" cy="126" r="4" fill="#ff49a5"/><circle cx="385" cy="126" r="13" fill="none" stroke="#ff49a5" stroke-opacity=".25"/>
+    <text x="390" y="295" fill="#342044" font-size="13" text-anchor="middle" font-family="monospace">N / 0${level}</text></g>
     ${modules.slice(0,2).map(module).join('')}
-    <path d="M82 70h80m-80 0v42m636 240h-80m80 0v-42" stroke="#63828e" stroke-opacity=".5"/>
-    <text x="87" y="60" fill="#637e8b" font-size="9" letter-spacing="3">SHELTER NETWORK</text>
-    <text x="640" y="373" fill="#637e8b" font-size="9" letter-spacing="2">SYSTEM READY</text>
+    <path d="M82 70h80m-80 0v42m636 240h-80m80 0v-42" stroke="#6d4591" stroke-opacity=".5"/>
+    <text x="87" y="60" fill="#72518d" font-size="9" letter-spacing="3">SHELTER NETWORK</text>
+    <text x="640" y="373" fill="#72518d" font-size="9" letter-spacing="2">SYSTEM READY</text>
   </svg>`;
 }

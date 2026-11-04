@@ -1,10 +1,10 @@
 export const RARITIES = Object.freeze([
-  { id: 'white', name: '白', color: '#e4e8e5', multiplier: 1 },
-  { id: 'yellow', name: '黄', color: '#f0cc72', multiplier: 1.2 },
-  { id: 'green', name: '绿', color: '#83dda8', multiplier: 1.4 },
-  { id: 'blue', name: '蓝', color: '#7cbcff', multiplier: 1.6 },
-  { id: 'purple', name: '紫', color: '#c6a0ff', multiplier: 1.8 },
-  { id: 'red', name: '红', color: '#ff858b', multiplier: 2 },
+  { id: 'white', name: '白', color: '#fffdf0', multiplier: 1 },
+  { id: 'yellow', name: '黄', color: '#ffe047', multiplier: 1.2 },
+  { id: 'green', name: '绿', color: '#79ed55', multiplier: 1.4 },
+  { id: 'blue', name: '蓝', color: '#4db8ff', multiplier: 1.6 },
+  { id: 'purple', name: '紫', color: '#b280ff', multiplier: 1.8 },
+  { id: 'red', name: '红', color: '#ff4b61', multiplier: 2 },
 ]);
 
 // White weapons share the same number-based damage rule. Weapon types differ in

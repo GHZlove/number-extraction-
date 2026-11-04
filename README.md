@@ -10,7 +10,7 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.4.0 · playable single-player prototype |
+| Current version | v0.4.1 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, directional combat, procedural worlds, extraction, shelter upgrades |
 | Content | Fourteen weapon types, six quality tiers, twelve enemy types, five difficulties |
@@ -19,7 +19,7 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-[简体中文](README.zh-CN.md) · [v0.4 worlds, enemies and weapons](docs/EXPANSION_V04.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [Colour theme](docs/VISUAL_V041.md) · [v0.4 worlds, enemies and weapons](docs/EXPANSION_V04.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
@@ -38,6 +38,7 @@ Extraction adds a second decision: carry on searching for better loot, or return
 - **Fourteen weapons:** the original eight weapon types plus a burst carbine, LMG, crossbow, grenade launcher, spear and warhammer. Equip two slots, six quality tiers, durability-based armour and a laser sight.
 - **Five expedition difficulties:** larger maps, higher enemy numbers and greater resource rewards. The minimum map is **ten times wider and ten times taller** than the original 3,200 × 2,000 map, for **100 times the area**.
 - **Terrain and enemies:** navigate open industrial compounds, container lanes, rock ridges, river bridges and brush. Twelve enemy types include fast scouts, slow armoured giants, strafing burst shooters, medics, summoners and radial-fire guards.
+- **Ink-style visuals:** fluorescent pink, cyan, lime and violet, original paint splashes, bright terrain and sticker-style shelter cards. Dark outlines and HUD panels keep combat information distinct.
 - **Fullscreen raids:** the world fills the screen, with a compact HUD and minimap. Shelter facilities and deployment controls appear outside the raid.
 - **Persistent shelter:** extracted currency, alloy and cores upgrade storage, supplies, the workshop and recycling. Every ending returns directly to the shelter; failed raids preserve banked assets.
 
