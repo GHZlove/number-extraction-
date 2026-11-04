@@ -1,90 +1,112 @@
-import { RULES, UPGRADES } from './config.js';
-import { attackDamage, bagTotal, tier, zoneAt } from './math.js';
+import { RULES, FACILITIES, DIFFICULTIES, LEGACY_WORLD, difficultyOf, VERSION } from './config.js';
+import { tier, zoneAt } from './math.js';
+import { activeWeapon, weaponOf, rarityOf, WEAPONS } from './equipment.js';
+import { facilityLevel, facilityCost, facilityBenefit, canUpgradeFacility, workshopGrade, starterLoadout, rewardMultiplier, shelterLevel } from './shelter.js';
+import { icon, shelterArt } from './art.js';
 
-const $=id=>document.getElementById(id);
-export const formatTime=seconds=>`${Math.floor(Math.max(0,seconds)/60).toString().padStart(2,'0')}:${Math.floor(Math.max(0,seconds)%60).toString().padStart(2,'0')}`;
+const $ = id => document.getElementById(id);
+const escapeHTML = value => String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const number = value => Math.floor(value).toLocaleString('en-US');
+export const formatTime = seconds => `${Math.floor(Math.max(0,seconds)/60).toString().padStart(2,'0')}:${Math.floor(Math.max(0,seconds)%60).toString().padStart(2,'0')}`;
+const costHTML = cost => `<span>${icon('data')}${number(cost.credits)}</span><span>${icon('alloy')}${cost.alloy}</span>${cost.core?`<span>${icon('core')}${cost.core}</span>`:''}`;
 
 export class UI {
   constructor(actions) {
-    this.actions=actions;this.toastUntil=0;this.previousBag='';
-    $('dialog').addEventListener('click',e=>{
-      const button=e.target.closest('[data-action]');
-      if(button&&!button.disabled)actions[button.dataset.action]?.(button.dataset.key);
+    this.actions = actions; this.toastUntil = 0;
+    const dispatch = event => {
+      const button = event.target.closest('[data-action]');
+      if (button && !button.disabled) actions[button.dataset.action]?.(button.dataset.key);
+    };
+    $('dialog').addEventListener('click',dispatch);
+    $('shelter-screen').addEventListener('click',dispatch);
+    $('shelter-screen').addEventListener('change',event=>{
+      if (event.target.dataset.action === 'selectWeapon') actions.selectWeapon(event.target.value);
     });
-    $('dialog').addEventListener('keydown',e=>{
-      if(e.key!=='Tab')return;
-      const focus=[...$('dialog').querySelectorAll('button:not(:disabled),a[href]')];
+    $('dialog').addEventListener('keydown',event=>{
+      if(event.key !== 'Tab') return;
+      const focus = [...$('dialog').querySelectorAll('button:not(:disabled),a[href]')];
       if(!focus.length)return;
-      if(e.shiftKey&&document.activeElement===focus[0]){e.preventDefault();focus.at(-1).focus();}
-      else if(!e.shiftKey&&document.activeElement===focus.at(-1)){e.preventDefault();focus[0].focus();}
+      if(event.shiftKey && document.activeElement === focus[0]) { event.preventDefault();focus.at(-1).focus(); }
+      else if(!event.shiftKey && document.activeElement === focus.at(-1)) { event.preventDefault();focus[0].focus(); }
     });
-    $('pause-button').onclick=actions.pause;$('raid-tab').onclick=actions.close;
-    $('help-button').onclick=actions.help;$('vault-button').onclick=actions.vault;$('upgrade-button').onclick=actions.vault;
-    $('sound-button').onclick=actions.sound;
+    for(const [id,name,action] of [['loadout-button','bag','inventory'],['help-button','help','help'],['pause-button','pause','pause']]) {
+      $(id).innerHTML = icon(name); $(id).onclick = actions[action];
+    }
+    $('sound-button').onclick = actions.sound;
+    $('inventory-shortcut').onclick = actions.inventory;
+    $('overload-button').onclick = actions.overload;
+    for(const slot of [0,1]) $('quick-slot-'+slot).onclick = ()=>actions.slot(String(slot));
   }
-  toast(text){$('message').textContent=text;$('message').classList.add('visible');this.toastUntil=performance.now()+4200;}
-  update(raid,save,started,paused){
-    const p=raid.player,z=zoneAt(p.x);
+  toast(text) { $('message').textContent=text;$('message').classList.add('visible');this.toastUntil=performance.now()+3800; }
+  tick() { if(performance.now()>this.toastUntil)$('message').classList.remove('visible'); }
+  warning(available) { return available?'':'<p class="save-warning">当前浏览器无法持久保存。进度仅在本次会话中有效。</p>'; }
+  shelter(save,{lastResult=null,saveAvailable=true}={}) {
+    const selected=difficultyOf(save.selectedDifficulty),loadout=starterLoadout(save),level=shelterLevel(save);
+    const report=lastResult||save.lastRuns[0];
+    const rewards=report?.success?`+${number(report.value)} ◇ · +${report.materials?.alloy||0} 合金 · +${report.materials?.core||0} 核心`:'本次未带出资源';
+    const reportHTML=report?`<section class="run-report ${report.success?'':'failed'}">${icon(report.success?'exit':'shield')}<div><b>${report.success?'安全归来，资源已入库。':'行动结束，已返回庇护所。'}</b><p>${report.success?'准备下一次远征，或者先升级设施。':escapeHTML(report.reason||'未能完成撤离')+'。已保存的庇护所资源仍然保留。'}</p></div><span class="run-rewards">${rewards}</span></section>`:'';
+    const resources=[['data','数据币',save.credits,''],['alloy','合金',save.materials.alloy,'alloy'],['core','核心',save.materials.core,'core']];
+    const facilities=Object.entries(FACILITIES).map(([key,definition])=>{
+      const current=facilityLevel(save,key),cost=facilityCost(key,current),next=Math.min(current+1,definition.max);
+      return `<article class="facility-card"><div class="facility-title"><span class="facility-icon">${icon(definition.icon)}</span><div><h3>${definition.name}</h3><small>${definition.en}</small></div><span class="facility-level">Lv.${String(current).padStart(2,'0')}</span></div><p>${facilityBenefit(key,current)}</p><div class="facility-next">${cost?'下一级：'+facilityBenefit(key,next):'设施已达到当前上限'}</div><button class="upgrade-button" data-action="upgradeFacility" data-key="${key}" ${canUpgradeFacility(save,key)?'':'disabled'}><span>${cost?'升级设施':'已满级'}</span>${cost?`<span class="cost-list">${costHTML(cost)}</span>`:''}</button></article>`;
+    }).join('');
+    $('shelter-screen').innerHTML=`
+      <header class="shelter-top"><div class="brand"><span class="brand-logo">n</span><div><strong>数字进化</strong><small>NUMBER EXTRACTION / SHELTER</small></div></div><div class="shelter-resources">${resources.map(([symbol,label,value,cls])=>`<div class="resource-chip ${cls}">${icon(symbol)}<div><small>${label}</small><b>${number(value)}</b></div></div>`).join('')}</div></header>
+      ${reportHTML}${this.warning(saveAvailable)}
+      <div class="shelter-layout"><div class="shelter-main">
+        <section class="shelter-hero"><div class="hero-heading"><div><span class="eyebrow">HOME / SECTOR ZERO</span><h1>第零庇护所</h1><p>带资源回来。让下一次出发更有准备。</p></div><span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span></div>${shelterArt(save)}<div class="hero-footer"><div><span>当前出击装备</span><b>${escapeHTML(loadout.weapons[0].name)} / ${escapeHTML(loadout.weapons[1].name)}</b></div><div><span>设施建设阶段</span><div class="hero-stage">${Array.from({length:10},(_,i)=>`<i class="${i<level?'on':''}"></i>`).join('')}</div></div></div></section>
+        <div class="section-heading"><h2>庇护所设施</h2><span>资源投入，长期成长</span></div><section class="facilities-grid">${facilities}</section>
+        <div class="shelter-stats"><div class="stat-card"><small>成功撤离</small><b>${save.extractions}</b></div><div class="stat-card"><small>最高数字</small><b>${save.best}</b></div><div class="stat-card"><small>累计行动</small><b>${save.extractions+save.deaths}</b></div></div>
+      </div><aside class="expedition-panel" aria-label="出击准备"><span class="eyebrow">NEXT EXPEDITION</span><h2>下一次，去哪里？</h2><p class="muted">更高难度带来更大的战区、更强的数字与更丰厚的资源。</p>
+        <div class="difficulty-list">${DIFFICULTIES.map(mission=>`<button class="difficulty-card ${mission.id===selected.id?'selected':''}" style="--difficulty:${mission.color}" data-action="selectDifficulty" data-key="${mission.id}" aria-pressed="${mission.id===selected.id}"><div class="difficulty-top"><b>${mission.name}</b><span>${'◆'.repeat(mission.rank)}${'◇'.repeat(5-mission.rank)}</span></div><div class="difficulty-meta"><span>地图 ×${mission.width*mission.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}</span><span>敌人 ${2**(mission.enemyShift+1)}–${512*2**mission.enemyShift}</span><span>收益 ×${mission.reward}</span></div></button>`).join('')}</div>
+        <div class="weapon-choice"><label for="starter-choice">工坊出击武器 · ${workshopGrade(save).name}品</label><select id="starter-choice" data-action="selectWeapon">${Object.entries(WEAPONS).map(([key,weapon])=>`<option value="${key}" ${key===save.selectedWeapon?'selected':''} ${weapon.unlock>facilityLevel(save,'workshop')?'disabled':''}>${weapon.name}${weapon.unlock>facilityLevel(save,'workshop')?' · 工坊Lv.'+weapon.unlock+'解锁':''}</option>`).join('')}</select><p>工坊 2 级配备基础护甲，4 级配备镭射。拾取装备在撤离后兑换资源，每次出击重新领取基础装备。</p></div>
+        <div class="expedition-summary"><div><small>战区尺寸</small><b>${selected.width} × ${selected.height}</b></div><div><small>行动时限</small><b>${formatTime(selected.seconds)}</b></div><div><small>背包容量</small><b>${RULES.bagCapacity+facilityLevel(save,'storage')*2} 格</b></div><div><small>总收益倍率</small><b>×${rewardMultiplier(save,selected.id).toFixed(2)}</b></div></div>
+        <button class="deploy-button" data-action="start"><span>确认出击</span>${icon('arrow')}</button><p class="deploy-note">成功撤离才带出资源 · 失败保留基地资产</p>
+      </aside></div><footer class="shelter-footer"><span>LOCAL SOLO / v${VERSION} · 进度保存在当前浏览器</span><button data-action="help">操作与战斗规则 ↗</button></footer>`;
+  }
+  update(raid,save,started,paused) {
+    const p=raid.player,zone=zoneAt(p.x,raid.world.zones),item=activeWeapon(p);
     $('player-value').textContent=p.value;
-    $('player-value').style.fontSize=p.value>=100?(innerWidth<651?'26px':'44px'):'';
-    $('next-value').textContent=p.value<RULES.maxValue?`${p.value} + ${p.value} → ${p.value*2}`:'本版成长上限';
-    $('tier-label').textContent=`TIER ${String(tier(p.value)).padStart(2,'0')}`;
-    $('attack-stat').textContent=`攻击力 ${attackDamage(p.value,p.value)}`;
-    $('evolution-track').querySelectorAll('span').forEach((el,i)=>el.classList.toggle('on',p.value>=2**i));
-    $('health-value').textContent=Math.ceil(p.hp);$('health-bar').style.width=`${p.hp}%`;$('health-bar').style.background=p.hp<30?'var(--red)':'var(--mint)';
+    $('player-value').style.fontSize=p.value>=1000?'22px':p.value>=100?'27px':'';
+    $('health-value').textContent=Number(p.hp.toFixed(1));$('health-bar').style.width=`${p.hp}%`;
+    $('health-bar').style.background=p.hp<30?'var(--red)':'var(--mint)';
+    $('armor-name').textContent=p.armor?`${rarityOf(p.armor.rarity).name}品护甲`:'未穿护甲';
+    $('armor-durability').textContent=p.armor?Math.ceil(p.armor.durability):'0';
+    $('armor-fill').style.width=p.armor?`${100*p.armor.durability/p.armor.maxDurability}%`:'0';
+    $('energy-value').textContent=p.overload>0?`${p.overload.toFixed(1)}s`:Math.floor(p.energy)+'%';
+    $('energy-fill').style.width=`${p.energy}%`;
+    $('energy-label').textContent=p.overload>0?'过载运行中':p.energy>=100?'战术过载就绪':'过载未就绪';
+    $('overload-button').disabled=p.energy<100||p.overload>0||paused;
+    $('overload-button').classList.toggle('ready',p.energy>=100);
+    for(const slot of [0,1]){
+      const equipped=p.weapons[slot],weapon=weaponOf(equipped),grade=rarityOf(equipped.rarity),button=$('quick-slot-'+slot);
+      button.innerHTML=`${slot+1} · ${escapeHTML(weapon.name)}<small>${grade.name}品 / ${weapon.short}</small>`;
+      button.style.setProperty('--rarity',grade.color);button.classList.toggle('active',p.activeSlot===slot);
+    }
+    $('laser-label').textContent=p.laser?'镭射已装 · 红线瞄准':'白线瞄准 · 未装镭射';$('laser-label').classList.toggle('laser-on',!!p.laser);
+    $('loot-value').textContent=number(Math.round(raid.carriedValue()*raid.rewardMultiplier));$('bag-count').textContent=`${raid.bag.length} / ${raid.capacity}`;
     $('divider-count').textContent=p.dividers;$('medkit-count').textContent=p.medkits;
-    document.querySelector('.touch-actions [data-control="KeyQ"] small').textContent=`剩余 ${p.dividers}`;
-    document.querySelector('.touch-actions [data-control="KeyR"] small').textContent=`剩余 ${p.medkits}`;
-    document.querySelector('.touch-actions [data-control="ShiftLeft"] small').textContent=p.dashCooldown>0?`${p.dashCooldown.toFixed(1)}s`:'闪避';
-    $('bag-count').textContent=`${raid.bag.length} / ${raid.capacity}`;
-    $('loot-value').textContent=bagTotal(raid.bag);$('bank-value').textContent=save.credits;
-    const signature=JSON.stringify(raid.bag)+raid.capacity;
-    if(signature!==this.previousBag){this.previousBag=signature;$('bag-grid').innerHTML=Array.from({length:raid.capacity},(_,i)=>{
-      const item=raid.bag[i];return item?`<div class="bag-slot filled" title="${item.name} · ${item.value} 数据币" aria-label="${item.name}，价值 ${item.value}">◇<small>${item.value}</small></div>`:'<div class="bag-slot" aria-label="空槽位">+</div>';
-    }).join('');}
-    $('goal-merge').classList.toggle('done',raid.tutorial.merge);$('goal-loot').classList.toggle('done',raid.bag.length>0);$('goal-exit').classList.toggle('done',raid.result?.success===true);
-    $('time-value').textContent=formatTime(RULES.raidSeconds-raid.elapsed);$('time-value').classList.toggle('danger-text',RULES.raidSeconds-raid.elapsed<60);
-    $('zone-name').textContent=z.name;$('zone-risk').textContent=`SECTOR 0${z.id+1} · ${z.risk}`;$('zone-led').style.background=z.color;$('zone-en').textContent=z.en;
-    $('coordinates').textContent=`${Math.round(p.x).toString().padStart(4,'0')} · ${Math.round(p.y).toString().padStart(4,'0')}`;
-    $('dash-label').textContent=p.dashCooldown>0?`${p.dashCooldown.toFixed(1)}s`:'闪避';
-    $('status-label').textContent=!started?'待部署':raid.result?'已结算':paused?'已暂停':'行动中';
-    if(performance.now()>this.toastUntil)$('message').classList.remove('visible');
-    const context=raid.context();
-    $('interaction').hidden=!context||!started||paused||!!raid.result;
-    if(context){$('interaction-text').textContent=context.kind==='exit'?'静止 · 按住撤离':'静止 · 按住搜索';$('interaction-count').textContent=context.kind==='exit'?`${Math.max(0,RULES.extractSeconds-raid.extractProgress).toFixed(1)}s`:'';$('interaction-fill').style.width=`${Math.min(100,context.progress*100)}%`;}
+    const buffs=[];if(p.overload>0)buffs.push('过载');for(const[key,label]of[['fury','增幅'],['phase','相位'],['magnet','牵引']])if(p.buffs[key]>0)buffs.push(`${label} ${Math.ceil(p.buffs[key])}s`);
+    $('buff-label').textContent=buffs.join(' · ');
+    $('mission-name').textContent=raid.difficulty.name;$('zone-name').textContent=zone.name;
+    $('coordinates').textContent=`${Math.round(p.x)} / ${Math.round(p.y)}`;$('time-value').textContent=formatTime(raid.duration-raid.elapsed);
+    $('map-scale').textContent=`${raid.world.bounds.width*raid.world.bounds.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}×`;$('map-theme').textContent=raid.world.theme;
+    const near=raid.nearbyGear();$('nearby-gear').hidden=!near||paused||!!raid.result;if(near){$('nearby-gear').textContent=`F · ${near.name}`;$('nearby-gear').style.color=rarityOf(near.rarity).color;}
+    const context=raid.context();$('interaction').hidden=!context||paused||!!raid.result;
+    if(context){$('interaction-text').textContent=context.kind==='exit'?'静止 · 按住撤离':context.kind==='node'?'静止 · 启用运算节点':'静止 · 按住搜索';$('interaction-count').textContent=context.kind==='exit'?`${Math.max(0,RULES.extractSeconds-raid.extractProgress).toFixed(1)}s`:'';$('interaction-fill').style.width=`${Math.min(100,context.progress*100)}%`;}
+    document.querySelector('.touch-actions [data-control="KeyQ"] small').textContent=`${p.dividers} 个`;
+    document.querySelector('.touch-actions [data-control="KeyR"] small').textContent=`${p.medkits} 个`;
+    document.querySelector('.touch-actions [data-control="KeyG"] small').textContent=p.overload>0?'运行中':`${Math.floor(p.energy)}%`;
+    this.tick();
   }
-  show(html,wide=false){$('overlay').hidden=false;$('dialog').className=`dialog${wide?' wide':''}`;$('dialog').innerHTML=html;$('overlay').scrollTop=0;requestAnimationFrame(()=>$('dialog').querySelector('button:not(:disabled)')?.focus());}
-  hide(){$('overlay').hidden=true;$('game-canvas').focus();}
-  warning(available){return available?'':'<p class="save-warning">当前浏览器无法保存进度。本次会话仍可游玩，但关闭页面后仓库可能丢失。</p>';}
-  home(available){this.show(`
-    <div class="eyebrow"><span class="line"></span> FIRST EXPEDITION / 第一次远征</div>
-    <div class="hero-symbols" aria-hidden="true"><div class="hero-cube">1</div><span>+</span><div class="hero-cube ghost">1</div><span>→</span><div class="hero-cube ghost faint">2</div></div>
-    <h1>每次翻倍，<br>都是一次<em>冒险。</em></h1>
-    <p class="lead">你从数字 1 出发。在失序的世界中合成、战斗，<br>带着找到的一切，活着回来。</p>
-    <div class="loop-chips"><div><b>搜</b> 寻找价值</div><span>→</span><div><b>打</b> 数学破局</div><span>→</span><div><b>撤</b> 安全兑现</div></div>
-    <button class="primary-button" data-action="start">开始行动 <span>↗</span></button>
-    <div class="dialog-note">一局最多 7 分钟 · 单机 · 支持键盘与触屏<br><button data-action="help">第一次来？查看操作与规则</button></div>${this.warning(available)}`);}
-  help(){this.show(`
-    <button class="dialog-close" data-action="close" aria-label="关闭规则">×</button><div class="eyebrow">FIELD MANUAL / 规则手册</div><h2 id="dialog-title">数字是力量，策略是出路。</h2>
-    <div class="rule-grid"><div class="rule-card"><b>01 · 同数才能合成</b><p>触碰中立的相同数字，<strong>1 + 1 = 2</strong>。不同数字不会合成。敌人先击败，才能拾取掉落的数字。</p></div>
-    <div class="rule-card"><b>02 · 不同数字也能打</b><p>攻击自动锁定范围内最近的敌人。强敌会减伤。<strong>Q：敌人 ÷2，并眩晕 1.25 秒</strong>。紫色角标是运算目标。</p></div>
-    <div class="rule-card"><b>03 · 读懂危险再出手</b><p>红圈和虚线是攻击预警。<strong>Shift 闪避</strong>短暂无敌，冷却 2.8 秒。<strong>R 修复 30 点生命</strong>，需要修复剂。</p></div>
-    <div class="rule-card"><b>04 · 活着带走才算数</b><p>靠近补给箱静止按住 E 搜索。进入<strong>绿色撤离圈静止按住 E 4 秒</strong>。移动、松键或受伤会打断。死亡或超时丢失全部本局战利品。</p></div></div>
-    <div class="key-help"><kbd>WASD</kbd> / 方向键 移动 <kbd>SPACE</kbd> 攻击 <kbd>Q</kbd> ÷2 <kbd>SHIFT</kbd> 闪避 <kbd>E</kbd> 按住交互 <kbd>R</kbd> 修复 <kbd>ESC</kbd> 暂停</div>
-    <p class="modal-info">地图从左到右：低危 → 中危 → 高危。物资价值随危险提升。每次出击都从 1 开始；仓库中的数据币可购买下一局的背包与道具升级。手机版使用画面下方摇杆和按钮。</p><button class="primary-button" data-action="close">明白了 <span>→</span></button>`,true);}
-  pause(){this.show(`<div class="eyebrow">SIGNAL HELD / 行动暂停</div><h2 id="dialog-title">停下来，想想下一步。</h2><p class="lead">暂停时，行动计时与敌人都会停止。<br>切换标签页或窗口失焦也会自动暂停。</p><button class="primary-button" data-action="close">继续行动 <span>→</span></button><div class="dialog-actions"><button class="secondary-button" data-action="help">查看规则</button><button class="secondary-button" data-action="abandonAsk">放弃本局</button></div>`);}
-  abandonAsk(){this.show(`<div class="eyebrow">ABORT RAID</div><h2 id="dialog-title">确定放弃这次行动？</h2><p class="lead">本局未撤离的战利品将全部丢失。已经保存在基地的资产不受影响。</p><button class="primary-button" data-action="close">继续行动 <span>→</span></button><div class="dialog-actions"><button class="secondary-button" data-action="abandon">确认放弃并结算</button></div>`);}
-  result(result,save,available){const success=result.success;this.show(`
-    <div class="eyebrow">${success?'EXTRACTION COMPLETE / 信号已回收':'SIGNAL LOST / 行动结束'}</div><div class="result-mark ${success?'':'failed'}">${success?'↗':'×'}</div>
-    <h2 id="dialog-title">${success?'这次冒险，有了回报。':'从 1 开始，再来一次。'}</h2><p class="lead">${success?'战利品已结算为数据币，安全存入基地。':result.reason+'。本局战利品全部丢失，基地资产仍然保留。'}</p>
-    <div class="result-summary"><div><span>${success?'安全带出':'损失价值'}</span><b>${success?'+':'−'}${result.value} ◇</b></div><div><span>最终数字</span><b>${result.number}</b></div><div><span>探索时长</span><b>${formatTime(result.seconds)}</b></div></div>
-    <p class="result-loot">${result.kills} 次击破 · ${result.merges} 次合成 · ${result.loot.length} 件物资<br>基地余额 ${save.credits} ◇ · 累计成功撤离 ${save.extractions} 次</p>${this.warning(available)}
-    <div class="dialog-actions"><button class="primary-button" data-action="start">再次出击 <span>↗</span></button><button class="secondary-button" data-action="vault">基地升级</button></div>`);}
-  vault(save,active,available){this.show(`
-    <button class="dialog-close" data-action="close" aria-label="关闭基地">×</button><div class="eyebrow">BASE CAMP / 基地仓库</div><h2 id="dialog-title">每次回来，都更有准备。</h2>
-    <div class="vault-balance">${save.credits} <small>◇ 数据币</small></div>
-    ${Object.entries(UPGRADES).map(([key,def])=>{const level=save.upgrades[key],maxed=level>=def.max;return `<div class="upgrade-card"><div><b>${def.name} <span class="muted tiny">Lv.${level} / ${def.max}</span></b><p>${key==='capacity'?`当前 ${RULES.bagCapacity+level*2} 格 · 每级 +2 格背包`:`开局 ${RULES.startingDividers+level} 个 ÷2 · 每级 +1 个`}<br>下次出击生效</p></div><button data-action="upgrade" data-key="${key}" ${active||maxed||save.credits<def.cost(level)?'disabled':''}>${maxed?'已满级':def.cost(level)+' ◇ 升级'}</button></div>`;}).join('')}
-    <p class="modal-info">${active?'当前行动已暂停。请先撤离或结算，再购买升级。':'战利品在撤离时自动兑换为数据币。装备仓库和交易系统留待后续版本。'}</p>
-    <div class="run-history">${save.lastRuns.length?save.lastRuns.slice(0,3).map(r=>`<div class="run-row"><span class="${r.success?'mint':'danger-text'}">${r.success?'成功撤离':'行动失败'}</span><span>数字 ${r.number}</span><span>${formatTime(r.seconds)}</span><span>+${r.value} ◇</span></div>`).join(''):'尚无行动记录，完成第一次撤离后回来看看。'}</div>
-    <p class="tiny muted">进度保存在当前浏览器。清除网站数据会清除仓库；不同设备之间暂不共享。</p>${this.warning(available)}<button class="primary-button" data-action="close">${active?'返回行动':'返回终端'} <span>→</span></button>`);}
+  show(html,wide=false) { $('overlay').hidden=false;$('dialog').className=`dialog${wide?' wide':''}`;$('dialog').innerHTML=html;requestAnimationFrame(()=>$('dialog').querySelector('button:not(:disabled)')?.focus()); }
+  hide(focus=true) { $('overlay').hidden=true;if(focus)$('game-canvas').focus(); }
+  help() { this.show(`<button class="dialog-close" data-action="close" aria-label="关闭规则">×</button><span class="eyebrow">FIELD MANUAL</span><h2 id="dialog-title">数字是力量，策略是出路。</h2><div class="rule-grid"><div class="rule-card"><b>01 / 合成与过载</b><p>同数中立方块接触合成，最大2048。连续合成积累能量，满能量按G启动7秒过载，伤害与攻速提高，并震慑附近敌人。</p></div><div class="rule-card"><b>02 / 数字战斗</b><p>白色、无护甲时，8对4造成50%/25%伤害，16对4为75%/12.5%。品质与护甲会改变最终值。Q减半并打断敌人。</p></div><div class="rule-card"><b>03 / 装备与节点</b><p>F拾装备，B换装，1/2切武器。镭射缩小枪械散布。E启用运算节点，获得增幅、相位或牵引增益。</p></div><div class="rule-card"><b>04 / 返回庇护所</b><p>在绿色出口静止按E四秒。撤离带出的货币、合金与核心可升级设施。失败不入账，结束后直接回庇护所。</p></div></div><div class="key-help"><kbd>WASD</kbd>移动 <kbd>鼠标</kbd>瞄准 <kbd>左键/空格</kbd>攻击 <kbd>Shift</kbd>闪避 <kbd>Q</kbd>÷2 <kbd>R</kbd>修复 <kbd>G</kbd>过载 <kbd>B</kbd>背包 <kbd>Esc</kbd>暂停</div><p>霰弹枪每次五发弹丸，共享一次攻击的基础伤害。磁轨步枪可穿透三个目标。工坊解锁更多出击武器；难度越高，地图越大，敌人数字与收益越高。</p><button class="primary-button" data-action="close">明白了 ${icon('arrow')}</button>`,true); }
+  pause() { this.show(`<span class="eyebrow">SIGNAL HELD</span><h2 id="dialog-title">行动暂停</h2><p>计时与敌人已经停止。准备好后继续行动。</p><button class="primary-button" data-action="close">继续行动 ${icon('arrow')}</button><div class="dialog-actions"><button class="secondary-button" data-action="help">查看规则</button><button class="secondary-button" data-action="abandonAsk">返回庇护所</button></div>`); }
+  abandonAsk() { this.show(`<span class="eyebrow">RETURN TO SHELTER</span><h2 id="dialog-title">放弃这次远征？</h2><p>尚未撤离的物资会丢失。庇护所已经保存的资源与升级保留。</p><button class="primary-button" data-action="close">继续搜索 ${icon('arrow')}</button><div class="dialog-actions"><button class="secondary-button" data-action="abandon">放弃并返回庇护所</button></div>`); }
+  inventory(raid) {
+    const p=raid.player,full=raid.bag.length>=raid.capacity,disabled=full?'disabled title="背包已满"':'';
+    const equipped=p.weapons.map((item,slot)=>`<div class="equipped-card" style="--rarity:${rarityOf(item.rarity).color}"><small>武器 ${slot+1}${p.activeSlot===slot?' / 当前':''}</small><b>${escapeHTML(item.name)}</b><span>${weaponOf(item).mode==='ranged'?'枪械':'近战'} · ${weaponOf(item).range} 范围</span><button class="secondary-button" data-action="slot" data-key="${slot}" ${p.activeSlot===slot?'disabled':''}>切换至此武器</button></div>`).join('');
+    this.show(`<button class="dialog-close" data-action="close" aria-label="关闭背包">×</button><span class="eyebrow">FIELD LOADOUT</span><h2 id="dialog-title">局内装备</h2><p class="modal-info">行动已暂停。装备可放入两个武器槽；拾取的旧装备回背包。成功撤离后兑换资源，每局重新领取工坊装备。</p><div class="equipped-grid">${equipped}</div><div class="attachment-row"><span>${p.armor?escapeHTML(p.armor.name)+' / '+Math.ceil(p.armor.durability)+'耐久':'未穿护甲'}</span>${p.armor?`<button data-action="remove" data-key="armor" ${disabled}>收起护甲</button>`:''}</div><div class="attachment-row"><span>${p.laser?'镭射已装配 · 红线瞄准':'未装镭射 · 白线瞄准'}</span>${p.laser?`<button data-action="remove" data-key="laser" ${disabled}>卸下镭射</button>`:''}</div><div class="section-heading"><h2>背包 ${raid.bag.length} / ${raid.capacity}</h2><span>预计带出 ${number(Math.round(raid.carriedValue()*raid.rewardMultiplier))} ◇</span></div><div class="inventory-list">${raid.bag.length?raid.bag.map((item,index)=>`<div class="inventory-item" style="--rarity:${rarityOf(item.rarity).color}"><div><b>${escapeHTML(item.name)}</b><small>${item.value} ◇${item.kind==='weapon'?' / 伤害×'+rarityOf(item.rarity).multiplier:item.kind==='armor'?' / '+Math.ceil(item.durability)+'耐久':''}</small></div><div class="inventory-actions">${item.kind==='weapon'?`<button data-action="equip0" data-key="${index}">装至1</button><button data-action="equip1" data-key="${index}">装至2</button>`:['armor','laser'].includes(item.kind)?`<button data-action="equip" data-key="${index}">装备</button>`:''}<button data-action="drop" data-key="${index}">丢弃</button></div></div>`).join(''):'<p class="muted">背包为空。打开出生区装备箱，按F拾取装备。</p>'}</div><button class="primary-button" data-action="close">返回行动 ${icon('arrow')}</button>`,true);
+  }
 }
