@@ -10,16 +10,16 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.4.1 · playable single-player prototype |
+| Current version | v0.5.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, directional combat, procedural worlds, extraction, shelter upgrades |
 | Content | Fourteen weapon types, six quality tiers, twelve enemy types, five difficulties |
-| Verification | 90 automated tests and syntax/reference checks for 15 modules |
+| Verification | 106 automated tests and syntax/reference checks for 17 modules |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-[简体中文](README.zh-CN.md) · [Colour theme](docs/VISUAL_V041.md) · [v0.4 worlds, enemies and weapons](docs/EXPANSION_V04.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.5 horde rules](docs/PRESSURE_V05.md) · [Colour theme](docs/VISUAL_V041.md) · [v0.4 worlds, enemies and weapons](docs/EXPANSION_V04.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
@@ -36,21 +36,22 @@ Extraction adds a second decision: carry on searching for better loot, or return
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
 - **Fourteen weapons:** the original eight weapon types plus a burst carbine, LMG, crossbow, grenade launcher, spear and warhammer. Equip two slots, six quality tiers, durability-based armour and a laser sight.
-- **Five expedition difficulties:** larger maps, higher enemy numbers and greater resource rewards. The minimum map is **ten times wider and ten times taller** than the original 3,200 × 2,000 map, for **100 times the area**.
+- **Compact expeditions:** five arenas from 6,400 × 4,000 to 12,800 × 8,000. Each map has 1/25 the area of its v0.4.1 counterpart, with tighter landmark layouts and more concentrated encounters.
+- **Persistent horde pressure:** repeated groups spawn around the player after a short preparation window, with visible warnings, escalating cadence, local navigation and eight-second surges every 35 seconds.
 - **Terrain and enemies:** navigate open industrial compounds, container lanes, rock ridges, river bridges and brush. Twelve enemy types include fast scouts, slow armoured giants, strafing burst shooters, medics, summoners and radial-fire guards.
 - **Ink-style visuals:** fluorescent pink, cyan, lime and violet, original paint splashes, bright terrain and sticker-style shelter cards. Dark outlines and HUD panels keep combat information distinct.
 - **Fullscreen raids:** the world fills the screen, with a compact HUD and minimap. Shelter facilities and deployment controls appear outside the raid.
 - **Persistent shelter:** extracted currency, alloy and cores upgrade storage, supplies, the workshop and recycling. Every ending returns directly to the shelter; failed raids preserve banked assets.
 
-| Difficulty | World size | Area vs v0.2 | Time limit | Enemy numbers* | Base reward |
+| Difficulty | World size | Area vs v0.2 | Time limit | Fixed enemy numbers* | Base reward |
 | --- | --- | --- | --- | --- | --- |
-| 边境巡查 / Scout | 32,000 × 20,000 | 100× | 10:00 | 2–512 | 1× |
-| 失序探索 / Standard | 40,000 × 25,000 | 156.25× | 12:00 | 4–1,024 | 1.6× |
-| 深层突袭 / Hard | 48,000 × 30,000 | 225× | 14:00 | 8–2,048 | 2.4× |
-| 核心危机 / Severe | 56,000 × 35,000 | 306.25× | 16:00 | 16–4,096 | 3.6× |
-| 零点噩梦 / Nightmare | 64,000 × 40,000 | 400× | 18:00 | 32–8,192 | 5.2× |
+| 边境巡查 / Scout | 6,400 × 4,000 | 4× | 4:00 | 2–512 | 1× |
+| 失序探索 / Standard | 7,680 × 4,800 | 5.76× | 5:00 | 4–1,024 | 1.6× |
+| 深层突袭 / Hard | 8,960 × 5,600 | 7.84× | 6:00 | 8–2,048 | 2.4× |
+| 核心危机 / Severe | 10,240 × 6,400 | 10.24× | 7:00 | 16–4,096 | 3.6× |
+| 零点噩梦 / Nightmare | 12,800 × 8,000 | 16× | 8:00 | 32–8,192 | 5.2× |
 
-*Includes elite enemies; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
+*Horde numbers also grow with elapsed time. Fixed ranges include elite enemies; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
 
 ## Run locally
 
@@ -102,6 +103,8 @@ Touch controls provide a joystick, action buttons and assisted aiming; weapons c
 
 ### First expedition
 
+Exits open after **45/60/75/90/105 seconds**, depending on difficulty. Survive until they turn green, then hold E for four seconds. Watch the wave counter, nearby enemy count and pink spawn warnings.
+
 1. Follow the fixed **1 → 2 → 4 → 8** neutral tile chain to reach player value **16** and full energy. The third tile is slightly above the others.
 2. Search the starter chest at `(485, 1190)` by standing still and holding **E** for 0.75 seconds. It provides 24 currency value and a ÷2 charge.
 3. Open the equipment chest at `(620, 1260)`. Press **F** for each item, then **B** to equip the yellow rifle, white armour and laser. Compare the two weapon slots and white/red aim guides.
@@ -139,7 +142,7 @@ Picked-up equipment is converted into resources on extraction. Workshop equipmen
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 15 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 17 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
@@ -156,19 +159,20 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **15 modules passing syntax/reference checks and 90 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion and 10 browser-contract tests.
+No `npm install` is required. The current verification has **17 modules passing syntax/reference checks and 106 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion, 16 pressure and 10 browser-contract tests.
 
-Coverage includes damage, equipment, large-map bounds, exit reachability, spatial queries, shelter upgrades, reward settlement, save migration, Overload, nodes, shotgun damage sharing, railgun penetration, new terrain, enemy support/summoning, speed differences, timed bursts, splash cover and application flow. The browser-contract tests use Node.js DOM/Canvas doubles; they do not establish actual layout, native browser behaviour, audio or device performance. See [testing notes](docs/TESTING.md).
+Coverage includes damage, equipment, large-map bounds, exit reachability, spatial queries, shelter upgrades, reward settlement, save migration, Overload, nodes, shotgun damage sharing, railgun penetration, new terrain, enemy support/summoning, speed differences, timed bursts, splash cover, extraction lock timing, spawn budgets, crowd steering and application flow. The browser-contract tests use Node.js DOM/Canvas doubles; they do not establish actual layout, native browser behaviour, audio or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
 Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
 
-This is a single-player prototype with no multiplayer, cloud synchronisation, application-level network requests or telemetry. Enemies use direct pursuit and local patrols; obstacle-aware pathfinding is not implemented. Real-browser layout, mobile devices, Safari, long sessions, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
+This is a single-player prototype with no multiplayer, cloud synchronisation, application-level network requests or telemetry. Enemies share a local navigation field and use crowd separation; full navigation meshes and globally optimal routes are not implemented. Real-browser layout, mobile devices, Safari, long sessions, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.5 compact arenas and horde pressure](docs/PRESSURE_V05.md)
 - [v0.4 maps, terrain, enemy and weapon rules](docs/EXPANSION_V04.md)
 - [v0.3 shelter and Overload foundation](docs/SHELTER_V03.md)
 - [v0.2 combat foundation](docs/COMBAT_V02.md)
