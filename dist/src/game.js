@@ -1,12 +1,12 @@
 import { RULES, WORLD, ENEMY_TYPES, difficultyOf } from './config.js';
 import {
   attackDamage, bagTotal, canMerge, clamp, distance, lineOfSight, maxEnemyHealth,
-  moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed,
+  moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree,
 } from './math.js';
-import { createLoot, generateWorld, lootForEnemy } from './world.js';
+import { createLoot, createEnemy, generateWorld, lootForEnemy } from './world.js';
 import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue } from './equipment.js';
 import { facilityLevel, starterLoadout, rewardMultiplier, salvageMaterials } from './shelter.js';
-import { obstaclesFor } from './spatial.js';
+import { obstaclesFor, terrainFor } from './spatial.js';
 
 export class Raid {
   constructor(save, seed = Date.now() >>> 0, options = {}) {
@@ -16,7 +16,7 @@ export class Raid {
     this.duration = this.difficulty.seconds;
     this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id);
     this.world = generateWorld(seed,this.difficulty.id);
-    this.status = 'playing';
+    this.status = 'playing';this.bursts=[];
     this.elapsed = 0;
     this.result = null;
     const loadout = starterLoadout(save,options.weapon);
@@ -43,6 +43,7 @@ export class Raid {
     const end={x:entity.x+dx,y:entity.y+dy};
     moveEntity(entity,dx,dy,obstaclesFor(this.world,entity,end,entity.radius+1),this.world.bounds);
   }
+  ground(entity=this.player){return terrainAt(entity,terrainFor(this.world,entity));}
   damagePower() { return (this.player.overload>0?1.25:1)*(this.player.buffs.fury>0?1.35:1); }
   activateOverload() {
     const p=this.player;
@@ -140,7 +141,7 @@ export class Raid {
 
   shoot(origin, angle, speed, range, owner, value, rarity = 'white', options = {}) {
     this.world.projectiles.push({ x: origin.x, y: origin.y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-      radius: owner === 'player' ? 3 : 6, life: range/speed, owner, value, rarity, power: options.power ?? 1, pierce: options.pierce || 0, hitIds: [], dead: false });
+      radius: owner === 'player' ? 3 : 6, life: range/speed, owner, value, rarity, power: options.power ?? 1, blast: options.blast || 0, pierce: options.pierce || 0, hitIds: [], dead: false });
   }
   attack() {
     const p = this.player;
@@ -149,22 +150,35 @@ export class Raid {
     p.attackCooldown = weapon.interval*(p.overload>0?0.75:1);
     this.event('attack');
     if (weapon.mode === 'ranged') {
-      const pellets=weapon.pellets||1;
-      for(let i=0;i<pellets;i++){
-        const offset=pellets===1?this.random()*2-1:(i/(pellets-1)*2-1);
-        const angle=p.aimAngle+offset*spreadOf(item,p.laser);
-        this.shoot(p,angle,weapon.speed,weapon.range,'player',p.value,item.rarity,{power:this.damagePower()/pellets,pierce:weapon.pierce||0});
-      }
-      this.effect(p.x, p.y, '', '#fff2c5', 'muzzle', 0.08, { angle: p.aimAngle });
+      const power=this.damagePower()/(weapon.burst||1);
+      this.fireWeapon(item,p.aimAngle,power);
+      if(weapon.burst)this.bursts.push({remaining:weapon.burst-1,wait:weapon.burstDelay,delay:weapon.burstDelay,item:{...item},angle:p.aimAngle,power,slot:p.activeSlot});
     } else {
       this.effect(p.x, p.y, '', '#cde8e0', 'slash', 0.2, { angle: p.aimAngle, arc: weapon.arc, radius: weapon.range });
       for (const enemy of this.world.enemies) {
         if (!enemy.dead && inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && this.visible(p, enemy)) {
           this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity)*this.damagePower());
+          if(weapon.stun&&!enemy.dead){enemy.stun=Math.max(enemy.stun,weapon.stun);enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;}
         }
       }
     }
     return true;
+  }
+  fireWeapon(item,angle,power){
+    const weapon=weaponOf(item),pellets=weapon.pellets||1,p=this.player;
+    for(let i=0;i<pellets;i++){
+      const offset=pellets===1?this.random()*2-1:i/(pellets-1)*2-1;
+      this.shoot(p,angle+offset*spreadOf(item,p.laser),weapon.speed,weapon.range,'player',p.value,item.rarity,{power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
+    }
+    this.effect(p.x,p.y,'','#fff2c5','muzzle',0.08,{angle});
+  }
+  updateBursts(dt){
+    for(const job of this.bursts){
+      if(this.player.activeSlot!==job.slot||activeWeapon(this.player).id!==job.item.id){job.remaining=0;continue;}
+      job.wait-=dt;
+      while(job.remaining>0&&job.wait<=0){this.fireWeapon(job.item,job.angle,job.power);job.remaining--;job.wait+=job.delay;}
+    }
+    this.bursts=this.bursts.filter(job=>job.remaining>0);
   }
   damageEnemy(enemy, amount) {
     if (enemy.dead) return;
@@ -194,7 +208,7 @@ export class Raid {
     p.dividers--;
     const old = enemy.value, ratio = clamp(enemy.hp/enemy.maxHp, 0, 1);
     enemy.value /= 2; enemy.maxHp = maxEnemyHealth(enemy.value); enemy.hp = ratio*enemy.maxHp;
-    enemy.stun = RULES.divideStun; enemy.state = 'idle'; enemy.timer = 0; enemy.chargeTime = 0; enemy.cooldown = 0.8;
+    enemy.stun = RULES.divideStun; enemy.state = 'idle'; enemy.timer = 0; enemy.chargeTime = 0; enemy.burstLeft=0;enemy.healTarget=null;enemy.cooldown = 0.8;
     this.effect(enemy.x, enemy.y-35, `${old} ÷ 2 → ${enemy.value}`, '#c3b4fa', 'text', 1.25);
     this.effect(enemy.x, enemy.y, '', '#b9a5f4', 'pulse', 0.4);
     this.event('divide'); this.message(`敌人 ${old} → ${enemy.value}，攻击已打断。`);
@@ -231,63 +245,95 @@ export class Raid {
     if (canRetaliate) this.hurt(incoming, '在数字碰撞中被击破');
   }
   resolveEnemyAttack(enemy, definition) {
-    const p = this.player;
-    const angle = Math.atan2(enemy.aimY-enemy.y, enemy.aimX-enemy.x);
-    if (definition.pattern === 'strike' || definition.pattern === 'blast') {
-      const radius = definition.pattern === 'blast' ? 118 : 64;
-      this.effect(enemy.aimX, enemy.aimY, '', '#ed8d7e', 'impact', 0.35, { radius });
-      if (distance(p, { x: enemy.aimX, y: enemy.aimY }) < radius+p.radius && this.visible(enemy, p)) {
-        this.hurt(attackDamage(enemy.value, p.value, p.maxHp, enemy.rarity), definition.pattern === 'blast' ? '被爆破冲击击破' : '被近战攻击击破');
+    const p=this.player,pattern=definition.pattern,angle=Math.atan2(enemy.aimY-enemy.y,enemy.aimX-enemy.x);
+    if(['strike','blast','slam'].includes(pattern)){
+      const radius=pattern==='slam'?175:pattern==='blast'?118:64;
+      this.effect(enemy.aimX,enemy.aimY,'','#ed8d7e','impact',0.45,{radius});
+      if(distance(p,{x:enemy.aimX,y:enemy.aimY})<radius+p.radius&&this.visible(enemy,p))this.hurt(attackDamage(enemy.value,p.value,p.maxHp,enemy.rarity),pattern==='slam'?'被巨像重击击破':pattern==='blast'?'被爆破冲击击破':'被近战攻击击破');
+    }else if(pattern==='charge'){
+      enemy.state='charge';enemy.chargeTime=0.65;enemy.chargeX=Math.cos(angle);enemy.chargeY=Math.sin(angle);return;
+    }else if(pattern==='heal'){
+      const ally=this.world.enemies.find(e=>e.id===enemy.healTarget&&!e.dead);
+      if(ally&&ally!==enemy&&distance(enemy,ally)<=definition.range&&this.visible(enemy,ally)){
+        ally.hp=Math.min(ally.maxHp,ally.hp+ally.maxHp*.18);this.effect(ally.x,ally.y-30,'修复 +18%','#8fe5bc','text',1);
       }
-    } else if (definition.pattern === 'charge') {
-      enemy.state = 'charge'; enemy.chargeTime = 0.65;
-      enemy.chargeX = Math.cos(angle); enemy.chargeY = Math.sin(angle);
-      return;
-    } else {
-      const offsets = definition.pattern === 'fan' ? [-0.24, 0, 0.24] : [0];
-      for (const offset of offsets) this.shoot(enemy, angle+offset,
-        definition.pattern === 'snipe' ? 1350 : 330, definition.pattern === 'snipe' ? 1150 : 800,
-        'enemy', enemy.value, enemy.rarity);
+      enemy.healTarget=null;
+    }else if(pattern==='summon'){
+      const living=this.world.enemies.filter(e=>!e.dead&&e.summonerId===enemy.id).length;
+      for(let i=0;i<Math.min(2,4-living);i++){
+        if((this.world.summonedCount||0)>=RULES.summonBudget)break;
+        let child=null;
+        for(let j=0;j<12;j++){
+          const a=j*Math.PI/6+i*.4,point={x:enemy.x+Math.cos(a)*100,y:enemy.y+Math.sin(a)*100};
+          if(isFree(point.x,point.y,24,obstaclesFor(this.world,point,point,24),this.world.bounds)&&this.world.enemies.every(e=>e.dead||distance(e,point)>50)){
+            const count=(this.world.summonedCount||0)+1;this.world.summonedCount=count;
+            child=createEnemy(`summoned-${count}`,point.x,point.y,Math.max(1,enemy.value/2),'scout');
+            Object.assign(child,{summonerId:enemy.id,zone:enemy.zone,moveScale:enemy.moveScale||1,cooldown:1.2});this.world.enemies.push(child);break;
+          }
+        }
+        if(child)this.effect(child.x,child.y,'孵化','#c4a1f2','pulse',.6);
+      }
+    }else if(pattern==='burst'){
+      enemy.state='burst';enemy.burstLeft=3;enemy.burstTimer=0;return;
+    }else{
+      const offsets=pattern==='ring'?Array.from({length:8},(_,i)=>i*Math.PI/4):pattern==='fan'?[-.24,0,.24]:[0];
+      for(const offset of offsets)this.shoot(enemy,angle+offset,pattern==='snipe'?1350:pattern==='ring'?270:330,pattern==='snipe'?1150:800,'enemy',enemy.value,enemy.rarity);
     }
-    enemy.state = 'idle'; enemy.cooldown = definition.cooldown;
+    enemy.state='idle';enemy.cooldown=definition.cooldown;
   }
-  updateEnemy(enemy, dt) {
-    if (enemy.dead) return;
-    const definition = ENEMY_TYPES[enemy.type] || ENEMY_TYPES.hunter;
-    enemy.cooldown = Math.max(0, enemy.cooldown-dt);
-    enemy.contactCooldown = Math.max(0, enemy.contactCooldown-dt);
-    if(distance(enemy,this.player)>RULES.activeEnemyRadius&&enemy.state!=='charge'&&enemy.state!=='windup'){enemy.stun=Math.max(0,enemy.stun-dt);return;}
-    if (enemy.stun > 0) { enemy.stun = Math.max(0, enemy.stun-dt); return; }
-    if (enemy.state === 'charge') {
-      const before = { x: enemy.x, y: enemy.y };
-      this.move(enemy, enemy.chargeX*560*dt, enemy.chargeY*560*dt);
-      enemy.chargeTime -= dt;
-      if (enemy.chargeTime <= 0 || distance(before, enemy) < 0.1) { enemy.state = 'idle'; enemy.cooldown = definition.cooldown; }
-      return;
+  updateEnemy(enemy,dt){
+    if(enemy.dead)return;
+    const definition=ENEMY_TYPES[enemy.type]||ENEMY_TYPES.hunter,pattern=definition.pattern;
+    enemy.cooldown=Math.max(0,enemy.cooldown-dt);enemy.contactCooldown=Math.max(0,enemy.contactCooldown-dt);
+    if(distance(enemy,this.player)>RULES.activeEnemyRadius&&!['charge','windup','burst'].includes(enemy.state)){enemy.stun=Math.max(0,enemy.stun-dt);return;}
+    if(enemy.stun>0){enemy.stun=Math.max(0,enemy.stun-dt);return;}
+    if(enemy.state==='charge'){
+      const before={x:enemy.x,y:enemy.y};this.move(enemy,enemy.chargeX*560*dt,enemy.chargeY*560*dt);enemy.chargeTime-=dt;
+      if(enemy.chargeTime<=0||distance(before,enemy)<.1){enemy.state='idle';enemy.cooldown=definition.cooldown;}return;
     }
-    if (enemy.state === 'windup') {
-      enemy.timer -= dt;
-      if (enemy.timer <= 0) this.resolveEnemyAttack(enemy, definition);
-      return;
+    if(enemy.state==='burst'){
+      enemy.burstTimer-=dt;
+      while(enemy.burstLeft>0&&enemy.burstTimer<=0){
+        const angle=Math.atan2(enemy.aimY-enemy.y,enemy.aimX-enemy.x)+(enemy.burstLeft-2)*.065;
+        this.shoot(enemy,angle,610,950,'enemy',enemy.value,enemy.rarity);enemy.burstLeft--;enemy.burstTimer+=.12;
+      }
+      if(enemy.burstLeft===0){enemy.state='idle';enemy.cooldown=definition.cooldown;}return;
     }
-    const p = this.player, d = distance(enemy, p), sight = this.visible(enemy, p);
-    if (d < definition.range && sight && enemy.cooldown === 0) {
-      enemy.state = 'windup'; enemy.timer = definition.windup; enemy.aimX = p.x; enemy.aimY = p.y;
-      return;
+    if(enemy.state==='windup'){enemy.timer-=dt;if(enemy.timer<=0)this.resolveEnemyAttack(enemy,definition);return;}
+    const p=this.player,d=distance(enemy,p),conceal=d>160?(this.ground(p)?.concealment||1):1;
+    const sight=d<Math.max(380,definition.range+100)*conceal&&this.visible(enemy,p);
+    if(pattern==='heal'&&enemy.cooldown===0){
+      const ally=this.world.enemies.filter(e=>e!==enemy&&!e.dead&&e.hp<e.maxHp&&distance(enemy,e)<=definition.range&&this.visible(enemy,e)).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+      if(ally){enemy.healTarget=ally.id;enemy.aimX=ally.x;enemy.aimY=ally.y;enemy.state='windup';enemy.timer=definition.windup;return;}
+    }else if(pattern!=='heal'&&d<definition.range*conceal&&sight&&enemy.cooldown===0){
+      enemy.state='windup';enemy.timer=definition.windup;enemy.aimX=p.x;enemy.aimY=p.y;return;
     }
-    if (!definition.speed) return;
-    let mx, my;
-    if (d < Math.max(380, definition.range+100) && sight) {
-      const sign = definition.pattern === 'fan' && d < 170 ? -1 : d > (definition.pattern === 'strike' ? 65 : 220) ? 1 : 0;
-      mx = (p.x-enemy.x)/Math.max(d, 1)*sign; my = (p.y-enemy.y)/Math.max(d, 1)*sign;
-    } else {
-      const hx = enemy.homeX+Math.cos(this.elapsed*0.5+enemy.phase)*48;
-      const hy = enemy.homeY+Math.sin(this.elapsed*0.45+enemy.phase)*48;
-      const length = Math.hypot(hx-enemy.x, hy-enemy.y) || 1;
-      mx = (hx-enemy.x)/length*0.35; my = (hy-enemy.y)/length*0.35;
+    if(!definition.speed)return;
+    let mx,my;
+    if(sight&&pattern!=='heal'){
+      const ranged=['fan','burst'].includes(pattern),sign=ranged&&d<190?-1:d>(['strike','slam'].includes(pattern)?65:240)?1:0;
+      mx=(p.x-enemy.x)/Math.max(d,1)*sign;my=(p.y-enemy.y)/Math.max(d,1)*sign;
+      if(pattern==='burst'){
+        const side=Math.sin(this.elapsed*1.4+enemy.phase)>.0?1:-1;
+        mx+=-(p.y-enemy.y)/Math.max(d,1)*side*.7;my+=(p.x-enemy.x)/Math.max(d,1)*side*.7;
+        const norm=Math.max(1,Math.hypot(mx,my));mx/=norm;my/=norm;
+      }
+    }else{
+      const hx=enemy.homeX+Math.cos(this.elapsed*.5+enemy.phase)*48,hy=enemy.homeY+Math.sin(this.elapsed*.45+enemy.phase)*48;
+      const length=Math.hypot(hx-enemy.x,hy-enemy.y)||1;mx=(hx-enemy.x)/length*.35;my=(hy-enemy.y)/length*.35;
     }
-    const speed = definition.speed*terrainSpeed(enemy, this.world.terrain);
-    this.move(enemy, mx*speed*dt, my*speed*dt);
+    const speed=definition.speed*(enemy.moveScale||1)*terrainSpeed(enemy,terrainFor(this.world,enemy));this.move(enemy,mx*speed*dt,my*speed*dt);
+  }
+  explode(bullet,point){
+    if(bullet.exploded)return;bullet.exploded=true;bullet.dead=true;
+    this.effect(point.x,point.y,'','#f4bf7e','impact',.45,{radius:bullet.blast});
+    for(const enemy of this.world.enemies){
+      const d=distance(point,enemy);
+      if(!enemy.dead&&d<=bullet.blast+enemy.radius&&this.visible(point,enemy)){
+        const falloff=Math.max(.35,1-d/bullet.blast*.6);
+        this.damageEnemy(enemy,attackDamage(bullet.value,enemy.value,enemy.maxHp,bullet.rarity)*bullet.power*falloff);
+      }
+    }
   }
   updateProjectiles(dt) {
     const bounds=this.world.bounds;
@@ -304,6 +350,13 @@ export class Raid {
         if(at<wall)hits.push({target,id,at});
       }
       hits.sort((a,b)=>a.at-b.at);
+      if(bullet.blast){
+        const impact=hits[0]?.at??Infinity,t=Math.min(impact,wall);
+        if(t!==Infinity)this.explode(bullet,{x:bullet.x+(next.x-bullet.x)*Math.max(0,t-.001),y:bullet.y+(next.y-bullet.y)*Math.max(0,t-.001)});
+        else if(next.x<0||next.y<0||next.x>bounds.width||next.y>bounds.height)this.explode(bullet,{x:clamp(next.x,0,bounds.width),y:clamp(next.y,0,bounds.height)});
+        else if(bullet.life<=dt)this.explode(bullet,next);
+        bullet.x=next.x;bullet.y=next.y;bullet.life-=step;continue;
+      }
       for(const hit of hits){
         const damage=attackDamage(bullet.value,hit.target.value,hit.target.maxHp,bullet.rarity)*bullet.power;
         if(bullet.owner==='player')this.damageEnemy(hit.target,damage);else this.hurt(damage,'被敌方弹丸击破');
@@ -364,7 +417,7 @@ export class Raid {
       this.move(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt);
       p.dashTime = Math.max(0, p.dashTime-dt);
     } else {
-      const speed = RULES.speed*terrainSpeed(p, this.world.terrain);
+      const speed = RULES.speed*terrainSpeed(p, terrainFor(this.world,p));
       this.move(p, mx*speed*dt, my*speed*dt);
     }
     if (input.autoAim && input.attack) {
@@ -374,6 +427,7 @@ export class Raid {
     if (input.overload) this.activateOverload();
     if (input.divide) this.divide();
     if (input.heal) this.heal();
+    this.updateBursts(dt);
     if (input.attack) this.attack();
     for (const tile of this.world.tiles) {
       if (!tile.dead && distance(p, tile) < (p.buffs.magnet>0?135:p.radius+17) && canMerge(p.value, tile.value) && this.visible(p, tile)) {

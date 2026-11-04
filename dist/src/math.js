@@ -1,4 +1,4 @@
-import { RULES, WORLD, ZONES } from './config.js';
+import { RULES, WORLD, ZONES, TERRAIN } from './config.js';
 import { rarityOf } from './equipment.js';
 
 export const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -104,12 +104,13 @@ export function inAttackArc(origin, target, angle, arc, range) {
   return distance(origin, target) <= range + (target.radius || 0) && Math.abs(wrapped) <= arc / 2;
 }
 
-export function terrainSpeed(entity, terrain = []) {
-  let speed = 1;
-  for (const patch of terrain) {
-    if (entity.x >= patch.x && entity.x <= patch.x+patch.w && entity.y >= patch.y && entity.y <= patch.y+patch.h) {
-      speed = Math.min(speed, patch.kind === 'water' ? 0.58 : patch.kind === 'mud' ? 0.74 : 1);
-    }
+export function terrainAt(entity, terrain = []) {
+  let selected=null;
+  for(const patch of terrain){
+    if(entity.x<patch.x||entity.x>patch.x+patch.w||entity.y<patch.y||entity.y>patch.y+patch.h)continue;
+    const info=TERRAIN[patch.kind];if(!info)continue;
+    if(!selected||info.priority>selected.priority||(info.priority===selected.priority&&info.speed<selected.speed))selected={...info,kind:patch.kind};
   }
-  return speed;
+  return selected;
 }
+export const terrainSpeed = (entity,terrain=[]) => terrainAt(entity,terrain)?.speed ?? 1;

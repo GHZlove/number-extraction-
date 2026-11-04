@@ -17,6 +17,12 @@ export const WEAPONS = Object.freeze({
   greatsword: { name: '大剑', short: 'GS', mode: 'melee', interval: 0.85, range: 132, arc: Math.PI * 0.9, unlock: 0 },
   dualblades: { name: '双刀', short: 'DB', mode: 'melee', interval: 0.24, range: 82, arc: Math.PI * 0.6, unlock: 1 },
   shotgun: { name: '霰弹枪', short: 'SG', mode: 'ranged', interval: 0.88, range: 440, speed: 780, spread: 0.25, pellets: 5, unlock: 2 },
+  carbine: { name: '脉冲卡宾枪', short: 'BST', mode: 'ranged', interval: 0.62, range: 820, speed: 1050, spread: 0.035, burst: 3, burstDelay: 0.075, unlock: 3 },
+  lmg: { name: '轻机枪', short: 'LMG', mode: 'ranged', interval: 0.19, range: 800, speed: 1000, spread: 0.16, unlock: 4 },
+  crossbow: { name: '复合弩', short: 'BOW', mode: 'ranged', interval: 0.95, range: 1000, speed: 1100, spread: 0.005, pierce: 1, unlock: 1 },
+  grenade: { name: '榴弹发射器', short: 'GL', mode: 'ranged', interval: 1.55, range: 700, speed: 480, spread: 0.035, blast: 130, unlock: 5 },
+  spear: { name: '长枪', short: 'SPR', mode: 'melee', interval: 0.64, range: 205, arc: Math.PI * 0.22, unlock: 0 },
+  warhammer: { name: '战锤', short: 'HAM', mode: 'melee', interval: 1.35, range: 128, arc: Math.PI * 1.3, stun: 0.75, unlock: 3 },
   railgun: { name: '磁轨步枪', short: 'RAIL', mode: 'ranged', interval: 1.3, range: 1500, speed: 2200, spread: 0.008, pierce: 2, unlock: 4 },
 });
 

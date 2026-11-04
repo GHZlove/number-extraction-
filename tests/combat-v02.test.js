@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RULES, ENEMY_TYPES } from '../dist/src/config.js';
+import { RULES, ENEMY_TYPES, TERRAIN } from '../dist/src/config.js';
 import { Raid } from '../dist/src/game.js';
 import { attackDamage, damageFraction, distance } from '../dist/src/math.js';
 import { createEnemy, generateWorld } from '../dist/src/world.js';
@@ -245,7 +245,7 @@ test('water affects simulation movement rather than only changing map appearance
   near(distance(start, wet.player), distance(start, dry.player)*0.58);
 });
 
-test('generated maps vary terrain and contain all six enemy patterns and weapon types', () => {
+test('generated maps vary terrain and contain all configured enemy patterns and weapon types', () => {
   const types = new Set(), weapons = new Set(), rarities = new Set(), terrain = new Set();
   for (let seed = 0; seed < 40; seed++) {
     const world = generateWorld(seed);
@@ -257,6 +257,6 @@ test('generated maps vary terrain and contain all six enemy patterns and weapon 
   }
   assert.deepEqual([...types].sort(), Object.keys(ENEMY_TYPES).sort());
   assert.deepEqual([...weapons].sort(), Object.keys(WEAPONS).sort());
-  assert.equal(rarities.size, 6); assert.deepEqual([...terrain].sort(), ['mud', 'water']);
+  assert.equal(rarities.size, 6); assert.deepEqual([...terrain].sort(), Object.keys(TERRAIN).sort());
   assert.notDeepEqual(generateWorld(1).obstacles, generateWorld(2).obstacles);
 });
