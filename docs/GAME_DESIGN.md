@@ -1,6 +1,6 @@
 # 数字进化 · Number Extraction
 
-> 本文保留 v0.1 的原始设计记录。战斗基础见 [COMBAT_V02.md](COMBAT_V02.md)，当前 v0.3 的庇护所、地图、难度、技能与新武器见 [SHELTER_V03.md](SHELTER_V03.md)。历史迭代设想不代表当前实现顺序。
+> 本文保留 v0.1 的原始设计记录。战斗基础见 [COMBAT_V02.md](COMBAT_V02.md)，庇护所与技能基础见 [SHELTER_V03.md](SHELTER_V03.md)，当前 v0.4 地图、地形、敌人与武器见 [EXPANSION_V04.md](EXPANSION_V04.md)。历史迭代设想不代表当前实现顺序。
 
 游戏设计文档 v0.1 · 2026-11-03
 

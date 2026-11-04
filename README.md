@@ -10,16 +10,16 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.3.0 · playable single-player prototype |
+| Current version | v0.4.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, directional combat, procedural worlds, extraction, shelter upgrades |
-| Content | Eight weapon types, six quality tiers, six enemy attack patterns, five difficulties |
-| Verification | 74 automated tests and syntax/reference checks for 14 modules |
+| Content | Fourteen weapon types, six quality tiers, twelve enemy types, five difficulties |
+| Verification | 90 automated tests and syntax/reference checks for 15 modules |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-[简体中文](README.zh-CN.md) · [v0.3 shelter and expeditions](docs/SHELTER_V03.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.4 worlds, enemies and weapons](docs/EXPANSION_V04.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
@@ -35,18 +35,19 @@ Extraction adds a second decision: carry on searching for better loot, or return
 
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
-- **Eight weapons:** pistols, SMGs, assault rifles, sniper rifles, shotguns, railguns, greatswords and dual blades. Equip two slots, six quality tiers, durability-based armour and a laser sight.
-- **Five expedition difficulties:** larger maps, higher enemy numbers and greater resource rewards. The minimum map is **four times wider and four times taller** than v0.2, for **16 times the area**.
+- **Fourteen weapons:** the original eight weapon types plus a burst carbine, LMG, crossbow, grenade launcher, spear and warhammer. Equip two slots, six quality tiers, durability-based armour and a laser sight.
+- **Five expedition difficulties:** larger maps, higher enemy numbers and greater resource rewards. The minimum map is **ten times wider and ten times taller** than the original 3,200 × 2,000 map, for **100 times the area**.
+- **Terrain and enemies:** navigate open industrial compounds, container lanes, rock ridges, river bridges and brush. Twelve enemy types include fast scouts, slow armoured giants, strafing burst shooters, medics, summoners and radial-fire guards.
 - **Fullscreen raids:** the world fills the screen, with a compact HUD and minimap. Shelter facilities and deployment controls appear outside the raid.
 - **Persistent shelter:** extracted currency, alloy and cores upgrade storage, supplies, the workshop and recycling. Every ending returns directly to the shelter; failed raids preserve banked assets.
 
 | Difficulty | World size | Area vs v0.2 | Time limit | Enemy numbers* | Base reward |
 | --- | --- | --- | --- | --- | --- |
-| 边境巡查 / Scout | 12,800 × 8,000 | 16× | 8:00 | 2–512 | 1× |
-| 失序探索 / Standard | 16,000 × 10,000 | 25× | 9:30 | 4–1,024 | 1.6× |
-| 深层突袭 / Hard | 19,200 × 12,000 | 36× | 11:00 | 8–2,048 | 2.4× |
-| 核心危机 / Severe | 22,400 × 14,000 | 49× | 12:30 | 16–4,096 | 3.6× |
-| 零点噩梦 / Nightmare | 25,600 × 16,000 | 64× | 14:00 | 32–8,192 | 5.2× |
+| 边境巡查 / Scout | 32,000 × 20,000 | 100× | 10:00 | 2–512 | 1× |
+| 失序探索 / Standard | 40,000 × 25,000 | 156.25× | 12:00 | 4–1,024 | 1.6× |
+| 深层突袭 / Hard | 48,000 × 30,000 | 225× | 14:00 | 8–2,048 | 2.4× |
+| 核心危机 / Severe | 56,000 × 35,000 | 306.25× | 16:00 | 16–4,096 | 3.6× |
+| 零点噩梦 / Nightmare | 64,000 × 40,000 | 400× | 18:00 | 32–8,192 | 5.2× |
 
 *Includes elite enemies; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
 
@@ -104,8 +105,9 @@ Touch controls provide a joystick, action buttons and assisted aiming; weapons c
 2. Search the starter chest at `(485, 1190)` by standing still and holding **E** for 0.75 seconds. It provides 24 currency value and a ÷2 charge.
 3. Open the equipment chest at `(620, 1260)`. Press **F** for each item, then **B** to equip the yellow rifle, white armour and laser. Compare the two weapon slots and white/red aim guides.
 4. Practise **G**, **Q** and dodging against the nearby hunter, or evade it. The node at `(1180, 1270)` grants a temporary damage buff.
-5. Return to the western green exit at `(310, 530)`. Stand still and hold **E** for four uninterrupted seconds.
-6. The shelter shows your banked rewards. Upgrade a facility when you can afford its listed resources, or prepare another expedition.
+5. The frontier cache at `(1500, 1420)` supplies the burst carbine, grenade launcher, spear and warhammer for an early test. A fast scout guards the road nearby.
+6. Return to the western green exit at `(310, 530)`. Stand still and hold **E** for four uninterrupted seconds.
+7. The shelter shows your banked rewards. Upgrade a facility when you can afford its listed resources, or prepare another expedition.
 
 ## Combat and progression
 
@@ -119,7 +121,9 @@ White weapons use a fraction of the target's maximum health. Equal numbers deal 
 
 Quality multipliers are **white 1.0, yellow 1.2, green 1.4, blue 1.6, purple 1.8, red 2.0**. Armour, Overload and node buffs modify the final damage. The examples exclude these effects.
 
-Shotguns share one attack's base damage across five pellets. Railguns can hit three distinct targets before stopping; walls block both. A laser reduces actual firearm spread by **70%**. Switching or equipping does not reset the shared attack cooldown. Ammunition is unlimited in this prototype.
+Shotguns share one attack's base damage across five pellets; burst carbines share it across three timed shots. Switching weapons cancels remaining burst shots. Crossbows penetrate two distinct targets. Spears have a long, narrow attack arc; warhammers interrupt surviving targets. Grenades explode once on contact or at maximum range, with distance-based splash damage blocked by walls.
+
+Railguns can hit three distinct targets before stopping; walls block projectiles. A laser reduces actual firearm spread by **70%**. Switching or equipping does not reset the shared attack cooldown. Ammunition is unlimited in this prototype.
 
 | Shelter facility | Effect |
 | --- | --- |
@@ -134,8 +138,7 @@ Picked-up equipment is converted into resources on extraction. Workshop equipmen
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-
-The 14 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation, spatial obstacle queries, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 15 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
@@ -152,9 +155,9 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **14 modules passing syntax/reference checks and 74 passing tests**: 19 core, 28 combat, 17 shelter/expedition and 10 browser-contract tests.
+No `npm install` is required. The current verification has **15 modules passing syntax/reference checks and 90 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion and 10 browser-contract tests.
 
-Coverage includes damage, equipment, large-map bounds, exit reachability, spatial queries, shelter upgrades, reward settlement, save migration, Overload, nodes, shotgun damage sharing, railgun penetration and application flow. The browser-contract tests use Node.js DOM/Canvas doubles; they do not establish actual layout, native browser behaviour, audio or device performance. See [testing notes](docs/TESTING.md).
+Coverage includes damage, equipment, large-map bounds, exit reachability, spatial queries, shelter upgrades, reward settlement, save migration, Overload, nodes, shotgun damage sharing, railgun penetration, new terrain, enemy support/summoning, speed differences, timed bursts, splash cover and application flow. The browser-contract tests use Node.js DOM/Canvas doubles; they do not establish actual layout, native browser behaviour, audio or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
@@ -165,7 +168,8 @@ This is a single-player prototype with no multiplayer, cloud synchronisation, ap
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
-- [v0.3 shelter, difficulty and Overload rules](docs/SHELTER_V03.md)
+- [v0.4 maps, terrain, enemy and weapon rules](docs/EXPANSION_V04.md)
+- [v0.3 shelter and Overload foundation](docs/SHELTER_V03.md)
 - [v0.2 combat foundation](docs/COMBAT_V02.md)
 - [Original v0.1 design record](docs/GAME_DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
