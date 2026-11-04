@@ -10,16 +10,18 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.5.0 · playable single-player prototype |
+| Current version | v0.6.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
-| Core systems | Number merging, directional combat, procedural worlds, extraction, shelter upgrades |
+| Core systems | Number merging, directional combat, tangram sectors, horde pressure, extraction, shelter upgrades |
 | Content | Fourteen weapon types, six quality tiers, twelve enemy types, five difficulties |
-| Verification | 106 automated tests and syntax/reference checks for 17 modules |
+| Verification | 118 automated tests and syntax/reference checks for 18 modules |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-[简体中文](README.zh-CN.md) · [v0.5 horde rules](docs/PRESSURE_V05.md) · [Colour theme](docs/VISUAL_V041.md) · [v0.4 worlds, enemies and weapons](docs/EXPANSION_V04.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+This version is available on the `feature/tangram-impact-v06` playtest branch: [download the complete v0.6 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/tangram-impact-v06.zip). The default branch and hosted demo follow separate release schedules.
+
+[简体中文](README.zh-CN.md) · [v0.6 tangram sectors and impact](docs/TANGRAM_V06.md) · [Horde rules](docs/PRESSURE_V05.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
@@ -34,6 +36,8 @@ Extraction adds a second decision: carry on searching for better loot, or return
 **Prepare at the shelter → Deploy → Merge and explore → Fight or evade → Extract → Upgrade**
 
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
+- **Tangram-style sectors:** seven connected polygon pieces replace three vertical bands. Seeded rotations, reflections and risk assignments change the route each raid. A piece's risk governs enemy numbers, guard density, horde cadence and loot; the teaching area stays low risk. Seams are traversable, with matching minimap shapes and entry notices.
+- **Combat impact:** directional hit sparks, enemy hit flashes, recoil, armour-break cues and shattering defeats. Heavy weapons add collision-safe knockback and a brief, throttled hit-stop with buffered controls. Synthesised weapon and impact sounds are opt-in; reduced-motion preferences suppress camera shake and hit deformation.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
 - **Fourteen weapons:** the original eight weapon types plus a burst carbine, LMG, crossbow, grenade launcher, spear and warhammer. Equip two slots, six quality tiers, durability-based armour and a laser sight.
 - **Compact expeditions:** five arenas from 6,400 × 4,000 to 12,800 × 8,000. Each map has 1/25 the area of its v0.4.1 counterpart, with tighter landmark layouts and more concentrated encounters.
@@ -60,7 +64,7 @@ Requirements: **Python 3**, a modern browser with JavaScript enabled, and option
 Clone the repository, or extract the complete source ZIP:
 
 ```bash
-git clone https://github.com/GHZlove/number-extraction-.git number-extraction
+git clone --branch feature/tangram-impact-v06 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
 cd number-extraction
 ```
 
@@ -142,7 +146,7 @@ Picked-up equipment is converted into resources on extraction. Workshop equipmen
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 17 JavaScript ES modules separate deterministic simulation, geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 18 JavaScript ES modules separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
@@ -159,9 +163,9 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **17 modules passing syntax/reference checks and 106 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion, 16 pressure and 10 browser-contract tests.
+No `npm install` is required. The current verification has **18 modules passing syntax/reference checks and 118 passing tests**: 19 core, 28 combat, 17 shelter/expedition, 16 expansion, 16 pressure, 12 tangram/impact/audio and 10 browser-contract tests.
 
-Coverage includes damage, equipment, large-map bounds, exit reachability, spatial queries, shelter upgrades, reward settlement, save migration, Overload, nodes, shotgun damage sharing, railgun penetration, new terrain, enemy support/summoning, speed differences, timed bursts, splash cover, extraction lock timing, spawn budgets, crowd steering and application flow. The browser-contract tests use Node.js DOM/Canvas doubles; they do not establish actual layout, native browser behaviour, audio or device performance. See [testing notes](docs/TESTING.md).
+Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover polygon tiling, sector risk and entity membership, knockback collisions, hit-stop input retention, effect rendering and rate-limited audio scheduling. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
@@ -172,6 +176,7 @@ This is a single-player prototype with no multiplayer, cloud synchronisation, ap
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.6 tangram sectors and combat impact](docs/TANGRAM_V06.md)
 - [v0.5 compact arenas and horde pressure](docs/PRESSURE_V05.md)
 - [v0.4 maps, terrain, enemy and weapon rules](docs/EXPANSION_V04.md)
 - [v0.3 shelter and Overload foundation](docs/SHELTER_V03.md)

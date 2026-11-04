@@ -1,12 +1,12 @@
+import { zoneAt } from './math.js';
 // Open structures and terrain pockets give large maps places to navigate toward.
 export function buildLandscapes(world,rand,addObstacle){
   const {width,height}=world.bounds,rank=world.difficulty.rank-1,sites=[];
   const spacing=1000+rank*100,scale=.6;let serial=0;
-  for(const zone of world.zones){
-    let index=0;
+  let index=0;
     for(let cy=900;cy<height-550;cy+=spacing){
-      for(let cx=zone.from+650;cx<zone.to-450;cx+=spacing){
-        const x=cx+rand(-130,130),y=cy+rand(-130,130),kind=serial++%6,cluster=`site-${zone.id}-${index++}`;
+      for(let cx=650;cx<width-450;cx+=spacing){
+        const x=cx+rand(-130,130),y=cy+rand(-130,130),sector=zoneAt({x,y},world.zones),kind=serial++%6,cluster=`site-${sector.id}-${index++}`;
         const place=(dx,dy,w,h,material)=>addObstacle({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,material,cluster});
         const patch=(dx,dy,w,h,ground)=>world.terrain.push({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,kind:ground});
         let name;
@@ -36,13 +36,14 @@ export function buildLandscapes(world,rand,addObstacle){
           for(const[dx,dy]of[[-260,-210],[140,-210],[-260,170],[140,170]])place(dx,dy,120,40,'barricade');
           patch(-360,-280,720,560,'mud');
         }
-        sites.push({x,y,zone:zone.id,kind,name});world.landmarks.push({x,y:y-230,name,kind});
+        sites.push({x,y,zone:sector.risk,sectorId:sector.id,kind,name});world.landmarks.push({x,y:y-230,name,kind});
       }
     }
-    // Rivers have frequent plank crossings, including each main-road intersection.
-    const riverX=zone.from+(zone.to-zone.from)*0.66;
+  // Two winding waterways cross polygon sectors instead of defining fixed strips.
+  for(let river=0;river<2;river++){
+    const riverX=width*(.25+river*.5);
     for(let y=350;y<height-400;y+=1100){
-      const x=riverX+Math.sin(y/1800+zone.id)*220;
+      const x=riverX+(y/height-.5)*width*.18+Math.sin(y/1200+river)*160;
       world.terrain.push({x,y,w:210,h:1080,kind:'water'});
       world.terrain.push({x:x-90,y:y+470,w:390,h:140,kind:'bridge'});
       for(const road of world.roads)if(road.w>road.h&&y<road.y+road.h&&y+1080>road.y){

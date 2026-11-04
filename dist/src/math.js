@@ -1,3 +1,4 @@
+import { sectorAt } from './regions.js';
 import { RULES, WORLD, ZONES, TERRAIN } from './config.js';
 import { rarityOf } from './equipment.js';
 
@@ -6,7 +7,7 @@ export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export const tier = value => Math.log2(value);
 export const isPowerOfTwo = value => Number.isInteger(value) && value > 0 && Number.isInteger(Math.log2(value));
 export const canMerge = (a, b) => isPowerOfTwo(a) && a === b && a < RULES.maxValue;
-export const zoneAt = (x, zones = ZONES) => zones.find(z => x >= z.from && x < z.to) || zones[zones.length-1];
+export const zoneAt = (point, sectors = []) => sectorAt(typeof point==='number'?{x:point,y:0}:point,sectors)||ZONES[0];
 export const maxEnemyHealth = () => 100;
 export function damageFraction(attackerValue, defenderValue) {
   if (!isPowerOfTwo(attackerValue) || !isPowerOfTwo(defenderValue)) return 0;

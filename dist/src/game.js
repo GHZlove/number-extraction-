@@ -3,10 +3,10 @@ import { NavigationField } from './navigation.js';
 import { RULES, WORLD, ENEMY_TYPES, PRESSURE, difficultyOf } from './config.js';
 import {
   attackDamage, bagTotal, canMerge, clamp, distance, lineOfSight, maxEnemyHealth,
-  moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree,
+  moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree, zoneAt,
 } from './math.js';
 import { createLoot, createEnemy, generateWorld, lootForEnemy } from './world.js';
-import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue } from './equipment.js';
+import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue, HIT_FEEDBACK } from './equipment.js';
 import { facilityLevel, starterLoadout, rewardMultiplier, salvageMaterials } from './shelter.js';
 import { SpatialGrid, obstaclesFor, terrainFor } from './spatial.js';
 
@@ -18,7 +18,7 @@ export class Raid {
     this.duration = this.difficulty.seconds;
     this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id);
     this.world = generateWorld(seed,this.difficulty.id);
-    this.status = 'playing';this.bursts=[];
+    this.status = 'playing';this.bursts=[];this.hitStop=0;this.hitStopCooldown=0;this.pendingInput={};
     this.elapsed = 0;
     this.director=options.pressure===false?null:new PressureDirector(seed,this.difficulty);
     this.navigation=new NavigationField(this.world);
@@ -34,6 +34,7 @@ export class Raid {
       invulnerable: 0, facingX: 1, facingY: 0, aimAngle: 0,
       ...loadout, activeSlot: 0, energy: 0, overload: 0, buffs: { fury: 0, phase: 0, magnet: 0 },
     };
+    this.player.recoil=0;this.player.recoilMax=.1;this.player.sectorId=zoneAt(this.player,this.world.zones).id;this.sectorNotice=0;
     this.bag = [];
     this.capacity = RULES.bagCapacity + facilityLevel(save,'storage') * 2;
     this.kills = 0; this.merges = 0; this.opened = 0;
@@ -153,14 +154,14 @@ export class Raid {
 
   shoot(origin, angle, speed, range, owner, value, rarity = 'white', options = {}) {
     this.world.projectiles.push({ x: origin.x, y: origin.y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-      radius: owner === 'player' ? 3 : 6, life: range/speed, owner, value, rarity, power: options.power ?? 1, blast: options.blast || 0, pierce: options.pierce || 0, hitIds: [], dead: false });
+      radius: owner === 'player' ? 3 : 6, life: range/speed, owner, value, rarity, weapon:options.weapon||'',power: options.power ?? 1, blast: options.blast || 0, pierce: options.pierce || 0, hitIds: [], dead: false });
   }
   attack() {
     const p = this.player;
     if (p.attackCooldown > 0 || this.status !== 'playing') return false;
     const item = activeWeapon(p), weapon = weaponOf(item);
     p.attackCooldown = weapon.interval*(p.overload>0?0.75:1);
-    this.event('attack');
+    this.event('attack',{weapon:item.weapon});p.recoil=weapon.mode==='melee'?.16:.1;p.recoilMax=p.recoil;
     if (weapon.mode === 'ranged') {
       const power=this.damagePower()/(weapon.burst||1);
       this.fireWeapon(item,p.aimAngle,power);
@@ -169,7 +170,7 @@ export class Raid {
       this.effect(p.x, p.y, '', '#cde8e0', 'slash', 0.2, { angle: p.aimAngle, arc: weapon.arc, radius: weapon.range });
       for (const enemy of this.world.enemies) {
         if (!enemy.dead && inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && this.visible(p, enemy)) {
-          this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity)*this.damagePower());
+          this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity)*this.damagePower(),{weapon:item.weapon,angle:p.aimAngle});
           if(weapon.stun&&!enemy.dead){enemy.stun=Math.max(enemy.stun,weapon.stun);enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;}
         }
       }
@@ -180,7 +181,7 @@ export class Raid {
     const weapon=weaponOf(item),pellets=weapon.pellets||1,p=this.player;
     for(let i=0;i<pellets;i++){
       const offset=pellets===1?this.random()*2-1:i/(pellets-1)*2-1;
-      this.shoot(p,angle+offset*spreadOf(item,p.laser),weapon.speed,weapon.range,'player',p.value,item.rarity,{power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
+      this.shoot(p,angle+offset*spreadOf(item,p.laser),weapon.speed,weapon.range,'player',p.value,item.rarity,{weapon:item.weapon,power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
     }
     this.effect(p.x,p.y,'','#fff2c5','muzzle',0.08,{angle});
   }
@@ -188,31 +189,40 @@ export class Raid {
     for(const job of this.bursts){
       if(this.player.activeSlot!==job.slot||activeWeapon(this.player).id!==job.item.id){job.remaining=0;continue;}
       job.wait-=dt;
-      while(job.remaining>0&&job.wait<=0){this.fireWeapon(job.item,job.angle,job.power);job.remaining--;job.wait+=job.delay;}
+      while(job.remaining>0&&job.wait<=0){this.event('attack',{weapon:job.item.weapon});this.player.recoil=.1;this.player.recoilMax=.1;this.fireWeapon(job.item,job.angle,job.power);job.remaining--;job.wait+=job.delay;}
     }
     this.bursts=this.bursts.filter(job=>job.remaining>0);
   }
-  damageEnemy(enemy, amount) {
-    if (enemy.dead) return;
-    const hit = absorbDamage(amount, enemy.armor);
-    if (enemy.armor) enemy.armor.durability = hit.durability;
-    enemy.hp = Math.max(0, enemy.hp-hit.damage);
-    this.effect(enemy.x, enemy.y-20, `−${Math.round(hit.damage*10)/10}`, '#f6e6ca');
-    if (hit.blocked) this.effect(enemy.x, enemy.y-42, '护甲', '#8fc5ff');
-    if (enemy.hp <= 0) this.kill(enemy);
+  damageEnemy(enemy,amount,impact={}){
+    if(enemy.dead)return;
+    const hit=absorbDamage(amount,enemy.armor),oldArmor=enemy.armor?.durability||0;
+    if(enemy.armor)enemy.armor.durability=hit.durability;
+    enemy.hp=Math.max(0,enemy.hp-hit.damage);enemy.hitFlash=.105;
+    const weapon=impact.weapon||'contact',feel=HIT_FEEDBACK[weapon]||HIT_FEEDBACK.contact;
+    const angle=impact.angle??Math.atan2(enemy.y-this.player.y,enemy.x-this.player.x);
+    enemy.knockX=(enemy.knockX||0)+Math.cos(angle)*feel.knock;enemy.knockY=(enemy.knockY||0)+Math.sin(angle)*feel.knock;
+    const length=Math.hypot(enemy.knockX,enemy.knockY);if(length>420){enemy.knockX*=420/length;enemy.knockY*=420/length;}
+    const x=impact.x??enemy.x-Math.cos(angle)*enemy.radius*.5,y=impact.y??enemy.y-Math.sin(angle)*enemy.radius*.5;
+    this.effect(x,y,'',hit.blocked?'#70d9ff':'#fff4c4','hit-spark',.18,{angle,radius:22+feel.strength*18,strength:feel.strength,seed:enemy.id.length*19+enemy.value});
+    this.effect(enemy.x,enemy.y-20,`−${Math.round(hit.damage*10)/10}`,'#fff2c2','text',.7,{heavy:feel.strength>=.9});
+    this.event('hit',{weapon,angle,strength:feel.strength,blocked:hit.blocked>0});
+    if(feel.stop>0&&this.hitStopCooldown<=0){this.hitStop=feel.stop;this.hitStopCooldown=.18;}
+    if(oldArmor>0&&hit.durability<=0){this.effect(enemy.x,enemy.y-45,'破甲','#7ad8ff','text',.9);this.event('armorbreak',{strength:1});}
+    else if(hit.blocked)this.effect(enemy.x,enemy.y-42,'护甲','#8fc5ff');
+    if(enemy.hp<=0)this.kill(enemy,impact);
   }
-  kill(enemy) {
-    if (enemy.dead) return;
-    enemy.dead = true; this.kills++; this.event('kill');
-    this.world.tiles.push({ id: `remnant-${enemy.id}`, x: enemy.x, y: enemy.y, value: enemy.value, dead: false });
+  kill(enemy,impact={}){
+    if(enemy.dead)return;
+    enemy.dead=true;this.kills++;this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
+    this.world.tiles.push({id:`remnant-${enemy.id}`,x:enemy.x,y:enemy.y,value:enemy.value,dead:false});
     this.player.energy=Math.min(100,this.player.energy+(enemy.elite?8:enemy.horde?4:2));
     if(enemy.horde)this.hordeKills++;
     if(!enemy.horde||this.random()<.35)this.world.drops.push(lootForEnemy(enemy,this.world.zones));
-    if (this.random() < (enemy.horde?.08:.42)) {
-      const gear = randomEquipment(this.random, enemy.zone ?? this.world.zones.find(zone=>enemy.homeX>=zone.from&&enemy.homeX<zone.to)?.id ?? 2, `gear-${enemy.id}`);
-      this.world.drops.push({ ...gear, x: enemy.x, y: enemy.y, dead: false });
+    if(this.random()<(enemy.horde?.08:.42)){
+      const gear=randomEquipment(this.random,enemy.zone??zoneAt(enemy,this.world.zones).risk,`gear-${enemy.id}`);this.world.drops.push({...gear,x:enemy.x,y:enemy.y,dead:false});
     }
-    this.effect(enemy.x, enemy.y, '击破', '#efac8d');
+    this.effect(enemy.x,enemy.y,'击破','#ffb4df');
+    this.effect(enemy.x,enemy.y,'','#ff73b6','shatter',.35,{radius:48,seed:enemy.id.length*17+enemy.value});
   }
   divide() {
     const p = this.player;
@@ -298,6 +308,8 @@ export class Raid {
   }
   updateEnemy(enemy,dt){
     if(enemy.dead)return;
+    enemy.hitFlash=Math.max(0,(enemy.hitFlash||0)-dt);
+    if(Math.hypot(enemy.knockX||0,enemy.knockY||0)>1){this.move(enemy,(enemy.knockX||0)*dt,(enemy.knockY||0)*dt);const decay=Math.exp(-dt*18);enemy.knockX*=decay;enemy.knockY*=decay;}
     const definition=ENEMY_TYPES[enemy.type]||ENEMY_TYPES.hunter,pattern=definition.pattern;
     enemy.cooldown=Math.max(0,enemy.cooldown-dt);enemy.contactCooldown=Math.max(0,enemy.contactCooldown-dt);
     if(distance(enemy,this.player)>RULES.activeEnemyRadius&&!['charge','windup','burst'].includes(enemy.state)){enemy.stun=Math.max(0,enemy.stun-dt);return;}
@@ -353,12 +365,12 @@ export class Raid {
   }
   explode(bullet,point){
     if(bullet.exploded)return;bullet.exploded=true;bullet.dead=true;
-    this.effect(point.x,point.y,'','#f4bf7e','impact',.45,{radius:bullet.blast});
+    this.effect(point.x,point.y,'','#f4bf7e','impact',.45,{radius:bullet.blast});this.event('explosion',{weapon:'grenade',strength:1.25});
     for(const enemy of this.world.enemies){
       const d=distance(point,enemy);
       if(!enemy.dead&&d<=bullet.blast+enemy.radius&&this.visible(point,enemy)){
         const falloff=Math.max(.35,1-d/bullet.blast*.6);
-        this.damageEnemy(enemy,attackDamage(bullet.value,enemy.value,enemy.maxHp,bullet.rarity)*bullet.power*falloff);
+        this.damageEnemy(enemy,attackDamage(bullet.value,enemy.value,enemy.maxHp,bullet.rarity)*bullet.power*falloff,{weapon:'grenade',angle:Math.atan2(enemy.y-point.y,enemy.x-point.x)});
       }
     }
   }
@@ -386,7 +398,7 @@ export class Raid {
       }
       for(const hit of hits){
         const damage=attackDamage(bullet.value,hit.target.value,hit.target.maxHp,bullet.rarity)*bullet.power;
-        if(bullet.owner==='player')this.damageEnemy(hit.target,damage);else this.hurt(damage,'被敌方弹丸击破');
+        if(bullet.owner==='player')this.damageEnemy(hit.target,damage,{weapon:bullet.weapon||'pistol',angle:Math.atan2(bullet.vy,bullet.vx),x:bullet.x+(next.x-bullet.x)*hit.at,y:bullet.y+(next.y-bullet.y)*hit.at});else this.hurt(damage,'被敌方弹丸击破');
         bullet.hitIds.push(hit.id);
         if(bullet.pierce>0)bullet.pierce--;else{bullet.dead=true;break;}
       }
@@ -423,9 +435,19 @@ export class Raid {
   }
   update(dt, input = {}) {
     if (this.status !== 'playing') return;
-    const p = this.player;
-    this.elapsed += dt;
-    for (const key of ['attackCooldown','dashCooldown','invulnerable','overload']) p[key]=Math.max(0,p[key]-dt);
+    const p=this.player;this.hitStopCooldown=Math.max(0,this.hitStopCooldown-dt);
+    if(this.hitStop>0){
+      for(const key of ['attack','divide','heal','dash','pickup','overload'])if(input[key])this.pendingInput[key]=true;
+      if(input.slot!==undefined)this.pendingInput.slot=input.slot;
+      if(Number.isFinite(input.aimX)){this.pendingInput.aimX=input.aimX;this.pendingInput.aimY=input.aimY;}
+      this.hitStop=Math.max(0,this.hitStop-dt);return;
+    }
+    const buffered=this.pendingInput;this.pendingInput={};
+    for(const key of ['attack','divide','heal','dash','pickup','overload'])if(buffered[key])input={...input,[key]:true};
+    if(buffered.slot!==undefined&&input.slot===undefined)input={...input,slot:buffered.slot};
+    if(buffered.aimX!==undefined&&!Number.isFinite(input.aimX))input={...input,aimX:buffered.aimX,aimY:buffered.aimY};
+    this.elapsed += dt;this.sectorNotice=Math.max(0,this.sectorNotice-dt);
+    for (const key of ['attackCooldown','dashCooldown','invulnerable','overload','recoil']) p[key]=Math.max(0,p[key]-dt);
     for(const key of Object.keys(p.buffs))p.buffs[key]=Math.max(0,p.buffs[key]-dt);
     let mx = input.x || 0, my = input.y || 0;
     const length = Math.hypot(mx, my);
@@ -448,6 +470,8 @@ export class Raid {
       const speed = RULES.speed*terrainSpeed(p, terrainFor(this.world,p));
       this.move(p, mx*speed*dt, my*speed*dt);
     }
+    const sector=zoneAt(p,this.world.zones);
+    if(p.sectorId!==sector.id){p.sectorId=sector.id;if(this.sectorNotice<=0){this.message(`进入 ${sector.name} · ${sector.riskLabel} / 箱子价值 ${sector.reward[0]}–${sector.reward[1]}`);this.sectorNotice=1.5;}}
     if (input.autoAim && input.attack) {
       const enemy = this.nearestEnemy(weaponOf(activeWeapon(p)).range);
       if (enemy) p.aimAngle = Math.atan2(enemy.y-p.y, enemy.x-p.x);

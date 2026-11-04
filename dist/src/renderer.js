@@ -4,12 +4,24 @@ import { activeWeapon, weaponOf, spreadOf, rarityOf } from './equipment.js';
 import { obstaclesFor, terrainFor } from './spatial.js';
 
 const TAU=Math.PI*2;
+function polygon(c,vertices,sx=1,sy=1){
+  c.beginPath();vertices.forEach((p,i)=>{if(i===0)c.moveTo(p.x*sx,p.y*sy);else c.lineTo(p.x*sx,p.y*sy);});c.lineTo(vertices[0].x*sx,vertices[0].y*sy);
+}
 export class Renderer {
   constructor(canvas,minimap) {
     this.canvas=canvas;this.ctx=canvas.getContext('2d');this.map=minimap;this.mctx=minimap.getContext('2d');
     this.width=1;this.height=1;this.scale=1;this.camera={x:300,y:1060};this.shake=0;this.bounds=WORLD;this.zones=ZONES;this.lastMapDraw=-Infinity;
     this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(canvas.parentElement);this.resize();
+  }
+  feedback(event){
+    if(this.reduced)return;
+    const strength=event.strength||.5;
+    if(event.type==='hit')this.shake=Math.max(this.shake,strength*2.8);
+    if(event.type==='kill')this.shake=Math.max(this.shake,strength*3.8);
+    if(event.type==='armorbreak')this.shake=Math.max(this.shake,3.5);
+    if(event.type==='explosion')this.shake=Math.max(this.shake,5);
+    if(event.type==='hurt')this.shake=Math.max(this.shake,5);
   }
   resize() {
     this.width=Math.max(1,this.canvas.parentElement.clientWidth);this.height=Math.max(1,this.canvas.parentElement.clientHeight);
@@ -41,9 +53,9 @@ export class Renderer {
     this.camera.y+=(clamp(p.y,halfH,this.bounds.height-halfH)-this.camera.y)*follow;
     this.shake=Math.max(0,this.shake-dt*20);
     c.setTransform(this.dpr,0,0,this.dpr,0,0);c.clearRect(0,0,this.width,this.height);c.fillStyle=PAINT.ink;c.fillRect(0,0,this.width,this.height);
-    c.save();c.translate(this.width/2+(this.reduced?0:Math.sin(time*90)*this.shake),this.height/2);c.scale(this.scale,this.scale);c.translate(-this.camera.x,-this.camera.y);
+    c.save();c.translate(this.width/2+(this.reduced?0:Math.sin(time*90)*this.shake),this.height/2+(this.reduced?0:Math.cos(time*113)*this.shake*.55));c.scale(this.scale,this.scale);c.translate(-this.camera.x,-this.camera.y);
     const left=this.camera.x-halfW,top=this.camera.y-halfH,right=left+2*halfW,bottom=top+2*halfH;
-    for(const zone of this.zones){c.fillStyle=PAINT.ground[zone.id];c.fillRect(zone.from,0,zone.to-zone.from,this.bounds.height);}
+    for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
     this.drawTerrain(w,time);
     this.drawPaint(w,{left,top,right,bottom});
     // A surveying grid and hand-placed route make the map readable at a glance.
@@ -52,12 +64,16 @@ export class Renderer {
     for(let y=Math.floor(top/48)*48;y<bottom;y+=48){c.strokeStyle=y%240===0?'#30244d18':'#30244d08';c.beginPath();c.moveTo(Math.max(0,left),y);c.lineTo(Math.min(this.bounds.width,right),y);c.stroke();}
     for(let i=0;i<170;i++) {
       const x=(i*397+87)%this.bounds.width,y=(i*263+133)%this.bounds.height;if(!this.visible(x,y,20))continue;
-      c.fillStyle=['#12b99c44','#b98d1744','#a365c444'][zoneAt(x,this.zones).id];c.fillRect(x,y,3+(i%5)*3,2);c.fillRect(x+4,y+9,2,6);
+      c.fillStyle=['#12b99c44','#b98d1744','#a365c444'][zoneAt({x,y},this.zones).risk];c.fillRect(x,y,3+(i%5)*3,2);c.fillRect(x+4,y+9,2,6);
       if(i%3===0){c.strokeStyle='#624f9c28';c.beginPath();c.arc(x,y,9,0,TAU);c.stroke();}
     }
-    for(const x of [this.zones[0].to,this.zones[1].to]){c.setLineDash([7,13]);c.strokeStyle=x===this.zones[0].to?'#e6ac18bb':'#d92791bb';c.beginPath();c.moveTo(x,0);c.lineTo(x,this.bounds.height);c.stroke();c.setLineDash([]);}
-    c.strokeStyle='#36274699';c.lineWidth=2;c.strokeRect(12,12,this.bounds.width-24,this.bounds.height-24);
-    for(const zone of this.zones){if(this.visible(zone.from+250,850,400)){this.text(`0${zone.id+1} / ${zone.en}`,zone.from+100,820,20,zone.color+'88','500','left');this.text('NO SIGNAL BEYOND THE BORDER',zone.from+100,841,8,PAINT.ink+'77','400','left');}}
+    c.setLineDash([14,9]);c.lineWidth=3;
+    for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.strokeStyle=zone.color+'bb';c.stroke();}
+    c.setLineDash([]);c.strokeStyle=PAINT.ink+'77';c.lineWidth=2;c.strokeRect(12,12,this.bounds.width-24,this.bounds.height-24);
+    for(const zone of this.zones){if(zone.center&&this.visible(zone.center.x,zone.center.y,350)){
+      this.text(`${zone.en} / ${zone.riskLabel}`,zone.center.x,zone.center.y-22,20,zone.color+'99','800');
+      this.text(zone.name,zone.center.x,zone.center.y+5,25,PAINT.ink+'45','800','center','sans-serif');
+    }}
     c.setLineDash([3,9]);c.strokeStyle='#36274688';c.lineWidth=1;c.beginPath();c.moveTo(260,1060);c.lineTo(655,1060);c.stroke();c.setLineDash([]);
     this.text('ENTRY / 001',245,1120,9,'#362746aa','400','left');
     for(const mark of w.spawnWarnings||[]){
@@ -85,10 +101,22 @@ export class Renderer {
         const badgeWidth=Math.min(190,Math.max(42,e.text.length*11));
         this.rect(e.x-badgeWidth/2,e.y-progress*25-15,badgeWidth,22,5,PAINT.ink);
         this.text(e.text,e.x+1,e.y-progress*25+1,14,PAINT.ink,'800');
-        this.text(e.text,e.x,e.y-progress*25,14,e.color,'700');
+        this.text(e.text,e.x,e.y-progress*25,e.heavy?18:14,e.color,'900');
+      }
+      else if(e.kind==='hit-spark'){
+        const count=e.strength>=.9?10:6;c.strokeStyle=e.color;c.lineWidth=e.strength>=.9?3:2;
+        for(let i=0;i<count;i++){
+          const a=(e.angle||0)+i*TAU/count+(e.seed||0)*.017,r=(e.radius||30)*progress;
+          c.beginPath();c.moveTo(e.x+Math.cos(a)*r*.35,e.y+Math.sin(a)*r*.35);c.lineTo(e.x+Math.cos(a)*(r+8),e.y+Math.sin(a)*(r+8));c.stroke();
+        }
+      }else if(e.kind==='shatter'){
+        for(let i=0;i<8;i++){const a=i*TAU/8+(e.seed||0)*.01,r=e.radius*progress;this.rect(e.x+Math.cos(a)*r-3,e.y+Math.sin(a)*r-3,6*(1-progress)+1,6*(1-progress)+1,1,i%2?PAINT.yellow:PAINT.pink,PAINT.ink);}
       }
       else if(e.kind==='slash'){c.strokeStyle=e.color;c.lineWidth=5*(1-progress)+1;c.beginPath();c.arc(e.x,e.y,e.radius*(.8+progress*.2),e.angle-e.arc/2,e.angle+e.arc/2);c.stroke();}
-      else if(e.kind==='muzzle'){c.fillStyle=e.color;c.beginPath();c.arc(e.x+Math.cos(e.angle)*29,e.y+Math.sin(e.angle)*29,5,0,TAU);c.fill();}
+      else if(e.kind==='muzzle'){
+        c.save();c.translate(e.x+Math.cos(e.angle)*37,e.y+Math.sin(e.angle)*37);c.rotate(e.angle);c.fillStyle=PAINT.yellow;c.strokeStyle=PAINT.ink;c.lineWidth=1;
+        c.beginPath();c.moveTo(-3,-5);c.lineTo(8,-3);c.lineTo(18,0);c.lineTo(8,3);c.lineTo(-3,5);c.lineTo(2,0);c.fill();c.stroke();c.restore();
+      }
       else {if(e.kind==='impact')this.inkSplat(e.x,e.y,(e.radius||64)*(.45+progress*.5),PAINT.orange,progress,Math.min(.6,e.life/e.maxLife));c.strokeStyle=e.color;c.lineWidth=e.kind==='impact'?3:2;c.beginPath();c.arc(e.x,e.y,e.kind==='pulse'?22+progress*90:(e.radius||64)*(.8+progress*.2),0,TAU);c.stroke();}
     }
     c.globalAlpha=1;c.restore();
@@ -161,7 +189,7 @@ export class Renderer {
     c.restore();
   }
   drawObstacle(o) {
-    const c=this.ctx,zone=zoneAt(o.x,this.zones).id;
+    const c=this.ctx,zone=zoneAt({x:o.x+o.w/2,y:o.y+o.h/2},this.zones).risk;
     if(o.material==='tree'){
       this.rect(o.x+10,o.y+7,13,30,3,'#884f6b');c.fillStyle='#73d78c';c.strokeStyle=PAINT.ink;c.beginPath();c.arc(o.x+17,o.y+8,29,0,TAU);c.fill();c.stroke();return;
     }
@@ -247,8 +275,9 @@ export class Renderer {
     const c=this.ctx,strong=e.value>p.value,s=(e.radius||21)*2-1;
     const fills={hunter:PAINT.orange,scout:PAINT.pink,brute:PAINT.purple,sentry:'#ffbf42',gunner:'#fd70b3',charger:'#ff795b',bomber:PAINT.yellow,sniper:'#ab79ff',skirmisher:'#ea69ed',medic:'#65e398',summoner:'#b895ff',orbiter:'#ff9e4a'};
     const fill=fills[e.type]||PAINT.pink,stroke=PAINT.ink;
+    const flash=this.reduced?0:clamp((e.hitFlash||0)/.105,0,1),sw=s*(1+flash*.13),sh=s*(1-flash*.1);
     c.lineWidth=3;this.rect(e.x-s/2+4,e.y-s/2+6,s,s,8,'#241b3a55');
-    this.rect(e.x-s/2,e.y-s/2,s,s,8,e.stun>0?'#d8c0ff':fill,stroke);
+    this.rect(e.x-sw/2,e.y-sh/2,sw,sh,8,flash>.25?'#fffefa':e.stun>0?'#d8c0ff':fill,stroke);
     c.fillStyle='#ffffff88';c.fillRect(e.x-14,e.y-15,28,4);
     this.text(String(e.value),e.x,e.y+7,e.value>=100?16:21,PAINT.ink,'900');
     const definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
@@ -273,7 +302,9 @@ export class Renderer {
     if(t>=4){c.strokeStyle=tint+'66';c.lineWidth=1;c.strokeRect(p.x-25,p.y-25,50,50);}
     this.text(String(p.value),p.x,p.y+8,p.value>=1000?13:p.value>=100?17:24,PAINT.ink,'600');
     this.text('YOU',p.x,p.y-33,10,PAINT.ink,'900');
-    const equipped=activeWeapon(p),weapon=weaponOf(equipped);c.save();c.translate(p.x,p.y);c.rotate(p.aimAngle);
+    const equipped=activeWeapon(p),weapon=weaponOf(equipped);c.save();c.translate(p.x,p.y);
+    const kick=clamp((p.recoil||0)/(p.recoilMax||.1),0,1);c.rotate(p.aimAngle+(weapon.mode==='melee'?Math.sin(kick*Math.PI)*.5:0));
+    c.translate(-kick*(weapon.mode==='ranged'?8:2),0);
     if(weapon.mode==='ranged'){
       const length={pistol:20,smg:25,rifle:33,sniper:44,shotgun:31,railgun:48,carbine:32,lmg:40,crossbow:34,grenade:26}[equipped.weapon]||25;
       this.rect(14,-5,length,10,2,'#302541',rarityOf(equipped.rarity).color);
@@ -304,7 +335,7 @@ export class Renderer {
   drawMap(raid) {
     const c=this.mctx,w=this.map.width,h=this.map.height,sx=w/this.bounds.width,sy=h/this.bounds.height;
     c.clearRect(0,0,w,h);
-    for(const z of this.zones){c.fillStyle=['#b8dace','#ebddb2','#dabde5'][z.id];c.fillRect(z.from*sx,0,(z.to-z.from)*sx,h);}
+    for(const z of this.zones){if(!z.vertices)continue;polygon(c,z.vertices,sx,sy);c.fillStyle=z.floor;c.fill();c.strokeStyle=z.color;c.lineWidth=1;c.stroke();}
     for(const patch of raid.world.terrain||[]){c.fillStyle=(TERRAIN[patch.kind]?.line||'#93734d')+'55';c.fillRect(patch.x*sx,patch.y*sy,patch.w*sx,patch.h*sy);}
     for(const o of raid.world.obstacles){c.fillStyle='#3f315b88';c.fillRect(o.x*sx,o.y*sy,o.w*sx,o.h*sy);}
     for(const site of raid.world.sites||[]){c.fillStyle='#603bc799';c.fillRect(site.x*sx-1,site.y*sy-1,2,2);}

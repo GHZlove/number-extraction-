@@ -73,3 +73,13 @@ export function equipmentValue(player) {
 export function activeWeapon(player) {
   return player.weapons[player.activeSlot] || player.weapons[0];
 }
+
+// Feedback affects displacement and presentation, never the number damage formula.
+export const HIT_FEEDBACK = Object.freeze({
+  contact:{knock:0,strength:.35,stop:0},pistol:{knock:95,strength:.45,stop:0},smg:{knock:42,strength:.3,stop:0},
+  rifle:{knock:80,strength:.5,stop:0},carbine:{knock:50,strength:.4,stop:0},lmg:{knock:65,strength:.5,stop:0},
+  sniper:{knock:240,strength:1.05,stop:.025},shotgun:{knock:48,strength:.9,stop:.025},railgun:{knock:240,strength:1.1,stop:.03},
+  crossbow:{knock:170,strength:.65,stop:0},grenade:{knock:260,strength:1.2,stop:.03},
+  greatsword:{knock:250,strength:1,stop:.03},dualblades:{knock:75,strength:.55,stop:0},spear:{knock:180,strength:.7,stop:.016},
+  warhammer:{knock:350,strength:1.35,stop:.03},
+});

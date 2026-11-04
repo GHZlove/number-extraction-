@@ -38,10 +38,10 @@ export class PressureDirector {
         if(isFree(pos.x,pos.y,34,obstaclesFor(w,pos,pos,34),w.bounds)&&w.spawnWarnings.every(other=>distance(other,pos)>65)&&w.enemies.every(e=>e.dead||distance(e,pos)>65)){point=pos;break;}
       }
       if(!point)continue;
-      const type=this.enemyType(raid.elapsed),zone=zoneAt(point.x,w.zones),tier=Math.min(11,1+zone.id+this.difficulty.enemyShift+Math.floor(raid.elapsed/70));
+      const type=this.enemyType(raid.elapsed),zone=zoneAt(point,w.zones),tier=Math.min(11,1+zone.risk+this.difficulty.enemyShift+Math.floor(raid.elapsed/70));
       const elite=i===0&&raid.elapsed>30&&this.wave%3===0,offset=elite?2:this.random()<.35?-1:0;
       const value=2**Math.max(0,Math.min(13,tier+offset));
-      w.spawnWarnings.push({...point,id:`horde-${++this.serial}`,type,value,zone:zone.id,elite,readyAt:raid.elapsed+PRESSURE.warningSeconds,duration:PRESSURE.warningSeconds,moveScale:(.9+this.random()*.2)*(1+(this.difficulty.rank-1)*.04)});
+      w.spawnWarnings.push({...point,id:`horde-${++this.serial}`,type,value,zone:zone.risk,sectorId:zone.id,elite,readyAt:raid.elapsed+PRESSURE.warningSeconds,duration:PRESSURE.warningSeconds,moveScale:(.9+this.random()*.2)*(1+(this.difficulty.rank-1)*.04)});
     }
   }
   update(raid,dt){
@@ -53,7 +53,7 @@ export class PressureDirector {
       mark.done=true;
       if(near>=cap||w.enemies.filter(e=>!e.dead).length>=640||distance(mark,p)<PRESSURE.safetyRadius||!isFree(mark.x,mark.y,30,obstaclesFor(w,mark,mark,30),w.bounds)||w.enemies.some(e=>!e.dead&&distance(e,mark)<50))continue;
       const e=createEnemy(mark.id,mark.x,mark.y,mark.value,mark.type);
-      Object.assign(e,{horde:true,elite:mark.elite,zone:mark.zone,moveScale:mark.moveScale,aggro:8,cooldown:.4,rarity:mark.elite?'yellow':'white'});
+      Object.assign(e,{horde:true,elite:mark.elite,zone:mark.zone,sectorId:mark.sectorId,moveScale:mark.moveScale,aggro:8,cooldown:.4,rarity:mark.elite?'yellow':'white'});
       w.enemies.push(e);this.spawned++;near++;
     }
     w.spawnWarnings=w.spawnWarnings.filter(mark=>!mark.done);
@@ -64,7 +64,7 @@ export class PressureDirector {
     }
     const profile=this.profile(raid.elapsed);
     if(raid.elapsed>=this.nextPulse){
-      this.wave++;this.enqueue(raid,Math.ceil(profile.batch*(raid.elapsed<this.surgeUntil?1.5:1)),profile);this.nextPulse=raid.elapsed+profile.interval;
+      const risk=zoneAt(p,w.zones).risk;this.wave++;this.enqueue(raid,Math.ceil(profile.batch*(1+risk*.15)*(raid.elapsed<this.surgeUntil?1.5:1)),profile);this.nextPulse=raid.elapsed+profile.interval/(1+risk*.1);
     }
     this.cleanup+=dt;
     if(this.cleanup>=PRESSURE.cleanupSeconds){

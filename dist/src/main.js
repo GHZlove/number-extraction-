@@ -56,7 +56,7 @@ function handleEvents(){
   for(const event of raid.events.splice(0)){
     if(event.type==='message')ui.toast(event.text);
     else if(event.type==='finish'){if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
-    else{sound.play(event.type);if(event.type==='hurt')renderer.shake=4;}
+    else{sound.play(event.type,event);renderer.feedback(event);}
   }
 }
 function autoPause(){if(view==='raid'&&!paused)show('pause');}

@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.5.0';
+export const VERSION = '0.6.0';
 export const LEGACY_WORLD = Object.freeze({ width: 3200, height: 2000 });
 export const WORLD = Object.freeze({ width: 6400, height: 4000, spawn: { x: 300, y: 1060 } });
 export const RULES = Object.freeze({
@@ -41,9 +41,9 @@ export const ENEMY_TYPES = Object.freeze({
   sniper: { name: '狙击手', pattern: 'snipe', windup: 0.95, range: 690, cooldown: 1.8, speed: 0 },
 });
 export const ZONES = Object.freeze([
-  { id: 0, name: '边缘缓冲区', en: 'THE OUTSKIRTS', from: 0, to: WORLD.width/3, risk: '低危', color: '#00c9bd', reward: [14, 26], values: [1, 1, 2, 2, 4, 8] },
-  { id: 1, name: '失序工业带', en: 'THE FRACTURE', from: WORLD.width/3, to: WORLD.width*2/3, risk: '中危', color: '#ebbc10', reward: [35, 65], values: [2, 4, 4, 8, 16, 32] },
-  { id: 2, name: '零点核心', en: 'ZERO CORE', from: WORLD.width*2/3, to: WORLD.width, risk: '高危', color: '#e72b8d', reward: [80, 130], values: [8, 16, 16, 32, 64, 128] },
+  { id: 0, risk: 0, name: '边缘缓冲区', en: 'THE OUTSKIRTS', riskLabel: '低危', color: '#00c9bd', reward: [14, 26], values: [1, 1, 2, 2, 4, 8] },
+  { id: 1, risk: 1, name: '失序工业带', en: 'THE FRACTURE', riskLabel: '中危', color: '#ebbc10', reward: [35, 65], values: [2, 4, 4, 8, 16, 32] },
+  { id: 2, risk: 2, name: '零点核心', en: 'ZERO CORE', riskLabel: '高危', color: '#e72b8d', reward: [80, 130], values: [8, 16, 16, 32, 64, 128] },
 ]);
 export const LOOT = Object.freeze([
   { name: '数据碎片', short: 'DATA', color: '#00c9bd' },
