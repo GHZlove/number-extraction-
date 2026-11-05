@@ -1,8 +1,8 @@
-# 技术架构与学习路径 · v0.7
+# 技术架构与学习路径 · v0.8
 
 ## 1. 总体结构
 
-这是原生 HTML + CSS + JavaScript ES modules 项目。浏览器加载 `dist/index.html`，由 `src/main.js` 组装模块。不需要 npm 安装，也没有外部字体、图片、音频依赖。音效由 Web Audio 合成，默认关闭。
+这是原生 HTML + CSS + JavaScript ES modules 项目。浏览器加载 `dist/index.html`，由 `src/main.js` 组装模块。网页版不需要 npm 安装，也没有外部字体、图片、音频依赖。v0.8桌面打包使用锁定的Electron开发依赖，将同一游戏代码和运行时打包为EXE，详见 [桌面架构](DESKTOP_V08.md)。音效由 Web Audio 合成，默认关闭。
 
 | 文件 | 职责 | 适合你关注的原理 |
 |---|---|---|
@@ -26,6 +26,8 @@
 | `src/input.js` | 键盘、鼠标、触屏输入 | 事件与按住/单次触发 |
 | `src/renderer.js` | 摄像机、地图、方块、墨迹/特效、小地图 | 坐标变换与 Canvas 绘制 |
 | `src/ui.js` | 独立庇护所、出击准备、HUD 和弹窗 | 视图与业务状态分离 |
+| `src/save-transfer.js` | JSON校验、导出和导入前备份 | 数据边界、可恢复迁移 |
+| `desktop/*.cjs` | Electron入口、协议、预加载桥和原生启动检查 | 桌面进程隔离与固定来源 |
 | `src/storage.js` | 新旧存档迁移、校验与结算 | 序列化、边界校验、幂等 |
 | `src/audio.js` | 可关闭的武器/命中合成音效、事件限频 | Web Audio 包络、噪声与资源复用 |
 | `src/main.js` | 启动模块、主循环、暂停和事件分发 | 模块协作与依赖方向 |

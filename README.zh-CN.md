@@ -1,4 +1,4 @@
-# 数字进化 · Number Extraction v0.7.0
+# 数字进化 · Number Extraction v0.8.0
 
 **合成数字，启动过载，带资源撤离，建设庇护所。**
 
@@ -6,11 +6,22 @@
 
 项目使用原生 **JavaScript ES modules、HTML5 Canvas、CSS、Web Audio 与 localStorage** 实现，无第三方运行依赖。技术展示重点包括玩法系统设计、状态管理、程序地图、碰撞几何、空间查询、存档迁移和自动化验证。
 
-当前为 **v0.7.0 可玩原型**，包含四种地图、据点守卫、打造与四种附魔、十四类武器、十二类敌人、三种首领和五档难度，已通过 147 项自动测试。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
+当前为 **v0.8.0 可玩原型**，包含四种地图、据点守卫、打造与四种附魔、十四类武器、十二类敌人、三种首领和五档难度，已通过 157 项自动测试。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
 
-[English](README.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
+[English](README.md) · [v0.8桌面与战术UI](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
+
+## 桌面启动
+
+从 [GitHub Releases](https://github.com/GHZlove/number-extraction-/releases) 下载Windows x64的EXE，双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+
+浏览器进度可在v0.8网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
 
 ## 这一版的变化
+
+- **战术界面**：降低地面与面板饱和度，保留荧光方块和技能；普通敌人减少常驻名称/速度文字，新增独立首领血条。庇护所分为出击、基地、工坊三个页签。
+- **桌面版**：免安装EXE、独立窗口、全屏快捷键、固定存档目录、未结算退出确认。支持存档导入导出与备份恢复。
+
+## 保留的v0.7玩法
 
 - **据点守卫为主**：大部分敌人集中在资源点，野外只刷新少量巡游敌人，附近巡游最多十名。据点存活守卫可呼叫有限增援，清空后不再持续增援；守卫被拉远会返回。
 - **四种地图**：七巧遗迹、裂谷放射、补给街区、多心荒原，出击前可选或随机。区域数量为7–12块，布局、地标顺序、河道与风险会变化。
@@ -26,7 +37,7 @@
 
 ## 快速启动
 
-[下载 v0.7 完整试玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/strongholds-forge-v07.zip)。此版本位于独立试玩分支，主分支和线上游戏按各自发布进度更新。
+[下载 v0.8 网页版 / 源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/tactical-desktop-v08.zip)。此版本位于独立试玩分支，主分支和线上游戏按各自发布进度更新。
 
 需要 Python 3 和现代浏览器，无第三方依赖、无构建步骤。解压完整 ZIP 后，Windows 双击 `start-windows.bat`，保留命令窗口，打开 **http://localhost:8000**。
 
@@ -82,7 +93,7 @@ v0.7 将 v0.3–v0.6 的庇护所和资源自动迁移到独立存档，保留�
 
 拾取装备成功撤离后兑换资源，工坊基础装备每局重新发放且不可出售；本轮没有跨局装备仓库。死亡、超时或放弃不带出局内收益，保留已有庇护所资产。
 
-当前版本通过 21 个模块静态检查和 147 项自动测试。自动测试中的 DOM/Canvas/Web Audio 使用替身，不等于真实浏览器、视觉、触控、音质或帧率验收；长时间游玩与经济平衡仍需试玩反馈。
+当前版本通过 22 个游戏模块和4个桌面文件静态检查和 157 项自动测试。自动测试中的 DOM/Canvas/Web Audio 使用替身，不等于真实浏览器、视觉、触控、音质或帧率验收；长时间游玩与经济平衡仍需试玩反馈。
 
 ## 开发与文档
 
@@ -93,6 +104,6 @@ npm run check
 npm test
 ```
 
-无需 npm install。代码位于 `dist/src/`，静态入口 `dist/index.html`，样式 `dist/style.css`，测试位于 `tests/`。共有 21 个模块，边界见 [架构](docs/ARCHITECTURE.md)。[v0.7 规则](docs/STRONGHOLDS_V07.md) 记录据点、打造、附魔、商人、首领和弹反，[v0.4 规则](docs/EXPANSION_V04.md) 记录地形、敌人与武器，[v0.3 规则](docs/SHELTER_V03.md) 保留设施与技能基础，[v0.2 规则](docs/COMBAT_V02.md) 保留战斗基础，[原始设计](docs/GAME_DESIGN.md) 保留 v0.1 历史。
+无需 npm install。代码位于 `dist/src/`，静态入口 `dist/index.html`，样式 `dist/style.css`，测试位于 `tests/`。共有 22 个游戏模块和4个桌面文件，边界见 [架构](docs/ARCHITECTURE.md)。[v0.7 规则](docs/STRONGHOLDS_V07.md) 记录据点、打造、附魔、商人、首领和弹反，[v0.4 规则](docs/EXPANSION_V04.md) 记录地形、敌人与武器，[v0.3 规则](docs/SHELTER_V03.md) 保留设施与技能基础，[v0.2 规则](docs/COMBAT_V02.md) 保留战斗基础，[原始设计](docs/GAME_DESIGN.md) 保留 v0.1 历史。
 
-项目尚未选择开源许可证，托管试玩仍限制访问。
+项目尚未选择开源许可证，托管试玩仍限制访问。桌面开发与构建需要安装package-lock锁定的开发依赖，详见桌面文档。
