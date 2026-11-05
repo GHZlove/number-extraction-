@@ -9,6 +9,7 @@ body { background:radial-gradient(ellipse at 15% 0,#16313a55,transparent 45%),va
 .shelter-screen .brand small { color:var(--muted); }
 .shelter-screen .resource-chip { background:#12202b;border:1px solid var(--line);color:var(--text);box-shadow:none;min-width:112px;border-radius:10px; }
 .shelter-screen .resource-chip small { color:var(--muted); }.shelter-screen .resource-chip b { font-size:18px; }
+.shelter-screen .resource-chip .icon { color:var(--mint); }.shelter-screen .resource-chip.alloy .icon { color:#8cbbe1; }.shelter-screen .resource-chip.core .icon { color:#ba9be3; }
 .shelter-tabs { display:flex;gap:8px;padding:5px;background:#0f1b27;border:1px solid var(--line);border-radius:12px;margin-bottom:20px; }
 .shelter-tabs button { flex:1;text-align:left;padding:12px 17px;background:transparent;border:1px solid transparent;border-radius:8px;color:var(--muted); }
 .shelter-tabs button span { display:block;font-size:14px;font-weight:800; }.shelter-tabs button small { display:block;font:9px monospace;letter-spacing:2px;margin-top:5px; }
@@ -18,12 +19,14 @@ body { background:radial-gradient(ellipse at 15% 0,#16313a55,transparent 45%),va
 .shelter-screen .hero-heading h1 { color:var(--text);font-size:34px; }.shelter-screen .hero-heading p,.shelter-screen .hero-footer span { color:var(--muted); }
 .shelter-screen .eyebrow { color:#78a3ac;font-size:9px;background:none;border:0;transform:none;box-shadow:none;padding:0; }.shelter-screen .safe-tag { background:#123b35;color:#66e3c0;border:1px solid #275e52; }
 .shelter-screen .shelter-art { filter:saturate(.65) brightness(.82);margin-top:14px;max-height:310px; }
+.shelter-screen .shelter-hero::before { opacity:.15; }
 .shelter-screen .hero-footer { background:#101e2bcc;border-color:var(--line);color:var(--text); }.shelter-screen .hero-footer b { color:var(--text); }
 .shelter-screen .hero-stage i { background:#293e4c; }.shelter-screen .hero-stage i.on { background:var(--mint); }
 .shelter-screen .section-heading h2 { color:var(--text); }.shelter-screen .section-heading span { color:var(--muted); }
 .shelter-screen .facility-card,.shelter-screen .expedition-panel,.shelter-screen .forge-panel { background:var(--panel);border:1px solid var(--line);box-shadow:none;border-radius:14px;color:var(--text); }
 .shelter-screen .facility-title h3,.shelter-screen .forge-panel h2,.shelter-screen .expedition-panel h2 { color:var(--text); }
 .shelter-screen .facility-icon { background:#1b303b;border:1px solid #324956;color:var(--mint); }.shelter-screen .facility-level { color:#a9c3d3; }
+.shelter-screen .facility-icon { transform:none; }.shelter-screen .facility-level { background:#1a3043;border:1px solid #3c566c; }.shelter-screen .facility-title small { color:var(--muted); }
 .shelter-screen .facility-card p,.shelter-screen .facility-next,.shelter-screen .forge-panel p,.shelter-screen .forge-panel small { color:var(--muted); }
 .shelter-screen .upgrade-button { background:#173731;border:1px solid #2b5a4c;color:#8ce6c1; }.shelter-screen .upgrade-button:disabled { background:#17232e;color:#8496a5;opacity:.65; }
 .shelter-screen .stat-card { background:#101c28;border:1px solid var(--line);color:var(--text);box-shadow:none; }.shelter-screen .stat-card small { color:var(--muted); }
@@ -31,6 +34,7 @@ body { background:radial-gradient(ellipse at 15% 0,#16313a55,transparent 45%),va
 .shelter-screen .difficulty-list { gap:6px; }.shelter-screen .difficulty-card { background:#101b27;border:1px solid #293c4c;color:var(--text);padding:9px 11px; }
 .shelter-screen .difficulty-card.selected { background:#1a3037;border-color:#41656b;box-shadow:inset 3px 0 var(--difficulty); }.shelter-screen .difficulty-top { margin-bottom:0; }
 .shelter-screen .difficulty-top b { color:var(--text);font-weight:700; }.shelter-screen .difficulty-meta { margin-top:6px;color:var(--muted); }.shelter-screen .difficulty-meta span:last-child { color:#b4cfcd; }
+.shelter-screen .difficulty-top span { color:var(--difficulty); }
 .shelter-screen .difficulty-card:not(.selected) .difficulty-meta { display:none; }
 .shelter-screen .weapon-choice { margin-top:15px; }.shelter-screen .weapon-choice label,.shelter-screen .forge-panel label { color:#afc7d6;font-size:11px; }
 .shelter-screen select { background:#0d1925;color:var(--text);border:1px solid #3a5063;border-radius:8px;padding:10px 12px;font-size:12px; }
@@ -42,12 +46,14 @@ body { background:radial-gradient(ellipse at 15% 0,#16313a55,transparent 45%),va
 .shelter-screen .shelter-footer { color:#6f899e;font-size:10px;gap:14px; }.shelter-footer>div { display:flex;gap:18px; }.shelter-screen .shelter-footer button { color:#adc3d5; }
 .shelter-screen .run-report { background:#112d28;border:1px solid #2c5f50;box-shadow:none; }.shelter-screen .run-report.failed { background:#301f2a;border-color:#6c3b51; }
 .shelter-screen .run-report b { color:var(--text); }.shelter-screen .run-report p { color:var(--muted); }.shelter-screen .run-rewards { color:#91e8c3; }
+.shelter-screen .run-report .icon { color:var(--mint); }.shelter-screen .run-report.failed .icon { color:var(--red); }
 .shelter-screen[data-tab="deploy"] .section-heading,.shelter-screen[data-tab="deploy"] .facilities-grid,.shelter-screen[data-tab="deploy"] .forge-panel,.shelter-screen[data-tab="deploy"] .shelter-stats { display:none; }
 .shelter-screen[data-tab="base"] .shelter-layout,.shelter-screen[data-tab="forge"] .shelter-layout { grid-template-columns:1fr; }
 .shelter-screen[data-tab="base"] .shelter-hero,.shelter-screen[data-tab="base"] .forge-panel,.shelter-screen[data-tab="base"] .expedition-panel { display:none; }
 .shelter-screen[data-tab="base"] .facilities-grid { grid-template-columns:repeat(4,1fr); }.shelter-screen[data-tab="base"] .section-heading { margin-top:8px; }
 .shelter-screen[data-tab="forge"] .shelter-hero,.shelter-screen[data-tab="forge"] .section-heading,.shelter-screen[data-tab="forge"] .facilities-grid,.shelter-screen[data-tab="forge"] .shelter-stats,.shelter-screen[data-tab="forge"] .expedition-panel { display:none; }
 .shelter-screen .forge-panel { margin:0;max-width:850px;padding:28px; }.shelter-screen .forge-panel h2 { margin-bottom:22px; }.shelter-screen .forge-panel select { max-width:500px; }.shelter-screen .forge-panel .upgrade-button { max-width:500px;margin-top:20px; }
+.shelter-screen .forge-panel select { background:#0d1925;color:var(--text);border:1px solid #3a5063; }
 .dialog { background:#121f2d;border:1px solid #385268;color:var(--text);box-shadow:0 24px 80px #0009;border-radius:16px; }.dialog h2 { color:var(--text); }.dialog p { color:#a1b8cb; }
 .primary-button { background:var(--mint);color:#072923;border:1px solid #68eddd;box-shadow:none; }.secondary-button { background:#1b3042;color:var(--text);border:1px solid #36516a;box-shadow:none; }
 .rule-card,.equipped-card,.inventory-item { background:#172a3b;border:1px solid #354b60;box-shadow:none;color:var(--text); }.equipped-card b,.inventory-item b { color:var(--text); }
