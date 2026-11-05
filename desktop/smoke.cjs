@@ -24,8 +24,9 @@ async function run(window,app) {
   if (!paused) throw Error('Pause control failed');
   if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem('number-extraction-v07',JSON.stringify({version:3,credits:37,materials:{alloy:0,core:0},shelter:{},lastRuns:[]}));`);
   await window.webContents.session.flushStorageData();
+  await delay(300);
   if (errors.length) throw Error(errors.join('\n'));
   await report({ok:true,shelter,raid,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
-  app.exit(0);
+  app.quit();
 }
 module.exports = {run,report};

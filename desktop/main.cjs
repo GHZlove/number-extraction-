@@ -7,8 +7,9 @@ const smoke = process.env.NUMBER_EXTRACTION_SMOKE === '1';
 let window = null, raidActive = false;
 app.setName('Number Extraction');
 app.setAppUserModelId('io.github.ghzlove.numberextraction');
-if (smoke && process.env.NUMBER_EXTRACTION_SMOKE_PROFILE) app.setPath('userData',path.resolve(process.env.NUMBER_EXTRACTION_SMOKE_PROFILE));
-else app.setPath('userData',path.join(app.getPath('appData'),'NumberExtraction'));
+const userData = smoke && process.env.NUMBER_EXTRACTION_SMOKE_PROFILE ? path.resolve(process.env.NUMBER_EXTRACTION_SMOKE_PROFILE) : path.join(app.getPath('appData'),'NumberExtraction');
+require('node:fs').mkdirSync(userData,{recursive:true});
+app.setPath('userData',userData);
 protocol.registerSchemesAsPrivileged([{scheme:'nextract',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,codeCache:true}}]);
 
 async function handleAsset(request) {
