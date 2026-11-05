@@ -329,7 +329,7 @@ export class Renderer {
       this.text(`BOSS / 阶段 ${e.bossPhase}`,e.x,e.y+s/2+48,12,PAINT.ink,'900');
     }
     if(e.poisoned>0)this.text('毒',e.x+s/2+12,e.y-16,14,'#bbf16c','900');
-    if(definition.glyph)this.text(definition.glyph,e.x+s/2+12,e.y+5,16,PAINT.ink,'900');
+    if(named&&definition.glyph)this.text(definition.glyph,e.x+s/2+12,e.y+5,16,PAINT.ink,'900');
     if(selected&&definition.speed)this.text(`${Math.round(e.chaseSpeed??definition.speed*(e.moveScale||1))}速`,e.x,e.y+s/2+27,8,'#9db4c4','500','center','sans-serif');
     if(['sentry','gunner','sniper'].includes(e.type)){c.fillStyle=stroke;c.fillRect(e.x-3,e.y-28,6,10);}
     if(e.armor?.durability>0){this.rect(e.x-20,e.y+36,40,3,1,'#142c3f');this.rect(e.x-20,e.y+36,40*e.armor.durability/e.armor.maxDurability,3,1,'#25bdff');}
@@ -375,9 +375,9 @@ export class Renderer {
   drawExitArrow(raid) {
     const c=this.ctx,p=raid.player,exit=[...raid.world.exits].sort((a,b)=>distance(p,a)-distance(p,b))[0];
     if(distance(p,exit)<100)return;
-    const x=25,y=this.height-(matchMedia('(pointer: coarse)').matches?245:155);
-    c.save();c.translate(x+9,y-3);c.rotate(Math.atan2(exit.y-p.y,exit.x-p.x));c.fillStyle=PAINT.ink;c.beginPath();c.moveTo(7,0);c.lineTo(-5,-5);c.lineTo(-2,0);c.lineTo(-5,5);c.fill();c.restore();
-    this.text(`${exit.name} · 距离 ${Math.round(distance(p,exit))}`,x+24,y,9,PAINT.ink,'400','left','sans-serif');
+    const x=25,y=this.height-(matchMedia('(pointer: coarse)').matches?290:190);
+    c.save();c.translate(x+9,y-3);c.rotate(Math.atan2(exit.y-p.y,exit.x-p.x));c.fillStyle='#bed3df';c.beginPath();c.moveTo(7,0);c.lineTo(-5,-5);c.lineTo(-2,0);c.lineTo(-5,5);c.fill();c.restore();
+    this.text(`${exit.name} · 距离 ${Math.round(distance(p,exit))}`,x+24,y,9,'#bed3df','400','left','sans-serif');
   }
   drawMap(raid) {
     const c=this.mctx,w=this.map.width,h=this.map.height,sx=w/this.bounds.width,sy=h/this.bounds.height;
