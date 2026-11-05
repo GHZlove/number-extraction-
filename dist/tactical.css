@@ -1,6 +1,5 @@
 /* v0.8: quiet surfaces, bright combat signals, one task per shelter tab. */
-:root { --bg:#0b111a;--panel:#121d2a;--panel-2:#192838;--line:#2c3e50;--text:#e6f0f6;--muted:#8da4b9;--mint:#2cddca;--gold:#f1cf65;--red:#ff6d87;--ink:#0a111c;--paper:#ecf5f8; }
-body[data-screen="shelter"],body[data-screen="raid"] { --bg:#0b111a;--panel:#121d2a;--panel-2:#192838;--line:#2c3e50;--text:#e6f0f6;--muted:#8da4b9;--mint:#2cddca;--gold:#f1cf65;--red:#ff6d87;--ink:#0a111c;--paper:#ecf5f8; }
+:root,.shelter-screen { color-scheme:dark;--bg:#0b111a;--panel:#121d2a;--panel-2:#192838;--line:#2c3e50;--text:#e6f0f6;--muted:#8da4b9;--mint:#2cddca;--gold:#f1cf65;--red:#ff6d87;--ink:#0a111c;--paper:#ecf5f8; }
 body { background:radial-gradient(ellipse at 15% 0,#16313a55,transparent 45%),var(--bg); }
 .shelter-screen { max-width:1400px;padding:28px 32px; }
 .shelter-screen .shelter-top { border-color:var(--line);margin-bottom:18px;padding-bottom:18px; }
