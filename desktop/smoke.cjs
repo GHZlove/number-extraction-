@@ -7,8 +7,15 @@ async function report(value) { await fs.writeFile(file(),JSON.stringify(value,nu
 async function run(window,app) {
   const errors=[];window.webContents.on('console-message',details => { if (details.level === 'error') errors.push(String(details.message)); });
   await delay(600);
-  const shelter = await window.webContents.executeJavaScript(`({screen:document.body.dataset.screen,start:!!document.querySelector('[data-action="start"]'),bridge:window.numberExtractionDesktop?.isDesktop===true,node:typeof window.require,credits:JSON.parse(localStorage.getItem('number-extraction-v07')||'null')?.credits})`);
+  const shelter = await window.webContents.executeJavaScript(`(() => {
+    const button=document.querySelector('[data-action="start"]'),box=button?.getBoundingClientRect();
+    const rgb=element=>getComputedStyle(element).color.match(/[0-9.]+/g).slice(0,3).map(Number);
+    const luminance=parts=>parts.map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
+    const fg=luminance(rgb(document.querySelector('.brand strong'))),bg=luminance([11,17,26]);
+    return {screen:document.body.dataset.screen,start:!!button,startVisible:!!box&&box.top>=0&&box.bottom<=innerHeight,brandContrast:(Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05),bridge:window.numberExtractionDesktop?.isDesktop===true,node:typeof window.require,credits:JSON.parse(localStorage.getItem('number-extraction-v07')||'null')?.credits};
+  })()`);
   if (shelter.screen !== 'shelter' || !shelter.start || !shelter.bridge || shelter.node !== 'undefined') throw Error('Invalid shelter startup: '+JSON.stringify(shelter));
+  if (!shelter.startVisible || shelter.brandContrast < 4.5) throw Error('Shelter controls are not readable/visible: '+JSON.stringify(shelter));
   if (process.env.NUMBER_EXTRACTION_SMOKE_MODE === 'verify' && shelter.credits !== 37) throw Error('Saved progress did not survive restart');
   await fs.writeFile(file().replace(/\.json$/, '-shelter.png'),(await window.webContents.capturePage()).toPNG());
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="start"]').click();`);
