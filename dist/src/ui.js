@@ -13,7 +13,7 @@ const costHTML = cost => `<span>${icon('data')}${number(cost.credits)}</span><sp
 
 export class UI {
   constructor(actions) {
-    this.actions = actions; this.toastUntil = 0;
+    this.actions = actions; this.toastUntil = 0;this.shelterTab='deploy';
     const dispatch = event => {
       const button = event.target.closest('[data-action]');
       if (button && !button.disabled) actions[button.dataset.action]?.(button.dataset.key);
@@ -41,9 +41,12 @@ export class UI {
   toast(text) { $('message').textContent=text;$('message').classList.add('visible');this.toastUntil=performance.now()+3800; }
   tick() { if(performance.now()>this.toastUntil)$('message').classList.remove('visible'); }
   warning(available) { return available?'':'<p class="save-warning">当前浏览器无法持久保存。进度仅在本次会话中有效。</p>'; }
+  saveTransfer(save,pending){
+    this.show(`<span class="eyebrow">SAVE / TRANSFER</span><h2 id="dialog-title">存档与迁移</h2><p>当前：${number(save.credits)} 数据币 · ${save.materials.alloy} 合金 · ${save.materials.core} 核心 · ${Object.keys(save.forged||{}).length} 件打造记录。</p><p>浏览器与桌面版各自保存进度。先在原版导出JSON，再在桌面版导入。未结束的战局不包含在存档中。</p><div class="dialog-actions"><button class="primary-button" data-action="exportSave">导出存档</button><button class="secondary-button" data-action="importSave">选择JSON导入</button></div>${pending?`<section class="save-preview"><b>待导入：${number(pending.credits)} 数据币 · ${pending.materials.alloy} 合金 · ${pending.materials.core} 核心</b><p>${Object.keys(pending.forged||{}).length} 件打造记录。确认后替换当前进度，原进度会先备份。</p><button class="primary-button" data-action="confirmImport">确认导入</button></section>`:''}<div class="dialog-actions"><button class="secondary-button" data-action="restoreBackup">查看导入前备份</button><button class="secondary-button" data-action="close">返回庇护所</button></div>`,true);
+  }
   forgePanel(save){
     const cost=forgeCost(save),owned=save.forged?.[save.selectedWeapon],weapon=WEAPONS[save.selectedWeapon];
-    return `<section class="forge-panel"><span class="eyebrow">FORGE / PERMANENT LOADOUT</span><h2>打造 · ${weapon.name}</h2><p>打造当前出击武器，最高 Lv.5。每级伤害 +8%，击退增强。打造记录永久保存，每次出击重新发放；死亡保留打造进度。</p><p>${owned?`当前 Lv.${owned.level} · ${ENCHANTS[owned.enchant].name}`:'尚未打造 · 第一次打造获得 Lv.1'}</p><label for="enchant-choice">此次打造附魔</label><select id="enchant-choice" data-action="selectEnchant">${Object.entries(ENCHANTS).map(([key,e])=>`<option value="${key}" ${key===save.selectedEnchant?'selected':''}>${e.name}</option>`).join('')}</select><p>${ENCHANTS[save.selectedEnchant].description}</p><button class="upgrade-button" data-action="forge" ${canForge(save)?'':'disabled'}><b>${cost?(owned?.level===5?'重铸附魔':'打造 / 升至 Lv.'+((owned?.level||0)+1)):'已达 Lv.5'}</b>${cost?`<span class="cost-list">${costHTML(cost)}</span>`:''}</button><small>更换出击武器可打造其他类型。升级时可选择新的附魔，满级后可付费重铸附魔。战局拾取装备仍在撤离时兑换资源。</small></section>`;
+    return `<section class="forge-panel"><span class="eyebrow">FORGE / PERMANENT LOADOUT</span><h2>打造 · ${weapon.name}</h2><label for="forge-weapon-choice">选择打造武器</label><select id="forge-weapon-choice" data-action="selectWeapon">${Object.entries(WEAPONS).map(([key,w])=>`<option value="${key}" ${key===save.selectedWeapon?'selected':''} ${w.unlock>facilityLevel(save,'workshop')?'disabled':''}>${w.name}${w.unlock>facilityLevel(save,'workshop')?' · 工坊Lv.'+w.unlock+'解锁':''}</option>`).join('')}</select><p>打造当前出击武器，最高 Lv.5。每级伤害 +8%，击退增强。打造记录永久保存，每次出击重新发放；死亡保留打造进度。</p><p>${owned?`当前 Lv.${owned.level} · ${ENCHANTS[owned.enchant].name}`:'尚未打造 · 第一次打造获得 Lv.1'}</p><label for="enchant-choice">此次打造附魔</label><select id="enchant-choice" data-action="selectEnchant">${Object.entries(ENCHANTS).map(([key,e])=>`<option value="${key}" ${key===save.selectedEnchant?'selected':''}>${e.name}</option>`).join('')}</select><p>${ENCHANTS[save.selectedEnchant].description}</p><button class="upgrade-button" data-action="forge" ${canForge(save)?'':'disabled'}><b>${cost?(owned?.level===5?'重铸附魔':'打造 / 升至 Lv.'+((owned?.level||0)+1)):'已达 Lv.5'}</b>${cost?`<span class="cost-list">${costHTML(cost)}</span>`:''}</button><small>更换出击武器可打造其他类型。升级时可选择新的附魔，满级后可付费重铸附魔。战局拾取装备仍在撤离时兑换资源。</small></section>`;
   }
   shop(raid,id){
     const trader=raid.world.merchants.find(m=>m.id===id);if(!trader)return;
@@ -60,9 +63,11 @@ export class UI {
       const current=facilityLevel(save,key),cost=facilityCost(key,current),next=Math.min(current+1,definition.max);
       return `<article class="facility-card"><div class="facility-title"><span class="facility-icon">${icon(definition.icon)}</span><div><h3>${definition.name}</h3><small>${definition.en}</small></div><span class="facility-level">Lv.${String(current).padStart(2,'0')}</span></div><p>${facilityBenefit(key,current)}</p><div class="facility-next">${cost?'下一级：'+facilityBenefit(key,next):'设施已达到当前上限'}</div><button class="upgrade-button" data-action="upgradeFacility" data-key="${key}" ${canUpgradeFacility(save,key)?'':'disabled'}><span>${cost?'升级设施':'已满级'}</span>${cost?`<span class="cost-list">${costHTML(cost)}</span>`:''}</button></article>`;
     }).join('');
+    $('shelter-screen').dataset.tab=this.shelterTab;
     $('shelter-screen').innerHTML=`
       <header class="shelter-top"><div class="brand"><span class="brand-logo">n</span><div><strong>数字进化</strong><small>NUMBER EXTRACTION / SHELTER</small></div></div><div class="shelter-resources">${resources.map(([symbol,label,value,cls])=>`<div class="resource-chip ${cls}">${icon(symbol)}<div><small>${label}</small><b>${number(value)}</b></div></div>`).join('')}</div></header>
       ${reportHTML}${this.warning(saveAvailable)}
+      <nav class="shelter-tabs" aria-label="庇护所功能">${[['deploy','出击终端','OPERATIONS'],['base','基地设施','SHELTER'],['forge','武器工坊','WORKSHOP']].map(([key,label,en])=>`<button data-action="shelterTab" data-key="${key}" aria-pressed="${this.shelterTab===key}"><span>${label}</span><small>${en}</small></button>`).join('')}</nav>
       <div class="shelter-layout"><div class="shelter-main">
         <section class="shelter-hero"><div class="hero-heading"><div><span class="eyebrow">HOME / SECTOR ZERO</span><h1>第零庇护所</h1><p>带资源回来。让下一次出发更有准备。</p></div><span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span></div>${shelterArt(save)}<div class="hero-footer"><div><span>当前出击装备</span><b>${escapeHTML(loadout.weapons[0].name)} / ${escapeHTML(loadout.weapons[1].name)}</b></div><div><span>设施建设阶段</span><div class="hero-stage">${Array.from({length:10},(_,i)=>`<i class="${i<level?'on':''}"></i>`).join('')}</div></div></div></section>
         <div class="section-heading"><h2>庇护所设施</h2><span>资源投入，长期成长</span></div><section class="facilities-grid">${facilities}</section>
@@ -73,7 +78,7 @@ export class UI {
         <div class="weapon-choice"><label for="map-choice">地图布局</label><select id="map-choice" data-action="selectMap">${MAP_LAYOUTS.map(map=>`<option value="${map.id}" ${map.id===save.selectedMap?'selected':''}>${map.name}</option>`).join('')}</select></div><p class="deploy-note">${Object.keys(ENEMY_TYPES).length} 类敌人 + 3种首领 · ${Object.keys(WEAPONS).length} 类武器 · 4 个撤离点</p><div class="weapon-choice"><label for="starter-choice">工坊出击武器 · ${workshopGrade(save).name}品</label><select id="starter-choice" data-action="selectWeapon">${Object.entries(WEAPONS).map(([key,weapon])=>`<option value="${key}" ${key===save.selectedWeapon?'selected':''} ${weapon.unlock>facilityLevel(save,'workshop')?'disabled':''}>${weapon.name}${weapon.unlock>facilityLevel(save,'workshop')?' · 工坊Lv.'+weapon.unlock+'解锁':''}</option>`).join('')}</select><p>工坊 2 级配备基础护甲，4 级配备镭射。拾取装备在撤离后兑换资源，每次出击重新领取基础装备。</p></div>
         <div class="expedition-summary"><div><small>战区尺寸</small><b>${selected.width} × ${selected.height}</b></div><div><small>行动时限</small><b>${formatTime(selected.seconds)}</b></div><div><small>撤离开放</small><b>${formatTime(selected.extractAt)} 后</b></div><div><small>怪潮节奏</small><b>据点驻守 / 稀疏巡游</b></div><div><small>背包容量</small><b>${RULES.bagCapacity+facilityLevel(save,'storage')*2} 格</b></div><div><small>总收益倍率</small><b>×${rewardMultiplier(save,selected.id).toFixed(2)}</b></div></div>
         <button class="deploy-button" data-action="start"><span>确认出击</span>${icon('arrow')}</button><p class="deploy-note">成功撤离才带出资源 · 失败保留基地资产</p>
-      </aside></div><footer class="shelter-footer"><span>LOCAL SOLO / v${VERSION} · 进度保存在当前浏览器</span><button data-action="help">操作与战斗规则 ↗</button></footer>`;
+      </aside></div><footer class="shelter-footer"><span>${window.numberExtractionDesktop?'WINDOWS DESKTOP':'LOCAL SOLO'} / v${VERSION} · 进度保存在本机</span><div><button data-action="saves">存档 · 导入 / 导出</button><button data-action="help">操作与战斗规则 ↗</button></div></footer>`;
   }
   update(raid,save,started,paused) {
     const p=raid.player,zone=zoneAt(p,raid.world.zones),item=activeWeapon(p);
@@ -81,6 +86,8 @@ export class UI {
     $('player-value').style.fontSize=p.value>=1000?'22px':p.value>=100?'27px':'';
     $('health-value').textContent=Number(p.hp.toFixed(1));$('health-bar').style.width=`${p.hp}%`;
     $('health-bar').style.background=p.hp<30?'var(--red)':'var(--mint)';
+    const boss=raid.world.enemies.filter(e=>e.boss&&!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<950&&(e.hp<e.maxHp||e.state==='windup'||e.bossPhase===2)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+    $('boss-hud').hidden=!boss;if(boss){$('boss-name').textContent=boss.bossName;$('boss-stage').textContent=`阶段 ${boss.bossPhase}`;$('boss-health-fill').style.width=`${100*boss.hp/boss.maxHp}%`;$('boss-health-text').textContent=`${Math.ceil(boss.hp)} / ${boss.maxHp}`;}
     $('armor-name').textContent=p.armor?`${rarityOf(p.armor.rarity).name}品护甲`:'未穿护甲';
     $('armor-durability').textContent=p.armor?Math.ceil(p.armor.durability):'0';
     $('armor-fill').style.width=p.armor?`${100*p.armor.durability/p.armor.maxDurability}%`:'0';

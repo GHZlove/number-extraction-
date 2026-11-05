@@ -1,0 +1,12 @@
+{
+  "appId": "io.github.ghzlove.numberextraction",
+  "productName": "Number Extraction",
+  "executableName": "NumberExtraction",
+  "asar": true,
+  "npmRebuild": false,
+  "directories": {"output": "release", "buildResources": "build"},
+  "files": ["dist/**/*", "desktop/**/*", "package.json"],
+  "win": {"target": [{"target": "portable", "arch": ["x64"]}], "icon": "build/icon.ico"},
+  "portable": {"artifactName": "NumberExtraction-${version}-Windows-x64.exe", "requestExecutionLevel": "user", "unicode": true},
+  "publish": null
+}

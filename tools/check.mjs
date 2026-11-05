@@ -13,5 +13,10 @@ for(const file of await readdir(resolve(root,'dist/src'))){
   count++;
 }
 const html=await readFile(resolve(root,'dist/index.html'),'utf8');
+for(const file of await readdir(resolve(root,'desktop'))){
+  if(!file.endsWith('.cjs'))continue;
+  const result=spawnSync(process.execPath,['--check',resolve(root,'desktop',file)],{encoding:'utf8'});
+  if(result.status!==0)throw new Error(result.stderr);
+}
 for(const match of html.matchAll(/(?:src|href)="(\.\/[^"#]+)"/g))if(match[1]!=='./')await access(resolve(root,'dist',match[1]));
-console.log(`Validated syntax and local references for ${count} JavaScript modules and index.html.`);
+console.log(`Validated syntax and local references for ${count} game modules, 4 desktop files and index.html.`);

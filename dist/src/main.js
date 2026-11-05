@@ -8,17 +8,19 @@ import { readSave,settleRun,writeSave } from './storage.js';
 import { upgradeFacility,unlockedWeapons,forgeWeapon } from './shelter.js';
 import { ENCHANTS } from './equipment.js';
 import { buyFromMerchant } from './commerce.js';
+import { BACKUP_KEY, serializeSave, parseSaveFile, commitSaveImport } from './save-transfer.js';
 
 let storage=null;try{storage=window.localStorage;}catch{}
 const initial=readSave(storage);let save=initial.save,saveAvailable=initial.available;
 if(initial.migrated)saveAvailable=writeSave(storage,save);
-let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null;
+let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null,pendingSave=null;
 const canvas=document.getElementById('game-canvas'),renderer=new Renderer(canvas,document.getElementById('minimap')),sound=new Sound();
 const persist=()=>{saveAvailable=writeSave(storage,save);};
 function clearInput(){input.active=false;input.clear();accumulator=0;}
 function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable});}
 function enterShelter(){
   view='shelter';paused=true;modal=null;clearInput();
+  window.numberExtractionDesktop?.setRaidActive(false);
   document.body.dataset.screen='shelter';document.getElementById('raid-screen').hidden=true;document.getElementById('shelter-screen').hidden=false;
   ui.hide(false);refreshShelter();
 }
@@ -26,12 +28,13 @@ function start(){
   if(view==='raid')return;
   const seed=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(seed);else seed[0]=Date.now();
   raid=new Raid(save,seed[0]);view='raid';paused=false;modal=null;accumulator=0;
+  window.numberExtractionDesktop?.setRaidActive(true);
   document.body.dataset.screen='raid';document.getElementById('shelter-screen').hidden=true;document.getElementById('raid-screen').hidden=false;
   renderer.resize();renderer.camera={...raid.player};renderer.lastMapDraw=-Infinity;input.clear();input.active=true;ui.hide();ui.update(raid,save,true,false);
 }
 function show(kind){
   if(view==='raid'){paused=true;clearInput();}modal=kind;
-  if(kind==='inventory')ui.inventory(raid);else if(kind==='merchant')ui.shop(raid,merchantId);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
+  if(kind==='inventory')ui.inventory(raid);else if(kind==='merchant')ui.shop(raid,merchantId);else if(kind==='saves')ui.saveTransfer(save,pendingSave);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
 }
 function close(){
   modal=null;ui.hide(view==='raid');
@@ -43,6 +46,27 @@ function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==
 const input=new Input(canvas,pause,inventory);
 const ui=new UI({
   start,close,pause,inventory,help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
+  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge'].includes(key)){ui.shelterTab=key;refreshShelter();}},
+  saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
+  exportSave:async()=>{
+    if(view!=='shelter')return;
+    const text=serializeSave(save),desktop=window.numberExtractionDesktop;
+    if(desktop){const result=await desktop.exportSave(text);if(result.ok)ui.toast('存档已导出。');else if(!result.canceled)ui.toast(result.error||'导出失败。');}
+    else{
+      const url=URL.createObjectURL(new Blob([text],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='NumberExtraction-save.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0);ui.toast('已生成JSON存档下载。');
+    }
+  },
+  importSave:async()=>{
+    if(view!=='shelter')return;
+    if(window.numberExtractionDesktop){const result=await window.numberExtractionDesktop.importSave();if(result.ok)reviewImport(result.text);else if(!result.canceled)ui.toast(result.error||'导入失败。');}
+    else document.getElementById('save-import-file').click();
+  },
+  confirmImport:()=>{
+    if(view!=='shelter'||!pendingSave)return;
+    try{save=commitSaveImport(storage,save,pendingSave);pendingSave=null;lastResult=null;refreshShelter();show('saves');ui.toast('存档已导入，原进度已备份。');}
+    catch{ui.toast('无法保存或备份，未替换当前进度。请先检查存储权限。');}
+  },
+  restoreBackup:()=>{if(view==='shelter'){try{reviewImport(storage.getItem(BACKUP_KEY));}catch{ui.toast('没有可读取的导入前备份。');}}},
   abandon:()=>{if(raid?.status==='playing'){raid.finish(false,'主动返回庇护所');handleEvents();}},
   selectDifficulty:key=>{if(view!=='shelter')return;save.selectedDifficulty=difficultyOf(key).id;persist();refreshShelter();},
   selectWeapon:key=>{if(view!=='shelter'||!unlockedWeapons(save).includes(key))return;save.selectedWeapon=key;persist();refreshShelter();},
@@ -56,6 +80,11 @@ const ui=new UI({
   slot:key=>{if(view==='raid'&&raid.switchWeapon(Number(key))){if(modal==='inventory')show('inventory');ui.update(raid,save,true,paused);}},
   overload:()=>{if(view==='raid'&&!paused)raid.activateOverload();},
   sound:()=>{const enabled=sound.toggle();document.getElementById('sound-state').textContent=enabled?'ON':'OFF';document.getElementById('sound-button').setAttribute('aria-label',enabled?'关闭音效':'开启音效');},
+});
+function reviewImport(text){try{pendingSave=parseSaveFile(text);show('saves');}catch(error){ui.toast(error.message);}}
+document.getElementById('save-import-file').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];if(view!=='shelter'||!file)return;
+  if(file.size>131072)ui.toast('存档文件不能超过128KB。');else reviewImport(await file.text());event.target.value='';
 });
 function equip(key,slot){if(raid?.equip(Number(key),slot)){sound.play('loot');show('inventory');ui.update(raid,save,true,paused);}}
 function handleEvents(){

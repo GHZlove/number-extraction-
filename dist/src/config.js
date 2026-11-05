@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.7.0';
+export const VERSION = '0.8.0';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
   {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
