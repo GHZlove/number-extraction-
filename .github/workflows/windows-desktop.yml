@@ -69,4 +69,4 @@ jobs:
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
           $tag = "v$version-desktop.${{ github.run_number }}"
-          gh release create $tag "release/NumberExtraction-$version-Windows-x64.exe" release/SHA256SUMS.txt desktop-smoke/portable-shelter.png desktop-smoke/portable-raid.png --target $env:GITHUB_SHA --title "Number Extraction v$version · Windows Preview" --notes-file docs/DESKTOP_RELEASE.md --prerelease
+          gh release create $tag "release/NumberExtraction-$version-Windows-x64.exe" release/SHA256SUMS.txt desktop-smoke/portable-shelter.png desktop-smoke/portable-shelter-wide.png desktop-smoke/portable-raid.png --target $env:GITHUB_SHA --title "Number Extraction v$version · Windows Preview" --notes-file docs/DESKTOP_RELEASE.md --prerelease
