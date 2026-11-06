@@ -4,7 +4,7 @@ The project is moving from adding content toward making each expedition more int
 
 ## Phase 1 · Run depth and tuning · v0.11–v0.11.1
 
-**Delivered: v0.11.0 Windows run-depth playtest. Current work: the v0.11.1 numeric tuning candidate and a planned 2–4 day human playtest pass. Outside-player feedback is still uncollected.**
+**Delivered: v0.11.1 Windows numeric tuning candidate, with 290 passing automated cases and native checks. A 2–4 day human playtest pass is planned; outside-player feedback is still uncollected.**
 
 - Ten optional run mutators, with at most three selected and clear risks/rewards.
 - Rising heat and warned hunter squads, with finite arrival and population budgets.

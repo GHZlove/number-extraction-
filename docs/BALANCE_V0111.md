@@ -101,3 +101,14 @@ The [v0.11 run-depth document](RUN_DEPTH_V011.md) preserves the original release
 Next, carry out the [planned anonymous playtest sessions](PLAYTEST_V0111.md), retain actual feedback and tune only where it supports a change. Do not claim that outside players have tested this version or that 2–4 days have passed until those sessions occur. Release verification and human balance evaluation are separate gates.
 
 Phase 2 (v0.12) remains planned: **equipment synergies and set bonuses first, contracts second, factions last**. Proceed after reviewing this tuning pass and its human feedback, not merely because all synthetic fixtures survived.
+
+## Verified Windows candidate
+
+The [Windows build 42287187592](https://github.com/GHZlove/number-extraction-/actions/runs/42287187592) passed 290 automated cases and three native executions: unpacked startup, unpacked restart and the final portable EXE. Each native pass checked seven window/zoom layouts, white shelter and numbered previews, settings, warehouse and boss codex, movement/merging, readable heat/form HUD, paused extraction risk/reward briefing, inventory and pause. Credits, stored gear and selected modifiers survived restart. The extraction briefing uses the current 40/70 window and route bonuses, with key location and guardian identity.
+
+- [Download Windows x64 portable EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/NumberExtraction-0.11.1-Windows-x64.exe) — 110,420,260 bytes.
+- SHA256: `0c614f55b55e39dd1c310625f638da9051bb276ed89b4acf368b46d6be71a150`; downloaded bytes match the published checksum and Windows PE signatures.
+- Release source: `4f84835d15e6088351246ffefa23cf1917b5e5ee`.
+- [Actual extraction briefing](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-exits.png) · [Modifier settings](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-rules.png).
+
+Native execution and screenshots establish that this candidate starts and its inspected controls work. They do not complete the uncollected human playtest pass. A seed is one reproduction input: reports should also include difficulty, map family, modifiers, tracked boss and loadout; the game has no daily-run or seed-entry interface yet.
