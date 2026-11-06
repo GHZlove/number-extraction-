@@ -1,4 +1,4 @@
-# 数字进化 · Number Extraction v0.9.0
+# 数字进化 · Number Extraction v0.9.1
 
 **合成数字，启动过载，带资源撤离，建设庇护所。**
 
@@ -6,17 +6,19 @@
 
 项目使用原生 **JavaScript ES modules、HTML5 Canvas、CSS、Web Audio 与 localStorage** 实现，无第三方运行依赖。技术展示重点包括玩法系统设计、状态管理、程序地图、碰撞几何、空间查询、存档迁移和自动化验证。
 
-当前为 **v0.9.0 可玩原型**，包含四种地图、据点守卫、打造与十二种附魔、二十类武器、十二类敌人、三种首领和五档难度，已通过 180 项自动测试。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
+当前为 **v0.9.1 可玩原型**，包含四种地图、据点守卫、打造与十二种附魔、二十类武器、十二类敌人、三种首领和五档难度，已通过 180 项自动测试。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
 
 [English](README.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
 
 ## 桌面启动
 
-**[直接下载 v0.9 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/NumberExtraction-0.9.0-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.0-desktop.8)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+**[直接下载 v0.9 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/NumberExtraction-0.9.1-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.1-desktop.10)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
 
 浏览器进度可在v0.9网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
 
 ## 这一版的变化
+
+**v0.9.1 修复**：首页字号按每个方块宽度和数字位数缩放，1024、2048、4096 保留边距，不再随窗口扩大溢出。兼容 v0.9.0 存档。
 
 - **白底主页与立体方块**：恢复白色庇护所和鲜艳多彩的战区。按参考图重绘圆角、厚边、高光和大号白字数字块；玩家有 YOU 标记，敌人有红边与警示。保留出击、基地、工坊页签和独立首领血条。
 - **新增八种附魔，总数十二种**：烈焰、寒霜、流血、破甲、爆裂、暴击、重力、回能；保留吸血、闪电、眩晕、毒雾，均有实际效果、状态限制与首领抗性。

@@ -4,9 +4,15 @@
 
 ## Windows 启动
 
-**[直接下载 NumberExtraction-0.9.0-Windows-x64.exe](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/NumberExtraction-0.9.0-Windows-x64.exe)** · [v0.9发布页](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.0-desktop.8)。双击即可进入独立窗口。无需 Python、Node.js、本地服务或另开浏览器。F11 / Alt+Enter 切换全屏。
+**[直接下载 NumberExtraction-0.9.1-Windows-x64.exe](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/NumberExtraction-0.9.1-Windows-x64.exe)** · [v0.9发布页](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.1-desktop.10)。双击即可进入独立窗口。无需 Python、Node.js、本地服务或另开浏览器。F11 / Alt+Enter 切换全屏。
 
 先完全退出旧 EXE 再打开新版：桌面版采用单实例锁，旧版未退出时会聚焦已有窗口。首次启动会展开内置运行时。预览版未配置代码签名，Windows 可能提示未知发布者；不需要关闭安全防护。附件包含 SHA256 和真实桌面截图。
+
+## v0.9.1 数字溢出修复
+
+用户在大窗口下发现 1024、2048、4096 超出方块。原字号使用视口宽度 `vw`，方块却有最大宽度，因此文字放大后失去边距。现在每个方块建立行内尺寸容器，字号使用 `cqi` 跟随当前方块；一/二位数、三位数、四位数分别使用方块宽度的 56%、40%、31%。删除断点中的固定字号，保持完整白字，不依靠裁切隐藏溢出。
+
+存档键、格式和数据目录保持兼容 v0.9.0；请退出旧 EXE 再启动新文件。原生回归检查逐一测量十二个数字的真实文字边界，覆盖七组窗口与缩放组合，并要求左右边距至少为方块宽度的 9%。
 
 ## 视觉与辨识
 
@@ -73,13 +79,21 @@
 
 Windows 工作流在发布下载前执行原生启动、白底亮度、十二格预览、文字对比、出击按钮可见性、Canvas 绘制、键盘移动合成、暂停、关闭重启存档和实际 portable EXE 检查。真实截图随 Release 提供。自动检查不等于不同显卡/DPI、长期平衡、触屏、Safari 或音质验收。
 
-本次 [Windows原生构建](https://github.com/GHZlove/number-extraction-/actions/runs/42157079462) 已通过上述检查，启动、重启和实际 portable 三次检查均成功，37数据币测试进度跨重启保留；主页背景亮度约0.946，品牌文字对比约11.77:1，十二格预览和出击按钮均可见。已人工查看发布的主页/战局截图，并实际下载 EXE 验证 PE 格式和 SHA256。文件110,401,077字节，SHA256：
+v0.9.1 [Windows原生构建42165088949](https://github.com/GHZlove/number-extraction-/actions/runs/42165088949) 已通过。初次启动、重启、最终 portable 各测七组，共252个数字边界检查均通过；实际视口依次为1920×1080、1536×864（125%）、1440×900、960×600（150%）、1008×680、600×800、390×844。最小左右边距约为方块宽度的9.37%。已查看最终宽屏截图，并下载最终 EXE 验证PE格式与SHA256一致。
+
+当前构建提交 `72b7c50`，文件110,403,917字节，SHA256：
+
+```text
+68cbce0bbac88fae7038c998a4ffcee1c53aa0a65b1e1b4b9133046ff4ac8e53
+```
+
+v0.9.0历史 [Windows原生构建](https://github.com/GHZlove/number-extraction-/actions/runs/42157079462) 已通过上述检查，启动、重启和实际 portable 三次检查均成功，37数据币测试进度跨重启保留；主页背景亮度约0.946，品牌文字对比约11.77:1，十二格预览和出击按钮均可见。已人工查看发布的主页/战局截图，并实际下载 EXE 验证 PE 格式和 SHA256。文件110,401,077字节，SHA256：
 
 ```text
 4882c0e68827cf815825aa27d98f239bad53f607d085a4723d580b540636c196
 ```
 
-游戏构建提交为 `d397406`；后续文档提交不改变 EXE 内的游戏代码。完整源码在 `feature/bright-arsenal-v09`，主分支与托管试玩未更新。
+v0.9.0游戏构建提交为 `d397406`；后续文档提交不改变 EXE 内的游戏代码。完整源码在 `feature/bright-arsenal-v09`，主分支与托管试玩未更新。
 
 ## 设计参考
 
@@ -89,4 +103,4 @@ Windows 工作流在发布下载前执行原生启动、白底亮度、十二格
 - [Microsoft Learn：Introduction to Enchantments](https://learn.microsoft.com/en-us/minecraft/creator/documents/introtoenchantments)：附魔为装备附加效果，包含火焰类设计。
 - [Terraria 官方 Wiki：Status effects](https://terraria.wiki.gg/wiki/Status_effects)：燃烧、寒冷/冻结、流血和护甲相关状态分类。
 
-桌面架构沿用 [v0.8实现](DESKTOP_V08.md)，构建命令不变；当前产物版本为 `NumberExtraction-0.9.0-Windows-x64.exe`。
+桌面架构沿用 [v0.8实现](DESKTOP_V08.md)，构建命令不变；当前产物版本为 `NumberExtraction-0.9.1-Windows-x64.exe`。

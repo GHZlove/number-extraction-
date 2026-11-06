@@ -10,7 +10,7 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.9.0 · playable single-player prototype |
+| Current version | v0.9.1 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, resource strongholds, crafting, enchantments, parries, bosses and extraction |
 | Content | 20 weapons, 12 enchantments, 12 enemy types, 3 bosses, 4 map families, 5 difficulties |
@@ -19,7 +19,7 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**[Download v0.9 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/NumberExtraction-0.9.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.0-desktop.8). Run in a standalone window without Python or a separate browser. See [v0.9 setup, arsenal and save migration](docs/BRIGHT_V09.md). Close an older running copy before opening the new EXE.
+**[Download v0.9 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/NumberExtraction-0.9.1-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.1-desktop.10). Run in a standalone window without Python or a separate browser. See [v0.9 setup, arsenal and save migration](docs/BRIGHT_V09.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the complete v0.9 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
@@ -27,11 +27,13 @@ The web/source version is available on the `feature/bright-arsenal-v09` playtest
 
 Detailed design and verification notes are currently in Chinese.
 
+v0.9.1 fixes homepage numeral overflow by sizing text against each tile and reducing the size for longer numbers. Native layout checks measure all twelve labels across seven window/zoom combinations, including wide windows and 125%/150% zoom.
+
 Actual Windows desktop captures from the release checks:
 
-![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/portable-shelter.png)
+![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/portable-shelter-wide.png)
 
-![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/portable-raid.png)
+![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/portable-raid.png)
 
 ## Design idea
 
