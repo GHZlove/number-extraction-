@@ -2,7 +2,7 @@
 
 This playtest implements the first phase of the development roadmap: mutators, rising heat, number-tier tradeoffs and variable extraction. It retains the white shelter, colourful maps, 20 weapons, 12 enchantments, nine bosses, four map families, five difficulties and the persistent warehouse. Later roadmap phases are not part of this build.
 
-Desktop release verification is in progress. This document describes the rules in the current source, not a claim that the new EXE has passed native checks. See [testing](TESTING.md) for release evidence and [the roadmap](ROADMAP.md) for future scope.
+Desktop release [v0.11.0-desktop.14](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.0-desktop.14) passed Windows startup, settings, extraction briefing, combat, seven layout/zoom cases, save restart and final portable checks. The automated suite contains 271 passing cases. See [testing](TESTING.md) for evidence and [the roadmap](ROADMAP.md) for future scope. Gameplay balance remains subject to playtesting.
 
 ## Preparing a run
 
@@ -97,3 +97,10 @@ The Windows application data directory and internal origin stay stable. Finish t
 6. Restart the desktop app and confirm warehouse contents, selected mutators and banked progress remain correct.
 
 Balance, pressure readability and hardware performance still need player feedback. This phase adds decision depth; it does not add factions, contracts, cursed sets, daily runs or multiplayer.
+
+## Verified download
+
+- [Windows x64 portable EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.0-desktop.14/NumberExtraction-0.11.0-Windows-x64.exe) — 110,419,716 bytes.
+- SHA256: `261be84d3200047c041751e140a6372227610129d325a706ba320a979bcdf727`.
+- [Windows build](https://github.com/GHZlove/number-extraction-/actions/runs/42283191730); source commit `da01a4fe10c0775a20f952ae77a48a10732fe585`.
+- Finish the current raid and exit the old app before launching the new EXE. Existing desktop progress migrates into the v0.11 key.

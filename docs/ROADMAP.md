@@ -4,7 +4,7 @@ The project is moving from adding content toward making each expedition more int
 
 ## Phase 1 · Run depth · v0.11–0.12
 
-**Current implementation: v0.11 source; verification and desktop publication in progress.**
+**Delivered: v0.11 Windows playtest, with 271 passing automated cases and native release checks. Awaiting gameplay feedback before the next phase.**
 
 - Ten optional run mutators, with at most three selected and clear risks/rewards.
 - Rising heat and warned hunter squads, with finite arrival and population budgets.
