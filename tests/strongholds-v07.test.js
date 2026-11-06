@@ -242,10 +242,13 @@ test('forge and map choices persist through the actual application and become th
 });
 
 test('walking to the western merchant and pressing E opens a paused trade dialog through the app',async t=>{
+  // Application routes need a reproducible map, just like simulation tests.
+  // Stop near the trader's centre rather than the edge of its interaction radius.
+  t.mock.method(globalThis.crypto,'getRandomValues',array=>{array.fill(38);return array;});
   const env=browserStubs(t);await import('../dist/src/main.js?merchant-contract-v07');const shelter=env.ids.get('shelter-screen');
   shelter.dispatch('click',{target:shelter.children.find(b=>b.dataset.action==='start')});const frame=env.frames.find(fn=>fn.name==='frame');let now=0;frame(now);
-  const key=(type,code)=>env.window.dispatch(type,{code,target:env.canvas});key('keydown','KeyW');for(let i=0;i<25;i++)frame(now+=100);key('keyup','KeyW');
-  key('keydown','KeyD');for(let i=0;i<6;i++)frame(now+=100);key('keyup','KeyD');key('keydown','KeyE');frame(now+=100);
+  const key=(type,code)=>env.window.dispatch(type,{code,target:env.canvas});key('keydown','KeyW');for(let i=0;i<22;i++)frame(now+=100);key('keyup','KeyW');
+  key('keydown','KeyD');for(let i=0;i<5;i++)frame(now+=100);key('keyup','KeyD');key('keydown','KeyE');frame(now+=100);
   assert.match(env.ids.get('dialog').innerHTML,/边境行商/);assert.equal(env.ids.get('overlay').hidden,false);
 });
 
