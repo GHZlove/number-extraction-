@@ -2,6 +2,7 @@
 const GUNS={
   pistol:[.045,.075,2200,120],smg:[.025,.045,2700,150],rifle:[.05,.08,1900,95],carbine:[.035,.06,2400,140],lmg:[.045,.075,1600,90],
   shotgun:[.095,.11,1500,70],sniper:[.09,.105,1150,55],railgun:[.1,.07,3000,330],crossbow:[.04,.05,1400,210],grenade:[.09,.09,850,65],
+  revolver:[.075,.09,1700,80],doublebarrel:[.09,.11,1400,65],plasma:[.08,.035,3200,540],flamethrower:[.12,.045,900,110],rocket:[.14,.1,700,50],
 };
 export class Sound {
   constructor(){this.enabled=false;this.context=null;this.master=null;this.noiseBuffer=null;this.last=new Map();}
@@ -37,7 +38,7 @@ export class Sound {
       if(type==='attack'){
         const setting=GUNS[event.weapon||'pistol'];
         if(setting){const[d,v,cutoff,f]=setting;this.noise(d,v,cutoff);this.tone(f,d+.025,'triangle',.035,f*.45);}
-        else{const heavy=['greatsword','warhammer'].includes(event.weapon);this.noise(heavy?.1:.055,.055,heavy?1100:2400);this.tone(heavy?85:190,.07,'triangle',.025);}
+        else{const heavy=['greatsword','warhammer','battleaxe'].includes(event.weapon);this.noise(heavy?.1:.055,.055,heavy?1100:2400);this.tone(heavy?85:190,.07,'triangle',.025);}
       }else if(type==='hit'){
         const heavy=event.strength>=.9;this.noise(heavy?.055:.025,event.blocked?.035:heavy?.075:.045,event.blocked?3500:1900);
         this.tone(event.blocked?820:heavy?120:230,heavy?.075:.035,event.blocked?'sine':'triangle',.025);

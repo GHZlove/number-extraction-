@@ -1,4 +1,5 @@
 import { attackDamage, distance } from './math.js';
+import { slowMultiplier } from './enchantments.js';
 
 export const BOSSES=Object.freeze({
   titan:{name:'裂地巨像',color:'#ff944b',moves:['slam','dash','ring']},
@@ -36,7 +37,7 @@ export function updateBoss(raid,e,dt){
   const p=raid.player,d=distance(e,p);
   if(e.hp<=e.maxHp*.5&&e.bossPhase===1){e.bossPhase=2;raid.message(e.bossName+'进入第二阶段！');raid.effect(e.x,e.y,'狂暴','#ff42a2','pulse',.6);}
   if(e.state==='boss-charge'){
-    const before={x:e.x,y:e.y};raid.move(e,e.chargeX*590*dt,e.chargeY*590*dt);e.chargeTime-=dt;
+    const before={x:e.x,y:e.y};raid.move(e,e.chargeX*590*dt*slowMultiplier(e),e.chargeY*590*dt*slowMultiplier(e));e.chargeTime-=dt;
     if(d<e.radius+p.radius+12)raid.hurt(attackDamage(e.value,p.value,p.maxHp)*.65,'被首领冲锋击破',{source:e,parryable:true});
     if(e.chargeTime<=0||distance(before,e)<.1){e.state='idle';e.cooldown=1.4;}return;
   }
@@ -53,6 +54,6 @@ export function updateBoss(raid,e,dt){
   }
   if(d>190){
     const route=raid.navigation.direction(e),a=Math.atan2(p.y-e.y,p.x-e.x),speed=e.bossPhase===2?135:105;
-    raid.move(e,(route?.x??Math.cos(a))*speed*dt,(route?.y??Math.sin(a))*speed*dt);
+    raid.move(e,(route?.x??Math.cos(a))*speed*dt*slowMultiplier(e),(route?.y??Math.sin(a))*speed*dt*slowMultiplier(e));
   }
 }

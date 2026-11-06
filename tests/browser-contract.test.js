@@ -111,14 +111,14 @@ test('main module starts, routes Start and B inventory controls, and advances a 
 
 test('shelter difficulty and workshop selections persist and apply to the next expedition', async t => {
   const env=browserStubs(t),save=defaultSave();save.credits=1000;save.materials={alloy:100,core:10};
-  env.window.localStorage.setItem('number-extraction-v07',JSON.stringify(save));
+  env.window.localStorage.setItem('number-extraction-v09',JSON.stringify(save));
   await import('../dist/src/main.js?shelter-flow-v03');
   const shelter=env.ids.get('shelter-screen');
   const action=(name,key)=>shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action===name&&(key===undefined||button.dataset.key===key))});
   action('upgradeFacility','workshop');
   shelter.dispatch('change',{target:{dataset:{action:'selectWeapon'},value:'smg'}});
   action('selectDifficulty','nightmare');
-  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v07'));
+  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v09'));
   assert.equal(stored.shelter.workshop,1);assert.equal(stored.selectedWeapon,'smg');assert.equal(stored.selectedDifficulty,'nightmare');
   assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/12800 × 8000/);
   action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.match(env.ids.get('mission-name').textContent,/零点噩梦/);
@@ -127,7 +127,7 @@ test('shelter difficulty and workshop selections persist and apply to the next e
 
 test('ending a raid returns directly to the shelter and preserves banked resources', async t => {
   const env=browserStubs(t),save=defaultSave();save.credits=91;save.materials={alloy:8,core:2};
-  env.window.localStorage.setItem('number-extraction-v07',JSON.stringify(save));
+  env.window.localStorage.setItem('number-extraction-v09',JSON.stringify(save));
   await import('../dist/src/main.js?return-shelter-v03');
   const shelter=env.ids.get('shelter-screen'),dialog=env.ids.get('dialog');
   shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action==='start')});
@@ -136,7 +136,7 @@ test('ending a raid returns directly to the shelter and preserves banked resourc
   dialog.dispatch('click',{target:dialog.children.find(button=>button.dataset.action==='abandon')});
   assert.equal(env.document.body.dataset.screen,'shelter');assert.equal(env.ids.get('raid-screen').hidden,true);assert.equal(shelter.hidden,false);
   assert.match(shelter.innerHTML,/已返回庇护所/);assert.equal(env.ids.get('overlay').hidden,true);
-  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v07'));
+  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v09'));
   assert.equal(stored.credits,91);assert.deepEqual(stored.materials,{alloy:8,core:2});assert.equal(stored.deaths,1);
 });
 

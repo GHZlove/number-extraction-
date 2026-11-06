@@ -1,4 +1,4 @@
-import { RULES, difficultyOf, MAP_LAYOUTS } from './config.js';
+import { RULES, difficultyOf, MAP_LAYOUTS, SAVE_KEY } from './config.js';
 import { Raid } from './game.js';
 import { Input } from './input.js';
 import { Renderer } from './renderer.js';
@@ -11,6 +11,7 @@ import { buyFromMerchant } from './commerce.js';
 import { BACKUP_KEY, serializeSave, parseSaveFile, commitSaveImport } from './save-transfer.js';
 
 let storage=null;try{storage=window.localStorage;}catch{}
+document.documentElement?.setAttribute('data-save-key',SAVE_KEY);
 const initial=readSave(storage);let save=initial.save,saveAvailable=initial.available;
 if(initial.migrated)saveAvailable=writeSave(storage,save);
 let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null,pendingSave=null;

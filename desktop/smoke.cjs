@@ -11,11 +11,12 @@ async function run(window,app) {
     const button=document.querySelector('[data-action="start"]'),box=button?.getBoundingClientRect();
     const rgb=element=>getComputedStyle(element).color.match(/[0-9.]+/g).slice(0,3).map(Number);
     const luminance=parts=>parts.map(x=>x/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4).reduce((sum,x,i)=>sum+x*[.2126,.7152,.0722][i],0);
-    const fg=luminance(rgb(document.querySelector('.brand strong'))),bg=luminance([11,17,26]);
-    return {screen:document.body.dataset.screen,start:!!button,startVisible:!!box&&box.top>=0&&box.bottom<=innerHeight,brandContrast:(Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05),bridge:window.numberExtractionDesktop?.isDesktop===true,node:typeof window.require,credits:JSON.parse(localStorage.getItem('number-extraction-v07')||'null')?.credits};
+    const fg=luminance(rgb(document.querySelector('.brand strong'))),bg=luminance(getComputedStyle(document.body).backgroundColor.match(/[0-9.]+/g).slice(0,3).map(Number));
+    return {screen:document.body.dataset.screen,start:!!button,startVisible:!!box&&box.top>=0&&box.bottom<=innerHeight,brandContrast:(Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05),backgroundLuminance:bg,previewTiles:document.querySelectorAll('.preview-number').length,bridge:window.numberExtractionDesktop?.isDesktop===true,node:typeof window.require,credits:JSON.parse(localStorage.getItem(document.documentElement.dataset.saveKey)||'null')?.credits};
   })()`);
   if (shelter.screen !== 'shelter' || !shelter.start || !shelter.bridge || shelter.node !== 'undefined') throw Error('Invalid shelter startup: '+JSON.stringify(shelter));
   if (!shelter.startVisible || shelter.brandContrast < 4.5) throw Error('Shelter controls are not readable/visible: '+JSON.stringify(shelter));
+  if (shelter.backgroundLuminance < .8 || shelter.previewTiles !== 12) throw Error('White shelter / numbered tile preview is missing');
   if (process.env.NUMBER_EXTRACTION_SMOKE_MODE === 'verify' && shelter.credits !== 37) throw Error('Saved progress did not survive restart');
   await fs.writeFile(file().replace(/\.json$/, '-shelter.png'),(await window.webContents.capturePage()).toPNG());
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="start"]').click();`);
@@ -29,7 +30,7 @@ async function run(window,app) {
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',bubbles:true}));`);
   const paused = await window.webContents.executeJavaScript(`!document.getElementById('overlay').hidden && document.getElementById('dialog').textContent.includes('行动暂停')`);
   if (!paused) throw Error('Pause control failed');
-  if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem('number-extraction-v07',JSON.stringify({version:3,credits:37,materials:{alloy:0,core:0},shelter:{},lastRuns:[]}));`);
+  if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem(document.documentElement.dataset.saveKey,JSON.stringify({version:3,credits:37,materials:{alloy:0,core:0},shelter:{},lastRuns:[]}));`);
   await window.webContents.session.flushStorageData();
   await delay(300);
   if (errors.length) throw Error(errors.join('\n'));

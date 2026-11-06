@@ -1,4 +1,4 @@
-import { SAVE_KEY, PREVIOUS_SAVE_KEY, LEGACY_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf, MAP_LAYOUTS } from './config.js';
+import { SAVE_KEY, PREVIOUS_SAVE_KEY, OLDER_SAVE_KEY, LEGACY_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { unlockedWeapons } from './shelter.js';
 import { ENCHANTS, WEAPONS, RARITIES } from './equipment.js';
 
@@ -39,7 +39,7 @@ export function normalizeSave(data) {
 }
 export function readSave(storage) {
   try {
-    const current=storage.getItem(SAVE_KEY),legacy=current===null?(storage.getItem(PREVIOUS_SAVE_KEY)??storage.getItem(LEGACY_SAVE_KEY)):null;
+    const current=storage.getItem(SAVE_KEY),legacy=current===null?(storage.getItem(PREVIOUS_SAVE_KEY)??storage.getItem(OLDER_SAVE_KEY)??storage.getItem(LEGACY_SAVE_KEY)):null;
     return { save:normalizeSave(JSON.parse(current??legacy)),available:true,migrated:current===null&&legacy!==null };
   }
   catch { return { save: defaultSave(), available: false }; }

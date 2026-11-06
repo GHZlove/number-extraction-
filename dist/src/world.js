@@ -23,7 +23,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
   const random = seededRandom(seed), rand = (a,b) => a+random()*(b-a), pick = list => list[Math.floor(random()*list.length)];
   const choices=MAP_LAYOUTS.slice(1),requested=choices.find(m=>m.id===options.layout);
   const layout=requested||choices[Math.floor(random()*choices.length)];
-  const protectedPoints=[WORLD.spawn,{x:310,y:530},{x:405,y:1060},{x:790,y:1060},{x:485,y:1190},{x:620,y:1260},{x:1500,y:1420},{x:1900,y:1450},{x:1180,y:1270}];
+  const protectedPoints=[WORLD.spawn,{x:310,y:530},{x:405,y:1060},{x:790,y:1060},{x:485,y:1190},{x:620,y:1260},{x:1500,y:1420},{x:1670,y:1500},{x:1900,y:1450},{x:1180,y:1270}];
   const zones=createSectors(bounds,random,protectedPoints,layout.id);
   const east = { x: bounds.width-400, y: Math.round(bounds.height*0.72) };
   const world = {
@@ -137,6 +137,8 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
     gear:[makeEquipment('weapon','rifle','yellow','tutorial-rifle'),makeEquipment('armor','','white','tutorial-armor'),makeEquipment('laser','','white','tutorial-laser')]});
   world.chests.push({id:'expansion-cache',x:1500,y:1420,zone:0,value:18,opened:false,dividers:1,medkits:1,armory:true,
     gear:['carbine','grenade','spear','warhammer'].map((type,i)=>decorateWeapon(makeEquipment('weapon',type,i<2?'yellow':'white',`expansion-weapon-${type}`),['leech','poison','lightning','stun'][i]))});
+  world.chests.push({id:'arsenal-cache',x:1670,y:1500,zone:0,value:20,opened:false,dividers:1,medkits:1,armory:true,
+    gear:['revolver','doublebarrel','plasma','flamethrower','rocket','battleaxe','spear','smg'].map((type,i)=>({...decorateWeapon(makeEquipment('weapon',type,'yellow',`arsenal-${type}`),['burn','frost','bleed','sunder','detonate','critical','gravity','energize'][i]),starter:true,value:0}))});
   const scout=createEnemy('frontier-scout',1900,1450,4*scale,'scout');scout.zone=0;world.enemies.push(scout);
   const guard=createEnemy('tutorial-guard',900,1280,8*scale,'hunter');guard.zone=0;world.enemies.push(guard);
   world.nodes.push({id:'tutorial-node',x:1180,y:1270,kind:'fury',used:false});
