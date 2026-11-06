@@ -226,7 +226,7 @@ test('merchant spending is exact with partial loot stacks, capped stock and no s
 });
 
 test('merchant checks capacity before taking payment and purchased equipment really carries an enchantment',()=>{
-  const r=empty(),trader=r.world.merchants[0];Object.assign(r.player,{x:trader.x,y:trader.y});r.capacity=1;r.bag=[createLoot(0,0,0,200,'a')];
+  const r=empty(),trader=r.world.merchants[0];Object.assign(r.player,{x:trader.x,y:trader.y});r.capacity=1;r.bag=[createLoot(0,0,0,200,'a'),makeEquipment('laser')];
   assert.equal(buyFromMerchant(r,trader.id,'weapon'),false);assert.equal(tradeValue(r),200);assert.equal(trader.stock.weapon,1);
   r.capacity=8;assert.equal(buyFromMerchant(r,trader.id,'weapon'),true);const weapon=r.bag.find(i=>i.kind==='weapon');assert.equal(weapon.level,2);assert.equal(weapon.enchant,'lightning');assert.equal(tradeValue(r),200-SHOP.weapon.cost);
 });

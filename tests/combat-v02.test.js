@@ -147,7 +147,7 @@ test('equipping swaps owned items without duplicating them and retains armor dur
 
 test('invalid equipment actions and full-bag removal preserve ownership', () => {
   const r = raid(); r.player.laser = makeEquipment('laser', '', 'white', 'scope');
-  r.bag = Array.from({ length: r.capacity }, () => ({ name: 'loot', value: 1, kind: 'loot' }));
+  r.bag = [{ name:'loot', value:1, kind:'loot' }, ...Array.from({ length:r.capacity }, (_,i)=>makeEquipment('armor','','white','full-'+i))];
   const before = JSON.stringify({ bag: r.bag, laser: r.player.laser });
   assert.equal(r.removeEquipment('laser'), false); assert.equal(r.equip(0), false);
   assert.equal(r.equip(-1), false); assert.equal(r.equip(0.5), false);
@@ -157,7 +157,7 @@ test('invalid equipment actions and full-bag removal preserve ownership', () => 
 test('F picks up one reachable equipment item; full bags leave it on the ground', () => {
   const r = raid();
   const item = { ...makeEquipment('weapon', 'rifle', 'green', 'field'), x: r.player.x+40, y: r.player.y, dead: false };
-  r.world.drops = [item]; r.bag = Array.from({ length: r.capacity }, () => ({ name: 'data', value: 1 }));
+  r.world.drops = [item]; r.bag = Array.from({ length:r.capacity }, (_,i)=>makeEquipment('armor','','white','full-'+i));
   assert.equal(r.pickupGear(), false); assert.equal(item.dead, false);
   r.bag.pop(); assert.equal(r.pickupGear(), true); assert.equal(item.dead, true);
   assert.equal(r.bag.filter(gear => gear.id === 'field').length, 1);

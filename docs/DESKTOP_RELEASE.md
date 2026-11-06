@@ -1,11 +1,9 @@
-Number Extraction v0.9.1 · Windows x64 preview
+Number Extraction v0.9.2 · Windows x64 preview
 
-- Fixes homepage number overflow: type scales with each tile's width and number of digits, including 1024, 2048 and 4096. Numbers keep visible side padding instead of being clipped. Native checks measure all twelve text bounds in seven window/zoom combinations, including 1920-wide and 125%/150% zoom; a wide-window screenshot is attached.
-
-- White shelter homepage, bright colourful terrain and raised number tiles with large white numerals, based on the user's supplied visual reference. Deployment, facilities and forging remain separate tabs.
-- Twelve enchantments: lifesteal, lightning, stun, poison cloud, burn, frost, bleed, sunder, detonation, critical hit, gravity and energy recovery. Each has an implemented effect and bounded cooldown/status behaviour.
-- Twenty weapon types: adds a heavy revolver, double-barrel shotgun, plasma pistol, flamethrower, rocket launcher and battleaxe. The arsenal trial cache at (1670, 1500), beside the previous frontier cache, supplies the new weapons and eight added enchantments. Trial equipment has no salvage value.
-- Download `NumberExtraction-0.9.1-Windows-x64.exe` and double-click. Close the previous game first. No Python, Node.js, local server or separate browser is required. F11 / Alt+Enter toggles fullscreen.
-- Desktop progression from v0.7/v0.8 is copied automatically into a separate v0.9 save key. Original saves remain intact. Browser-to-desktop migration still uses the JSON export/import panel.
+- Enemy remnants now have two uses: equal numbers merge first; lower numbers recycle automatically into carried coins when approached. At the 2048 merge cap, equal remnants can also be recycled. Ordinary neutral tiles are preserved. Gold outlines and nearby labels mark recyclable remnants.
+- Remnant coins scale with the fallen number: 4 + 2 × log2(number), e.g. 16 → 12, 64 → 16, 512 → 22. Coins can be spent at field traders, which spend coins before material-bearing fragments. Unspent coins are banked only on successful extraction and do not create alloy or cores.
+- Resource storage is unlimited. Only weapons, armour and attachments occupy equipment slots. Fragments, currency and materials never block equipment pickups, chest searches or supply collection. Full equipment bags leave uncollected equipment on the ground. The backpack screen groups resources separately and the HUD counts equipment only.
+- White shelter, colourful terrain, raised number tiles, twelve enchantments and twenty weapons retained. Homepage numerals fit at wide and narrow window sizes and 125%/150% zoom.
+- Download `NumberExtraction-0.9.2-Windows-x64.exe` and double-click. Close the previous game first. No Python, Node.js, local server or separate browser is required. F11 / Alt+Enter toggles fullscreen. Existing desktop progress is compatible.
 - This preview is unsigned; Windows may show an unknown-publisher prompt. Keep security protections enabled.
-- Automated checks cover the 180 logic/policy/UI cases, Windows startup, white homepage and 12-tile preview, button visibility/text contrast, movement/merging, pause, restart persistence and actual portable-EXE execution. Screenshots and SHA256 are attached. Sound quality, extended play and hardware performance still need player testing.
+- 198 automated cases cover gameplay, policy and UI, including 18 new remnant/economy/capacity tests. Native Windows checks verify startup, seven layout/zoom combinations, the resource/equipment inventory, combat movement/merging, pause, restart persistence and the actual portable EXE. Screenshots and SHA256 are attached. Long-term economy balance, sound and hardware performance still need player testing.

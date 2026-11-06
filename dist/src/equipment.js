@@ -1,3 +1,5 @@
+export const isEquipment = item => ['weapon','armor','laser'].includes(item?.kind);
+
 export const RARITIES = Object.freeze([
   { id: 'white', name: '白', color: '#fffdf0', multiplier: 1 },
   { id: 'yellow', name: '黄', color: '#ffe047', multiplier: 1.2 },

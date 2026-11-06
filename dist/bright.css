@@ -39,3 +39,11 @@ body { background:#f7f9fc; }
 .shelter-screen .shelter-footer { color:#7d8d9c; }.shelter-screen .shelter-footer button { color:#408d95; }
 @media(max-width:1100px) { .number-preview { max-width:330px;gap:11px;margin:22px auto; }.preview-number { border-radius:14px; } }
 @media(max-width:600px) { .number-preview { max-width:310px;gap:10px;padding:0 10px; }.preview-number { border-radius:13px; } }
+
+/* Resource storage is independent of the equipment slot grid. */
+.resource-pouch { margin:20px 0;padding:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px; }
+.resource-pouch .section-heading { margin:0;gap:12px;flex-wrap:wrap; }.resource-pouch .section-heading h2 { font-size:17px; }
+.resource-pouch p,.resource-pouch>small { color:var(--muted);font-size:11px;line-height:1.7; }
+.resource-stacks { display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:12px 0; }
+.resource-stack { display:flex;flex-direction:column;gap:5px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:7px; }
+.resource-stack b { color:var(--text);font-size:12px; }.resource-stack span { color:var(--gold);font-size:15px;font-weight:800; }.resource-stack small { color:var(--muted);font-size:10px; }

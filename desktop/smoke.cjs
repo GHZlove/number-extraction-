@@ -66,6 +66,12 @@ async function run(window,app) {
   const raid = await window.webContents.executeJavaScript(`({screen:document.body.dataset.screen,hp:document.getElementById('health-value').textContent,number:document.getElementById('player-value').textContent,painted:document.getElementById('game-canvas').getContext('2d').getImageData(20,20,1,1).data[3]})`);
   if (raid.screen !== 'raid' || !Number(raid.hp) || Number(raid.number) < 2 || raid.painted !== 255) throw Error('Raid did not run: '+JSON.stringify(raid));
   await fs.writeFile(file().replace(/\.json$/, '-raid.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyB',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyB',bubbles:true}));`);
+  await delay(100);
+  const inventory=await window.webContents.executeJavaScript(`({open:!document.getElementById('overlay').hidden,unlimited:document.getElementById('dialog').textContent.includes('资源袋 · 不限量'),equipment:document.getElementById('dialog').textContent.includes('装备背包 0 / 8'),counter:document.getElementById('bag-count').textContent})`);
+  if(!inventory.open||!inventory.unlimited||!inventory.equipment||inventory.counter!=='0 / 8')throw Error('Resource pouch / equipment slots are missing: '+JSON.stringify(inventory));
+  await fs.writeFile(file().replace(/\.json$/, '-inventory.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('#dialog [data-action="close"]').click();`);
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',bubbles:true}));`);
   const paused = await window.webContents.executeJavaScript(`!document.getElementById('overlay').hidden && document.getElementById('dialog').textContent.includes('行动暂停')`);
   if (!paused) throw Error('Pause control failed');
@@ -73,7 +79,7 @@ async function run(window,app) {
   await window.webContents.session.flushStorageData();
   await delay(300);
   if (errors.length) throw Error(errors.join('\n'));
-  await report({ok:true,shelter,previewLayouts,raid,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
+  await report({ok:true,shelter,previewLayouts,raid,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
   app.quit();
 }
 module.exports = {run,report};

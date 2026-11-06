@@ -57,11 +57,12 @@ test('damage interrupts extraction and respects dash immunity',()=>{
   const r=emptyRaid();r.extractProgress=2;r.hurt(20);assert.equal(r.extractProgress,0);assert.equal(r.player.hp,80);
   r.player.invulnerable=0;r.player.dashTime=.1;r.hurt(40);assert.equal(r.player.hp,80);
 });
-test('chest grants fixed loot once; full bags cannot consume a chest',()=>{
+test('chest grants fixed loot once and resources do not require equipment space',()=>{
   const r=emptyRaid(),c={id:'box',...r.player,zone:0,value:24,opened:false,dividers:1,medkits:1};r.world.chests=[c];
   advance(r,.8,{interact:true});assert.equal(c.opened,true);assert.equal(r.bag.length,1);assert.equal(r.bag[0].value,24);assert.equal(r.player.dividers,3);
   advance(r,1,{interact:true});assert.equal(r.bag.length,1);
-  c.opened=false;r.capacity=1;advance(r,1,{interact:true});assert.equal(c.opened,false);assert.equal(r.bag.length,1);
+  const next={...c,id:'box-full',opened:false};r.world.chests=[next];r.capacity=0;
+  advance(r,1,{interact:true});assert.equal(next.opened,true);assert.equal(r.bag.length,2);assert.equal(r.equipmentCount(),0);
 });
 test('extraction needs four continuous stationary seconds; release resets it',()=>{
   const r=emptyRaid();r.elapsed=r.difficulty.extractAt;place(r,r.world.exits[0]);advance(r,2,{interact:true});assert.equal(r.result,null);

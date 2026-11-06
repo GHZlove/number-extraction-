@@ -74,7 +74,7 @@ export function forgeWeapon(save){
   save.forged||={};save.forged[save.selectedWeapon]={level,rarity:RARITIES[level===5?5:level-1].id,enchant:save.selectedEnchant};return true;
 }
 export function facilityBenefit(key, level) {
-  if (key === 'storage') return `背包 ${8+level*2} 格`;
+  if (key === 'storage') return `装备背包 ${8+level*2} 格 · 资源袋不限量`;
   if (key === 'supply') return `开局 ÷2 ${2+level} · 修复 ${1+Math.floor(level/2)}`;
   if (key === 'recycler') return `撤离资源收益 +${level*5}%`;
   const count = Object.values(WEAPONS).filter(weapon => weapon.unlock <= level).length;
@@ -84,7 +84,7 @@ export function facilityBenefit(key, level) {
 export function salvageMaterials(items) {
   const result = { alloy: 0, core: 0 };
   for (const item of items) {
-    if (item.starter) continue;
+    if (item.starter || item.currencyOnly) continue;
     const rank = RARITIES.findIndex(grade => grade.id === item.rarity);
     result.alloy += item.kind === 'loot' || !item.kind ? Math.max(1,Math.floor(item.value/16)) : Math.max(1,rank+1);
     result.core += item.zone === 2 || rank >= 4 ? 1 : 0;

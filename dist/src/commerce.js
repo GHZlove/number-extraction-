@@ -14,9 +14,10 @@ export function buyFromMerchant(raid,merchantId,key){
   const merchant=raid.world.merchants.find(m=>m.id===merchantId),offer=SHOP[key];
   if(raid.status!=='playing'||!merchant||!offer||Math.hypot(raid.player.x-merchant.x,raid.player.y-merchant.y)>125||
      !raid.visible(raid.player,merchant)||(merchant.stock[key]||0)<=0||tradeValue(raid)<offer.cost)return false;
-  const gear=!['medkit','divider'].includes(key);if(gear&&raid.bag.length>=raid.capacity)return false;
+  const gear=!['medkit','divider'].includes(key);if(gear&&raid.equipmentCount()>=raid.capacity)return false;
   let remaining=offer.cost;
-  for(const item of raid.bag)if(!item.kind||item.kind==='loot'){const take=Math.min(remaining,item.value);item.value-=take;remaining-=take;if(!remaining)break;}
+  const funds=raid.bag.filter(i=>!i.kind||i.kind==='loot');
+  for(const item of [...funds.filter(i=>i.currencyOnly),...funds.filter(i=>!i.currencyOnly)]){const take=Math.min(remaining,item.value);item.value-=take;remaining-=take;if(!remaining)break;}
   raid.bag=raid.bag.filter(i=>i.kind&&i.kind!=='loot'||i.value>0);merchant.stock[key]--;
   if(key==='medkit')raid.player.medkits++;
   else if(key==='divider')raid.player.dividers++;

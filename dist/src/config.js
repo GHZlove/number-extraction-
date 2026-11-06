@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.9.1';
+export const VERSION = '0.9.2';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
   {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
@@ -25,7 +25,7 @@ export const DIFFICULTIES = Object.freeze([
 ]);
 export const difficultyOf = id => DIFFICULTIES.find(item => item.id === id) || DIFFICULTIES[0];
 export const FACILITIES = Object.freeze({
-  storage: { name: '储备仓', en: 'STORAGE', icon: 'storage', max: 20, base: 80, alloy: 3, description: '每级增加 2 格局内背包。' },
+  storage: { name: '储备仓', en: 'STORAGE', icon: 'storage', max: 20, base: 80, alloy: 3, description: '每级增加 2 格装备背包，资源袋不限量。' },
   supply: { name: '补给站', en: 'SUPPLIES', icon: 'medical', max: 20, base: 90, alloy: 3, description: '增加开局运算道具与修复剂。' },
   workshop: { name: '武器工坊', en: 'WORKSHOP', icon: 'weapon', max: 6, base: 120, alloy: 4, description: '解锁出击武器，提高基础装备品质。' },
   recycler: { name: '回收中心', en: 'RECYCLER', icon: 'core', max: 20, base: 100, alloy: 4, description: '每级提高 5% 撤离资源收益。' },

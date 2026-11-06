@@ -1,5 +1,5 @@
 import { RULES, WORLD, ZONES, ENEMY_TYPES, TERRAIN, PAINT } from './config.js';
-import { clamp, distance, tier, zoneAt, firstWallFraction } from './math.js';
+import { clamp, distance, tier, zoneAt, firstWallFraction, canRecycleRemnant } from './math.js';
 import { activeWeapon, weaponOf, spreadOf, rarityOf, ENCHANTS } from './equipment.js';
 import { obstaclesFor, terrainFor } from './spatial.js';
 import { drawNumberTile } from './number-tiles.js';
@@ -267,11 +267,15 @@ export class Renderer {
     this.text(gear?(distance(p,item)<80?'F · '+item.name:rarityOf(item.rarity).name+'品装备'):`${item.value}◇`,item.x,y+30,gear?10:9,PAINT.ink,'400','center','sans-serif');
   }
   drawTile(tile,p,time) {
-    const c=this.ctx,equal=tile.value===p.value&&p.value<RULES.maxValue,size=equal?40:35;
+    const c=this.ctx,equal=tile.value===p.value&&p.value<RULES.maxValue,recycle=canRecycleRemnant(p.value,tile),size=equal?40:35;
     const y=tile.y+(this.reduced?0:Math.sin(time*2.5+tile.x)*2);
     if(equal){c.strokeStyle='#43a62c99';c.lineWidth=2;c.beginPath();c.arc(tile.x,y,29,0,TAU);c.stroke();}
-    drawNumberTile(c,{x:tile.x,y,size,value:tile.value,stroke:equal?'#83e951':'#ffffffaa'});
+    drawNumberTile(c,{x:tile.x,y,size,value:tile.value,stroke:equal?'#83e951':recycle?'#e8bb46':'#ffffffaa'});
     if(equal&&distance(p,tile)<155)this.text('同数合成',tile.x,y-31,10,'#385f31','700','center','sans-serif');
+    else if(recycle){
+      this.text('◇',tile.x+16,y-14,12,'#e5ac24','900');
+      if(distance(p,tile)<155)this.text(`残骸 +${tile.coins}◇`,tile.x,y+34,10,'#70501d','700','center','sans-serif');
+    }
   }
   drawTelegraph(e,time) {
     const c=this.ctx,definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;

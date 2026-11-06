@@ -2,11 +2,11 @@ import { PressureDirector } from './pressure.js';
 import { NavigationField } from './navigation.js';
 import { RULES, WORLD, ENEMY_TYPES, PRESSURE, difficultyOf } from './config.js';
 import {
-  attackDamage, bagTotal, canMerge, clamp, distance, lineOfSight, maxEnemyHealth,
+  attackDamage, bagTotal, canMerge, canRecycleRemnant, remnantCoins, clamp, distance, lineOfSight, maxEnemyHealth,
   moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree, zoneAt,
 } from './math.js';
 import { createLoot, createEnemy, generateWorld, lootForEnemy } from './world.js';
-import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue, HIT_FEEDBACK, knockbackFor, weaponPower, decorateWeapon, makeEquipment } from './equipment.js';
+import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue, HIT_FEEDBACK, knockbackFor, weaponPower, decorateWeapon, makeEquipment, isEquipment } from './equipment.js';
 import { applyEnchantment, updateHazards, updateAfflictions, slowMultiplier } from './enchantments.js';
 import { updateBoss } from './bosses.js';
 import { facilityLevel, starterLoadout, rewardMultiplier, salvageMaterials } from './shelter.js';
@@ -40,6 +40,7 @@ export class Raid {
     this.bag = [];
     this.capacity = RULES.bagCapacity + facilityLevel(save,'storage') * 2;
     this.kills = 0; this.merges = 0; this.opened = 0;
+    this.recycled = 0; this.recycledValue = 0;
     this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = null;
     this.events = []; this.lastMessage = ''; this.lastMessageTime = -10;
     this.tutorial = { merge: false, chest: false, extraction: false };
@@ -106,13 +107,15 @@ export class Raid {
     return node?{kind:'node',target:node,progress:this.nodeProgress/0.9}:null;
   }
   nearbyGear() {
-    return this.world.drops.filter(item => !item.dead && item.kind && item.kind !== 'loot' &&
+    return this.world.drops.filter(item => !item.dead && isEquipment(item) &&
       distance(this.player, item) < 75 && this.visible(this.player, item))
       .sort((a, b) => distance(this.player, a)-distance(this.player, b))[0] || null;
   }
+  equipmentCount() { return this.bag.filter(isEquipment).length; }
   addLoot(item) {
-    if (this.bag.length >= this.capacity) { this.message('背包已满。按 B 换装或丢弃物品。'); return false; }
-    const { x, y, dead, ...stored } = item;
+    if (this.status !== 'playing' || item.dead) return false;
+    if (isEquipment(item) && this.equipmentCount() >= this.capacity) { this.message('装备背包已满。资源袋不限量；按 B 换装或丢弃装备。'); return false; }
+    const { x=this.player.x, y=this.player.y, dead, ...stored } = item;
     this.bag.push({ ...stored });
     this.event('loot'); this.effect(x, y, item.kind === 'loot' || !item.kind ? `+${item.value} ◇` : item.name, '#e7c381');
     return true;
@@ -138,7 +141,7 @@ export class Raid {
   removeEquipment(kind) {
     if (this.status !== 'playing' || !['armor', 'laser'].includes(kind)) return false;
     const item = this.player[kind];
-    if (!item || this.bag.length >= this.capacity) return false;
+    if (!item || this.equipmentCount() >= this.capacity) return false;
     this.bag.push(item); this.player[kind] = null; return true;
   }
   dropItem(index) {
@@ -225,7 +228,7 @@ export class Raid {
   kill(enemy,impact={}){
     if(enemy.dead)return;
     enemy.dead=true;this.kills++;this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
-    this.world.tiles.push({id:`remnant-${enemy.id}`,x:enemy.x,y:enemy.y,value:enemy.value,dead:false});
+    this.world.tiles.push({id:`remnant-${enemy.id}`,x:enemy.x,y:enemy.y,value:enemy.value,remnant:true,coins:remnantCoins(enemy.value),dead:false});
     this.player.energy=Math.min(100,this.player.energy+(enemy.elite?8:enemy.horde?4:2));
     if(enemy.horde)this.hordeKills++;
     if(!enemy.horde||this.random()<.35)this.world.drops.push(lootForEnemy(enemy,this.world.zones));
@@ -469,7 +472,6 @@ export class Raid {
     } else if(context.kind==='node'){
       this.nodeProgress+=dt;if(this.nodeProgress>=0.9){this.activateNode(context.target);this.nodeProgress=0;}
     } else {
-      if (this.bag.length >= this.capacity) { this.message('背包已满，无法开启补给箱。'); return; }
       this.searchProgress += dt;
       if (this.searchProgress >= 0.75) {
         const chest = context.target;
@@ -477,7 +479,7 @@ export class Raid {
         this.addLoot({...createLoot(chest.x, chest.y, chest.zone, chest.value, chest.id),bossLoot:!!chest.bossLoot});
         this.player.dividers += chest.dividers; this.player.medkits += chest.medkits; this.searchProgress = 0;
         for (const gear of chest.gear || []) this.world.drops.push({ ...gear, x: chest.x, y: chest.y+24, dead: false });
-        this.message(chest.gear?.length ? '装备已掉落在箱边。按 F 拾取，按 B 换装，1/2 切换武器。' : '补给已收入背包。左上方绿圈可以撤离。');
+        this.message(chest.gear?.length ? '资源已收入不限量资源袋，装备留在箱边。按 F 拾取，按 B 换装。' : '补给已收入不限量资源袋。左上方绿圈可以撤离。');
       }
     }
   }
@@ -540,6 +542,11 @@ export class Raid {
         this.combo=this.elapsed-this.lastMerge<4?Math.min(5,this.combo+1):1;this.lastMerge=this.elapsed;
         p.energy=Math.min(100,p.energy+RULES.energyPerMerge+(this.combo-1)*2);
         this.effect(p.x, p.y-35, `${old} + ${old} = ${p.value}`, '#a9edd1', 'text', 1.1); this.event('merge');
+      } else if (canRecycleRemnant(p.value,tile) && distance(p,tile)<(p.buffs.magnet>0?220:56) && this.visible(p,tile)) {
+        const value=tile.coins??remnantCoins(tile.value);
+        if(this.addLoot({id:`coins-${tile.id}`,kind:'loot',currencyOnly:true,name:'残骸金币',value,x:tile.x,y:tile.y})){
+          tile.dead=true;this.recycled++;this.recycledValue+=value;
+        }
       }
     }
     for (const loot of this.world.drops) {
@@ -570,7 +577,7 @@ export class Raid {
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
     const items=[...this.bag,...equipped],materials=salvageMaterials(items);
     this.result = { id:this.id,success,reason,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*this.rewardMultiplier),number:this.player.value,
-      seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,
+      seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,
       materials:{alloy:Math.round(materials.alloy*this.rewardMultiplier),core:Math.round(materials.core*this.rewardMultiplier)},
       loot:items.map(item=>({...item})) };
     this.event('finish', { result: this.result });
