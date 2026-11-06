@@ -9,7 +9,10 @@ async function checkPreviewLayouts(window) {
   window.setMinimumSize(320,300);
   try {
     for (const [width,height,scale] of [[1920,1080,1],[1920,1080,1.25],[1440,900,1],[1440,900,1.5],[1008,680,1],[600,800,1],[390,844,1]]) {
-      window.setContentSize(width,height);window.webContents.setZoomFactor(scale);
+      window.setContentSize(width,height);
+      await delay(150);
+      window.webContents.setZoomFactor(scale);
+      await delay(150);
       const result=await window.webContents.executeJavaScript(`(async () => {
         await document.fonts.ready;
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -20,13 +23,17 @@ async function checkPreviewLayouts(window) {
         });
         return {viewport:[innerWidth,innerHeight],tiles};
       })()`);
+      const contentSize=window.getContentSize(),actualZoom=window.webContents.getZoomFactor();
+      if (Math.abs(actualZoom-scale)>.001||result.viewport.some((size,i)=>Math.abs(size-contentSize[i]/scale)>2)) {
+        throw Error('Window or zoom has not settled: '+JSON.stringify({requested:[width,height],scale,actualZoom,contentSize,viewport:result.viewport}));
+      }
       for (const tile of result.tiles) {
         if (!(tile.width>0&&tile.height>0&&tile.left>=tile.width*.09&&tile.right>=tile.width*.09&&tile.top>=0&&tile.bottom>=0)) {
           throw Error('Number overflows its tile: '+JSON.stringify({width,height,scale,...result,tile}));
         }
       }
       if (result.tiles.length!==12) throw Error('Missing preview tiles after resizing');
-      layouts.push({requested:[width,height],zoom:scale,...result});
+      layouts.push({requested:[width,height],contentSize,zoom:actualZoom,...result});
       if (width===1920&&scale===1) await fs.writeFile(file().replace(/\.json$/, '-shelter-wide.png'),(await window.webContents.capturePage()).toPNG());
     }
   } finally {
