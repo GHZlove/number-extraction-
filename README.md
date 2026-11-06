@@ -10,30 +10,34 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.9.1 · playable single-player prototype |
+| Current version | v0.9.2 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, resource strongholds, crafting, enchantments, parries, bosses and extraction |
 | Content | 20 weapons, 12 enchantments, 12 enemy types, 3 bosses, 4 map families, 5 difficulties |
-| Verification | 180 automated tests; syntax/reference checks for 23 game modules + 4 desktop files |
+| Verification | 198 automated tests; syntax/reference checks for 23 game modules + 4 desktop files |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**[Download v0.9 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/NumberExtraction-0.9.1-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.1-desktop.10). Run in a standalone window without Python or a separate browser. See [v0.9 setup, arsenal and save migration](docs/BRIGHT_V09.md). Close an older running copy before opening the new EXE.
+**[Download v0.9.2 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/NumberExtraction-0.9.2-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.2-desktop.11). Run in a standalone window without Python or a separate browser. See [v0.9.2 rules and setup](docs/REMNANTS_V092.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the complete v0.9 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
-[简体中文](README.zh-CN.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
-v0.9.1 fixes homepage numeral overflow by sizing text against each tile and reducing the size for longer numbers. Native layout checks measure all twelve labels across seven window/zoom combinations, including wide windows and 125%/150% zoom.
+v0.9.2 adds automatic recycling of lower-number enemy remnants and an unlimited resource pouch. Equipment alone uses backpack slots; coins can be spent at field traders or banked on extraction.
+
+The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
 
 Actual Windows desktop captures from the release checks:
 
-![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/portable-shelter-wide.png)
+![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/portable-shelter-wide.png)
 
-![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/portable-raid.png)
+![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/portable-raid.png)
+
+[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/portable-inventory.png).
 
 ## Design idea
 
@@ -155,12 +159,20 @@ Railguns can hit three distinct targets before stopping; walls block projectiles
 
 | Shelter facility | Effect |
 | --- | --- |
-| Storage | +2 backpack slots per level, up to level 20 |
+| Storage | +2 equipment backpack slots per level, up to level 20; resources do not consume slots |
 | Supplies | +1 starting ÷2 charge per level; +1 repair kit every two levels, up to level 20 |
 | Workshop | Unlock starter weapons, improve starting quality, add armour at level 2 and a laser at level 4; maximum level 6 |
 | Recycler | +5% extraction yield per level, up to level 20 |
 
 Picked-up equipment is converted into resources on extraction. Workshop equipment is issued afresh for each raid and has no salvage value. There is no persistent equipment warehouse. See [v0.3 rules](docs/SHELTER_V03.md) for costs, unlocks and rewards.
+
+## Remnants and carrying
+
+Equal enemy remnants still merge first. Lower remnants recycle automatically when approached; higher remnants remain available for later growth. At the 2048 merge cap, equal remnants can also be recycled. Ordinary neutral tiles remain unchanged. Gold outlines and nearby labels identify recyclable remnants.
+
+Coin value is `4 + 2 × log2(remnant number)`: 16 yields 12, 64 yields 16, and 512 yields 22. These are carried raid funds. Merchants spend coins before material-bearing fragments; unspent funds are banked only after successful extraction, using the existing reward multiplier. Remnant coins produce no alloy or cores.
+
+Only weapons, armour and attachments occupy equipment slots. Fragments, coins and materials have unlimited storage, grouped in a separate resource pouch. Full equipment bags can still collect resources and search chests; uncollected gear stays on the ground. HUD and merchant capacity checks use the equipment count. See [v0.9.2 rules](docs/REMNANTS_V092.md).
 
 ## Forge, trade and return
 
@@ -191,7 +203,7 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **23 game modules and 4 desktop files passing syntax/reference checks, with 180 passing tests**. The latest 23 cases cover the new weapon mechanics, status effects, save migration, trial economy and raised-tile rendering.
+No `npm install` is required. The current verification has **23 game modules and 4 desktop files passing syntax/reference checks, with 198 passing tests**. The latest 18 cases cover remnant recycling, unlimited resources, equipment capacity, trading, settlement and resource/equipment UI separation.
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
@@ -204,6 +216,7 @@ This is a single-player prototype with no multiplayer, cloud synchronisation, ga
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.9.2 remnant recycling and unlimited resource storage](docs/REMNANTS_V092.md)
 - [v0.9 bright tiles, twelve enchantments and twenty weapons](docs/BRIGHT_V09.md)
 - [v0.8 Windows desktop, tactical UI and save migration](docs/DESKTOP_V08.md)
 - [v0.7 strongholds, forge, enchantments, parry and bosses](docs/STRONGHOLDS_V07.md)

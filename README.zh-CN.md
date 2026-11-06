@@ -1,4 +1,4 @@
-# 数字进化 · Number Extraction v0.9.1
+# 数字进化 · Number Extraction v0.9.2
 
 **合成数字，启动过载，带资源撤离，建设庇护所。**
 
@@ -6,17 +6,19 @@
 
 项目使用原生 **JavaScript ES modules、HTML5 Canvas、CSS、Web Audio 与 localStorage** 实现，无第三方运行依赖。技术展示重点包括玩法系统设计、状态管理、程序地图、碰撞几何、空间查询、存档迁移和自动化验证。
 
-当前为 **v0.9.1 可玩原型**，包含四种地图、据点守卫、打造与十二种附魔、二十类武器、十二类敌人、三种首领和五档难度，已通过 180 项自动测试。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
+当前为 **v0.9.2 可玩原型**，包含四种地图、据点守卫、打造与十二种附魔、二十类武器、十二类敌人、三种首领和五档难度，已通过 198 项自动测试。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
 
-[English](README.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
+[English](README.md) · [v0.9.2残骸与资源袋](docs/REMNANTS_V092.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
 
 ## 桌面启动
 
-**[直接下载 v0.9 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.1-desktop.10/NumberExtraction-0.9.1-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.1-desktop.10)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+**[直接下载 v0.9.2 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/NumberExtraction-0.9.2-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.2-desktop.11)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
 
 浏览器进度可在v0.9网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
 
 ## 这一版的变化
+
+**v0.9.2 新增**：低等级敌人残骸靠近后回收成金币，同数优先合成；2048时可回收同级残骸。金币可在局内消费，成功撤离后入库。只有武器、护甲和配件占装备格，碎片、金币与材料不限量；满装备包仍可开箱和拾取资源。B界面将资源汇总与装备分开，商人优先消费残骸金币。详见 [回收规则](docs/REMNANTS_V092.md)。
 
 **v0.9.1 修复**：首页字号按每个方块宽度和数字位数缩放，1024、2048、4096 保留边距，不再随窗口扩大溢出。兼容 v0.9.0 存档。
 
@@ -86,7 +88,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 3. `(620,1260)` 的装备箱提供黄品步枪、白品护甲和镭射；F 拾取，B 换装。
 4. 对附近追猎者尝试 G 过载、Q 运算和 Shift 闪避，也可以绕开。`(1180,1270)` 有增幅节点。
 5. `(1500,1420)` 的前沿试验箱提供吸血卡宾枪、毒雾榴弹、闪电长枪、眩晕战锤，方便直接试用。
-6. 前沿试验箱旁 `(1670,1500)` 的军械箱提供六种新武器与八种新附魔。F 拾取、B 换装；试用品不能换资源，背包满时需先选择或丢弃装备。
+6. 前沿试验箱旁 `(1670,1500)` 的军械箱提供六种新武器与八种新附魔。F 拾取、B 换装；试用品不能换资源，装备格满时需先选择或丢弃装备。
 7. 等待撤离开放（最低难度45秒），回到 `(310,530)` 西侧绿色出口，静止按 E 四秒，受伤、移动或松键会中断。
 8. 结算直接回庇护所，资源足够时升级设施，再次出击。
 
@@ -98,7 +100,7 @@ v0.9 自动复制 v0.7/v0.8 的庇护所与打造进度到独立存档，保留�
 
 拾取装备成功撤离后兑换资源，工坊基础装备每局重新发放且不可出售；本轮没有跨局装备仓库。死亡、超时或放弃不带出局内收益，保留已有庇护所资产。
 
-当前版本通过 23 个游戏模块和4个桌面文件静态检查和 180 项自动测试。逻辑测试中的 DOM/Canvas/Web Audio 使用替身；Windows工作流另行检查真实启动、白底主页、12格数字预览、出击按钮、移动合成、暂停和重启存档，并附截图。长时间游玩、音质、硬件性能与经济平衡仍需试玩反馈。
+当前版本通过 23 个游戏模块和4个桌面文件静态检查和 198 项自动测试。逻辑测试中的 DOM/Canvas/Web Audio 使用替身；Windows工作流另行检查真实启动、白底主页、12格数字预览、出击按钮、移动合成、暂停和重启存档，并附截图。长时间游玩、音质、硬件性能与经济平衡仍需试玩反馈。
 
 ## 开发与文档
 
