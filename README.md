@@ -10,34 +10,38 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.9.2 · playable single-player prototype |
+| Current version | v0.10.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, resource strongholds, crafting, enchantments, parries, bosses and extraction |
-| Content | 20 weapons, 12 enchantments, 12 enemy types, 3 bosses, 4 map families, 5 difficulties |
-| Verification | 198 automated tests; syntax/reference checks for 23 game modules + 4 desktop files |
+| Content | 20 weapons, 12 enchantments, 12 enemy types, 9 bosses, 4 map families, 5 difficulties |
+| Verification | 233 automated tests; syntax/reference checks for 25 game modules + 4 desktop files |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**[Download v0.9.2 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/NumberExtraction-0.9.2-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.2-desktop.11). Run in a standalone window without Python or a separate browser. See [v0.9.2 rules and setup](docs/REMNANTS_V092.md). Close an older running copy before opening the new EXE.
+**[Download v0.10.0 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/NumberExtraction-0.10.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.10.0-desktop.12). Run in a standalone window without Python or a separate browser. See [v0.10 warehouse, bosses and compatibility](docs/WAREHOUSE_BOSSES_V010.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the complete v0.9 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
-[简体中文](README.zh-CN.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.10 warehouse and nine bosses](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
-v0.9.2 adds automatic recycling of lower-number enemy remnants and an unlimited resource pouch. Equipment alone uses backpack slots; coins can be spent at field traders or banked on extraction.
+v0.10 adds an upgradeable warehouse that preserves extracted equipment, four-slot deployment planning, repairs and explicit recycling. Excess gear stays in a pending area. Six new bosses bring the roster to nine, with a codex, selectable targets, new warned attack geometry and distinct weapon rewards.
+
+v0.9.2 added automatic recycling of lower-number enemy remnants and an unlimited resource pouch. Equipment alone uses backpack slots; coins can be spent at field traders or banked on extraction.
 
 The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
 
 Actual Windows desktop captures from the release checks:
 
-![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/portable-shelter-wide.png)
+![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/portable-shelter-wide.png)
 
-![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/portable-raid.png)
+![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/portable-raid.png)
 
-[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.2-desktop.11/portable-inventory.png).
+[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/portable-inventory.png).
+
+[View the persistent warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/portable-warehouse.png) · [View the nine-boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/portable-bosses.png).
 
 ## Design idea
 
@@ -56,7 +60,7 @@ Extraction adds a second decision: carry on searching for better loot, or return
 - **Resource strongholds:** most enemies defend resource sites. Small wilderness patrols have their own cap; occupied sites can call limited reinforcements. Guards return when pulled too far away.
 - **Twelve enchantments:** lifesteal, chain lightning, stun, poison clouds, burn, frost, bleed, sunder, on-kill detonation, critical hits, gravity and energy recovery. Forge a permanent starter weapon up to Lv.5 and choose an enchantment; levels improve damage and knockback, while gun type, quality and number advantage also affect pushback.
 - **Reactive defence:** aim toward an incoming attack and right-click for a short parry window. Reflect bullets or interrupt melee attackers, including bosses. Poison and ordinary explosions require movement.
-- **Traders, shelters and bosses:** spend carried loot at a field merchant; low-risk exits offer protective safehouses. Three boss archetypes cycle telegraphed moves and enter a second phase below half health. Some high-risk exits remain locked until their guardian falls.
+- **Traders, shelters and bosses:** spend carried loot at a field merchant; low-risk exits offer protective safehouses. Nine boss archetypes cycle telegraphed moves and enter a second phase below half health. Some high-risk exits remain locked until their guardian falls.
 - **Combat impact:** directional hit sparks, enemy hit flashes, recoil, armour-break cues and shattering defeats. Heavy weapons add collision-safe knockback and a brief, throttled hit-stop with buffered controls. Synthesised weapon and impact sounds are opt-in; reduced-motion preferences suppress camera shake and hit deformation.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
 - **Twenty weapons:** pistols, automatic weapons, piercing and explosive firearms, plus directional melee weapons. v0.9 adds a heavy revolver, double-barrel shotgun, plasma pistol, flamethrower, rocket launcher and battleaxe. Equip two slots, six quality tiers, durability-based armour and a laser sight.
@@ -159,12 +163,13 @@ Railguns can hit three distinct targets before stopping; walls block projectiles
 
 | Shelter facility | Effect |
 | --- | --- |
+| Warehouse | 24 persistent gear slots, +12 per upgrade, up to level 10; full inventories preserve gear in a pending area |
 | Storage | +2 equipment backpack slots per level, up to level 20; resources do not consume slots |
 | Supplies | +1 starting ÷2 charge per level; +1 repair kit every two levels, up to level 20 |
 | Workshop | Unlock starter weapons, improve starting quality, add armour at level 2 and a laser at level 4; maximum level 6 |
 | Recycler | +5% extraction yield per level, up to level 20 |
 
-Picked-up equipment is converted into resources on extraction. Workshop equipment is issued afresh for each raid and has no salvage value. There is no persistent equipment warehouse. See [v0.3 rules](docs/SHELTER_V03.md) for costs, unlocks and rewards.
+Extracted equipment now enters a persistent warehouse without also converting into currency or materials. It starts with 24 slots, gains 12 per upgrade and preserves overflow in a pending area. Select stored weapons, armour and a laser for the next raid; deployment withdrawals are saved before play begins, and carried warehouse gear is lost on failure. Stored gear can be repaired or explicitly recycled. Free workshop and trial gear cannot be stored or recycled. See [v0.10 rules](docs/WAREHOUSE_BOSSES_V010.md).
 
 ## Remnants and carrying
 
@@ -186,7 +191,7 @@ Safehouse circles block incoming damage, provide one treatment per location and 
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 23 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 25 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
@@ -203,19 +208,20 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **23 game modules and 4 desktop files passing syntax/reference checks, with 198 passing tests**. The latest 18 cases cover remnant recycling, unlimited resources, equipment capacity, trading, settlement and resource/equipment UI separation.
+No `npm install` is required. The current verification has **25 game modules and 4 desktop files passing syntax/reference checks, with 233 passing tests**. The latest 35 cases cover warehouse ownership, checkout failure protection, pending gear, repair/recycling, save migration, new boss geometry, control/counterplay, summon limits, rewards and shelter UI flows.
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
-v0.9 first copies v0.7/v0.8 progress, with fallbacks for v0.3–v0.6 and earlier saves, into a separate save key. Original keys remain intact. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
+v0.10 first copies v0.9 progress, then v0.7/v0.8 progress, with fallbacks for v0.3–v0.6 and earlier saves, into a separate schema-4 save key. Original keys remain intact. Equipment that older versions already converted into resources cannot be reconstructed; those resources are retained. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
 
 This is a single-player prototype with no multiplayer, cloud synchronisation, gameplay network requests or telemetry. Desktop dependencies are used for development and packaging; the built game runs offline. Enemies share a local navigation field and use crowd separation; full navigation meshes and globally optimal routes are not implemented. Windows desktop checks are performed by the release workflow; mobile devices, Safari, long sessions, display scaling, sound quality, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.10 persistent warehouse, nine bosses and ten reference games](docs/WAREHOUSE_BOSSES_V010.md)
 - [v0.9.2 remnant recycling and unlimited resource storage](docs/REMNANTS_V092.md)
 - [v0.9 bright tiles, twelve enchantments and twenty weapons](docs/BRIGHT_V09.md)
 - [v0.8 Windows desktop, tactical UI and save migration](docs/DESKTOP_V08.md)
