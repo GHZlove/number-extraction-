@@ -113,8 +113,8 @@ test('fog limits auto-targeting and hides distant enemy numbers in the real rend
 
 test('volatile deaths warn first then hurt once, expire, respect walls and never chain enemy kills',()=>{
  const r=empty(['volatile']),e=target(r,1,'hunter',30),bystander=target(r,1,'hunter',50,'bystander');r.kill(e);assert.equal(r.world.hazards.length,1);assert.equal(r.player.hp,100);
- updateRunHazards(r,.89);assert.equal(r.player.hp,100);updateRunHazards(r,.02);assert.equal(r.player.hp,85);assert.equal(bystander.dead,false);r.player.invulnerable=0;updateRunHazards(r,.1);assert.equal(r.player.hp,85);updateRunHazards(r,.1);assert.equal(r.world.hazards.length,0);
- const covered=empty(['volatile']);const foe=target(covered,1,'hunter',70);covered.world.obstacles=[{x:covered.player.x+35,y:covered.player.y-80,w:10,h:160}];covered.kill(foe);updateRunHazards(covered,1);assert.equal(covered.player.hp,100);
+ updateRunHazards(r,1.29);assert.equal(r.player.hp,100);updateRunHazards(r,.02);assert.equal(r.player.hp,85);assert.equal(bystander.dead,false);r.player.invulnerable=0;updateRunHazards(r,.1);assert.equal(r.player.hp,85);updateRunHazards(r,.1);assert.equal(r.world.hazards.length,0);
+ const covered=empty(['volatile']);const foe=target(covered,1,'hunter',70);covered.world.obstacles=[{x:covered.player.x+35,y:covered.player.y-80,w:10,h:160}];covered.kill(foe);updateRunHazards(covered,1.4);assert.equal(covered.player.hp,100);
 });
 
 test('volatile fields are bounded and bosses do not create death bursts',()=>{
@@ -125,7 +125,7 @@ test('volatile fields are bounded and bosses do not create death bursts',()=>{
 test('rich speeds heat from time and activity while safehouses halve its time growth',()=>{
  const normal=empty(),rich=empty(['rich']);normal.heat.update(normal,10);rich.heat.update(rich,10);near(rich.heat.value/normal.heat.value,1.5);
  const sheltered=empty();Object.assign(sheltered.player,{x:sheltered.world.exits[0].x,y:sheltered.world.exits[0].y});sheltered.heat.update(sheltered,10);near(sheltered.heat.value,normal.heat.value/2);
- const before=rich.heat.value;rich.kill(target(rich));near(rich.heat.value-before,.6);rich.heat.add(1000);assert.equal(rich.heat.value,100);rich.heat.add(-50);assert.equal(rich.heat.value,100);
+ const before=rich.heat.value;rich.kill(target(rich));near(rich.heat.value-before,.3);rich.heat.add(1000);assert.equal(rich.heat.value,100);rich.heat.add(-50);assert.equal(rich.heat.value,100);
 });
 
 test('heat escalates four levels and warning-backed hunters materialize with a twelve-person cap',()=>{
@@ -153,7 +153,7 @@ test('completed raids freeze heat and cannot schedule additional hunters',()=>{
 });
 
 test('number identities change physical size, real movement and incoming damage at explicit thresholds',()=>{
- const cases=[[32,19,1,1],[64,21,1.04,1],[128,21,1.04,1],[256,24,.94,.92],[512,24,.94,.92],[1024,28,.86,.86],[2048,28,.86,.86]];
+ const cases=[[32,19,1,1],[64,21,1.04,1],[128,21,1.04,1],[256,24,.94,.92],[512,24,.94,.92],[1024,26,.90,.86],[2048,26,.90,.86]];
  for(const [value,radius,speed,damage]of cases){const r=empty();r.player.value=value;updateNumberForm(r);assert.equal(r.player.radius,radius);assert.equal(numberForm(value),r.player.form);const x=r.player.x;r.update(step,{x:1});near(r.player.x-x,RULES.speed*speed*step);r.hurt(25);near(r.player.hp,100-25*damage);}
  assert.equal(attackDamage(8,4),50);assert.equal(attackDamage(4,8),25);assert.equal(attackDamage(16,4),75);assert.equal(attackDamage(4,16),12.5);
 });
@@ -161,7 +161,7 @@ test('number identities change physical size, real movement and incoming damage 
 test('growing near a wall defers collision expansion until open space without teleporting',()=>{
  const r=empty();r.world.obstacles=[{x:r.player.x+20,y:r.player.y-100,w:20,h:200}];const origin={x:r.player.x,y:r.player.y};r.player.value=1024;updateNumberForm(r);
  assert.equal(r.player.form.id,'core');assert.equal(r.player.radius,19);assert.equal(r.player.formPending,true);assert.deepEqual({x:r.player.x,y:r.player.y},origin);assert.ok(isFree(r.player.x,r.player.y,r.player.radius,r.world.obstacles,r.world.bounds));
- r.update(step,{x:-1});advance(r,.1,{x:-1});assert.equal(r.player.radius,28);assert.equal(r.player.formPending,false);assert.ok(isFree(r.player.x,r.player.y,r.player.radius,r.world.obstacles,r.world.bounds));
+ r.update(step,{x:-1});advance(r,.1,{x:-1});assert.equal(r.player.radius,26);assert.equal(r.player.formPending,false);assert.ok(isFree(r.player.x,r.player.y,r.player.radius,r.world.obstacles,r.world.bounds));
 });
 
 test('mutator and form changes do not rewrite carried equipment or persistent forge records',()=>{
@@ -191,14 +191,14 @@ test('fallback extraction succeeds without a key, number or dead boss after four
 });
 
 test('timed exits reject short windows, reopen predictably, and allow a complete four-second channel',()=>{
- const r=empty(),exit=r.world.exits.find(e=>e.kind==='window');Object.assign(r.player,{x:exit.x,y:exit.y});r.elapsed=exit.opensAt+27;assert.equal(r.extractionReady(exit),false);r.updateInteraction({interact:true},.1);assert.equal(r.extractProgress,0);
- r.elapsed=exit.opensAt+30;assert.equal(r.extractionReady(exit),false);assert.equal(r.extractionStatus(exit).wait,40);
+ const r=empty(),exit=r.world.exits.find(e=>e.kind==='window');Object.assign(r.player,{x:exit.x,y:exit.y});r.elapsed=exit.opensAt+37;assert.equal(r.extractionReady(exit),false);r.updateInteraction({interact:true},.1);assert.equal(r.extractProgress,0);
+ r.elapsed=exit.opensAt+40;assert.equal(r.extractionReady(exit),false);assert.equal(r.extractionStatus(exit).wait,30);
  r.elapsed=exit.opensAt+70+25;advance(r,4.1,{interact:true});assert.equal(r.result.success,true);assert.equal(r.result.extractedVia,'window');
 });
 
 test('a timed exit that closes or takes damage cancels extraction without leaving stale progress',()=>{
  const r=empty(),exit=r.world.exits.find(e=>e.kind==='window');Object.assign(r.player,{x:exit.x,y:exit.y});r.elapsed=exit.opensAt+10;r.updateInteraction({interact:true},1);assert.equal(r.extractProgress,1);
- r.elapsed=exit.opensAt+30;r.updateInteraction({interact:true},.1);assert.equal(r.extractProgress,0);assert.equal(r.result,null);r.elapsed=exit.opensAt+70;r.updateInteraction({interact:true},1);r.hurt(1);assert.equal(r.extractProgress,0);assert.equal(r.result,null);
+ r.elapsed=exit.opensAt+40;r.updateInteraction({interact:true},.1);assert.equal(r.extractProgress,0);assert.equal(r.result,null);r.elapsed=exit.opensAt+70;r.updateInteraction({interact:true},1);r.hurt(1);assert.equal(r.extractProgress,0);assert.equal(r.result,null);
 });
 
 test('key cache grants one raid-only card; locked or interrupted extraction never consumes it',()=>{

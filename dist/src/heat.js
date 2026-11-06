@@ -1,7 +1,8 @@
+import { RUN_BALANCE } from './run-rules.js';
 import { zoneAt } from './math.js';
 
 export class HeatDirector{
- constructor(difficulty,scale=1){this.value=0;this.scale=scale;this.rate=.28+(difficulty.rank-1)*.025;this.level=0;this.nextHunt=0;this.total=0;this.waves=0;}
+ constructor(difficulty,scale=1){this.value=0;this.scale=scale;this.rate=RUN_BALANCE.heatRate+(difficulty.rank-1)*RUN_BALANCE.heatRankStep;this.level=0;this.nextHunt=0;this.total=0;this.waves=0;}
  add(amount){this.value=Math.min(100,this.value+Math.max(0,amount)*this.scale);}
  update(raid,dt){
   if(raid.status!=='playing')return;
@@ -21,6 +22,6 @@ export class HeatDirector{
    }
    this.total+=marks.length;if(marks.length){this.waves++;raid.message(`追猎队接近：${marks.length}名猎手，1.3秒出生预警。`);}
   }
-  this.nextHunt=raid.elapsed+Math.max(22,40-level*5);
+  this.nextHunt=raid.elapsed+Math.max(RUN_BALANCE.hunterIntervalMin,RUN_BALANCE.hunterIntervalBase-level*5);
  }
 }

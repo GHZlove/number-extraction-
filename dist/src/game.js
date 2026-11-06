@@ -1,4 +1,4 @@
-import { runRules, updateNumberForm, configureExpedition, extractionStatus, updateRunHazards } from './run-rules.js';
+import { RUN_BALANCE, exitRewardMultiplier, runRules, updateNumberForm, configureExpedition, extractionStatus, updateRunHazards } from './run-rules.js';
 import { HeatDirector } from './heat.js';
 import { PressureDirector } from './pressure.js';
 import { NavigationField } from './navigation.js';
@@ -239,8 +239,8 @@ export class Raid {
   }
   kill(enemy,impact={}){
     if(enemy.dead)return;
-    enemy.dead=true;this.kills++;this.heat?.add(enemy.boss?8:.4);
-    if(this.run.volatile&&!enemy.boss&&this.world.hazards.filter(h=>h.runHazard).length<32)this.world.hazards.push({kind:'deathburst',runHazard:true,owner:'enemy',x:enemy.x,y:enemy.y,radius:95,age:0,warn:.9,life:1.1,color:'#ff8055',label:'残爆',done:false});this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
+    enemy.dead=true;this.kills++;this.heat?.add(enemy.boss?RUN_BALANCE.bossHeat:RUN_BALANCE.killHeat);
+    if(this.run.volatile&&!enemy.boss&&this.world.hazards.filter(h=>h.runHazard).length<32)this.world.hazards.push({kind:'deathburst',runHazard:true,owner:'enemy',x:enemy.x,y:enemy.y,radius:RUN_BALANCE.burstRadius,age:0,warn:RUN_BALANCE.burstWarning,life:RUN_BALANCE.burstWarning+.2,color:'#ff8055',label:'残爆',done:false});this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
     this.world.tiles.push({id:`remnant-${enemy.id}`,x:enemy.x,y:enemy.y,value:enemy.value,remnant:true,coins:remnantCoins(enemy.value),dead:false});
     this.player.energy=Math.min(100,this.player.energy+(enemy.elite?8:enemy.horde?4:2));
     if(enemy.horde)this.hordeKills++;
@@ -312,7 +312,7 @@ export class Raid {
     if(this.safehouseAt())return false;
     if(options.parryable&&this.tryParry(options.source))return false;
     if (p.invulnerable > 0 || p.dashTime > 0 || this.status !== 'playing') return false;
-    const hit = absorbDamage(amount*(p.buffs.phase>0?0.7:1)*(p.form?.damage||1), p.armor);
+    const hit = absorbDamage(amount*this.run.incomingDamage*(p.buffs.phase>0?0.7:1)*(p.form?.damage||1), p.armor);
     if (p.armor) p.armor.durability = hit.durability;
     p.hp = Math.max(0, p.hp-hit.damage); p.invulnerable = 0.65;
     this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0;
@@ -616,9 +616,10 @@ export class Raid {
     this.status = success ? 'success' : 'dead';
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
     const items=[...this.bag,...equipped],materials=salvageMaterials(this.bag.filter(item=>!isEquipment(item)));
-    this.result = { id:this.id,success,reason,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*this.rewardMultiplier),number:this.player.value,
+    const exitMultiplier=success?exitRewardMultiplier({kind:this.extractedVia}):1,multiplier=this.rewardMultiplier*exitMultiplier;
+    this.result = { id:this.id,success,reason,exitBonus:exitMultiplier-1,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*multiplier),number:this.player.value,
       seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,mutators:[...this.run.ids],heat:this.heat?.value||0,seed:this.world.seed,extractedVia:this.extractedVia,
-      materials:{alloy:Math.round(materials.alloy*this.rewardMultiplier),core:Math.round(materials.core*this.rewardMultiplier)},
+      materials:{alloy:Math.round(materials.alloy*multiplier),core:Math.round(materials.core*multiplier)},
       gear:this.carriedEquipment().map(item=>({...item})),loot:items.map(item=>({...item})) };
     this.event('finish', { result: this.result });
   }

@@ -1,4 +1,4 @@
-# 数字进化 · Number Extraction v0.11.0
+# 数字进化 · Number Extraction v0.11.1
 
 **合成数字，启动过载，带资源撤离，建设庇护所。**
 
@@ -6,17 +6,19 @@
 
 项目使用原生 **JavaScript ES modules、HTML5 Canvas、CSS、Web Audio 与 localStorage** 实现，无第三方运行依赖。技术展示重点包括玩法系统设计、状态管理、程序地图、碰撞几何、空间查询、存档迁移和自动化验证。
 
-当前为 **v0.11.0 行动深度试玩版**，在四种地图、十二种附魔、二十类武器、十二类敌人、九种首领和五档难度的基础上，加入行动词条、热度追猎、数字体型和条件撤离。271项测试通过，Windows原生窗口、重启存档与最终EXE已验证。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
+当前为 **v0.11.1 数值调优试玩版**，在四种地图、十二种附魔、二十类武器、十二类敌人、九种首领和五档难度的基础上，加入行动词条、热度追猎、数字体型和条件撤离。290项测试通过，v0.11.1的Windows原生验证进行中。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
 
-[English](README.md) · [v0.11行动深度规则](docs/RUN_DEPTH_V011.md) · [分阶段路线](docs/ROADMAP.md) · [v0.10仓库与九类首领](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2残骸与资源袋](docs/REMNANTS_V092.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
+[English](README.md) · [v0.11.1数值与诊断](docs/BALANCE_V0111.md) · [匿名试玩清单](docs/PLAYTEST_V0111.md) · [v0.11行动深度规则](docs/RUN_DEPTH_V011.md) · [分阶段路线](docs/ROADMAP.md) · [v0.10仓库与九类首领](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2残骸与资源袋](docs/REMNANTS_V092.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
 
 ## 桌面启动
 
-**[直接下载 v0.11.0 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.0-desktop.14/NumberExtraction-0.11.0-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.0-desktop.14)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+**v0.11.1构建进行中，以下是上一版已验证下载：** **[直接下载 v0.11.0 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.0-desktop.14/NumberExtraction-0.11.0-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.0-desktop.14)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
 
 浏览器进度可在v0.9网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
 
 ## 这一版的变化
+
+**v0.11.1 调优**：降低战斗带来的热度正反馈，1024体型略小且移动更快，扩大浓雾视野，延长残爆预警；玻璃火力明确增加25%承伤。特殊出口等待缩短，窗口改为40/70秒，成功撤离额外获得8–15%币和材料；情报显示首领名字、钥卡位置与路线收益。西侧保底与仓库保留。提供有限生命诊断和2—4天匿名试玩清单；真人反馈尚未收集，第二阶段尚未开始。
 
 **v0.11 新增**：出击前从十个词条中最多选三个，风险与结算奖励提前展示；热度随时间、搜箱和战斗增长，25/50/75/100触发更强的有限追猎队；数字达到64、256、1024后体型、速度和防御产生取舍；特殊撤离点按种子分配窗口、钥卡、数字或首领条件。西侧保底出口按原时限开放且持续可用，局内右上角可暂停查看撤离情报。保留白底主页、彩色地图、仓库及旧进度。后续阵营、契约、套装、无尽与每日种子属于规划，尚未加入。见 [规则](docs/RUN_DEPTH_V011.md)。
 
@@ -100,11 +102,11 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 
 ## 存档和范围
 
-v0.11 使用结构5与独立 `number-extraction-v11` 存档键，优先复制v0.10，其次v0.9及更早版本；原键保留，旧版不能覆盖新进度。仓库、待收装备、选装计划和打造记录保留，旧存档默认不选择词条。桌面版存档目录保持不变，旧EXE进度可自动迁移。请先退出旧版再启动新版，避免单实例锁唤起旧窗口。请使用相同浏览器和完全相同的网址（localhost与127.0.0.1的进度不共用）。存档仅属于当前浏览器与来源，本地和线上不共享。清理浏览器数据会清空进度，多开标签可能互相覆盖；刷新不会保存未结束的战局。
+v0.11.1沿用v0.11.0的存档和仓库。v0.11 使用结构5与独立 `number-extraction-v11` 存档键，优先复制v0.10，其次v0.9及更早版本；原键保留，旧版不能覆盖新进度。仓库、待收装备、选装计划和打造记录保留，旧存档默认不选择词条。桌面版存档目录保持不变，旧EXE进度可自动迁移。请先退出旧版再启动新版，避免单实例锁唤起旧窗口。请使用相同浏览器和完全相同的网址（localhost与127.0.0.1的进度不共用）。存档仅属于当前浏览器与来源，本地和线上不共享。清理浏览器数据会清空进度，多开标签可能互相覆盖；刷新不会保存未结束的战局。
 
 本版开始，拾取装备成功撤离后入仓，不再同时兑换成资源；工坊基础装备每局重新发放且不入仓/出售。死亡、超时或放弃丢失本局携带装备和收益，未带入的仓库及已有庇护所资产保留。旧版已兑成资源的装备无法还原，已有资源保留。
 
-v0.11的271项自动测试、Windows原生检查与最终便携EXE均通过，结果见 [测试记录](docs/TESTING.md)。逻辑测试中的 DOM/Canvas/Web Audio 使用替身；Windows工作流另行检查真实启动、白底主页、12格数字预览、出击按钮、移动合成、暂停和重启存档，并附截图。长时间游玩、音质、硬件性能与经济平衡仍需试玩反馈。
+v0.11.1的290项自动测试通过，Windows原生检查与最终便携EXE验证进行中，结果见 [测试记录](docs/TESTING.md)。逻辑测试中的 DOM/Canvas/Web Audio 使用替身；Windows工作流另行检查真实启动、白底主页、12格数字预览、出击按钮、移动合成、暂停和重启存档，并附截图。长时间游玩、音质、硬件性能与经济平衡仍需试玩反馈。
 
 ## 开发与文档
 

@@ -101,7 +101,14 @@ async function run(window,app) {
   await fs.writeFile(file().replace(/\.json$/, '-raid.png'),(await window.webContents.capturePage()).toPNG());
   await window.webContents.executeJavaScript(`document.getElementById('extract-brief-button').click();`);
   await delay(100);
-  const exitBrief=await window.webContents.executeJavaScript(`({open:!document.getElementById('overlay').hidden,count:document.querySelectorAll('.exit-brief-item').length,text:document.getElementById('dialog').textContent,time:document.getElementById('time-value').textContent})`);
+  const exitBrief=await window.webContents.executeJavaScript(`({open:!document.getElementById('overlay').hidden,count:document.querySelectorAll('.exit-brief-item').length,text:document.getElementById('dialog').textContent,routes:[...document.querySelectorAll('.exit-brief-item')].map(item=>({kind:item.dataset.exitKind,bonus:item.querySelector('.exit-bonus')?.textContent,details:item.textContent})),time:document.getElementById('time-value').textContent})`);
+  for(const route of exitBrief.routes){
+    const bonus={fallback:0,window:8,key:10,number:10,boss:15}[route.kind];
+    if(bonus===undefined||!route.details.includes('距离')||!(bonus?route.bonus.includes('+'+bonus+'%'):route.bonus.includes('标准收益')))throw Error('Extraction risk/reward briefing is incomplete: '+JSON.stringify(route));
+    if(route.kind==='window'&&!route.details.includes('每70秒开放40秒'))throw Error('Outdated extraction window briefing');
+    if(route.kind==='key'&&!route.details.includes('前沿钥卡箱：'))throw Error('Key cache location is missing');
+    if(route.kind==='boss'&&!/守门首领：.{2,}/.test(route.details))throw Error('Guardian identity is missing');
+  }
   await delay(200);
   const briefTime=await window.webContents.executeJavaScript(`document.getElementById('time-value').textContent`);
   if(!exitBrief.open||exitBrief.count!==4||!exitBrief.text.includes('西侧保底')||briefTime!==exitBrief.time)throw Error('Paused extraction intelligence failed: '+JSON.stringify(exitBrief));

@@ -1,5 +1,7 @@
 # v0.11 · Run depth
 
+> Historical v0.11.0 release parameters and verification. For the current tuning candidate, see [v0.11.1 numeric changes](BALANCE_V0111.md) and the [playtest guide](PLAYTEST_V0111.md).
+
 This playtest implements the first phase of the development roadmap: mutators, rising heat, number-tier tradeoffs and variable extraction. It retains the white shelter, colourful maps, 20 weapons, 12 enchantments, nine bosses, four map families, five difficulties and the persistent warehouse. Later roadmap phases are not part of this build.
 
 Desktop release [v0.11.0-desktop.14](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.0-desktop.14) passed Windows startup, settings, extraction briefing, combat, seven layout/zoom cases, save restart and final portable checks. The automated suite contains 271 passing cases. See [testing](TESTING.md) for evidence and [the roadmap](ROADMAP.md) for future scope. Gameplay balance remains subject to playtesting.

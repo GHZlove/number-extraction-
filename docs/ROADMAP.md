@@ -2,32 +2,30 @@
 
 The project is moving from adding content toward making each expedition more interesting. Phases are delivered and reviewed separately. A version range is a planning label, not a release date or a promise that every listed feature is implemented.
 
-## Phase 1 · Run depth · v0.11–0.12
+## Phase 1 · Run depth and tuning · v0.11–v0.11.1
 
-**Delivered: v0.11 Windows playtest, with 271 passing automated cases and native release checks. Awaiting gameplay feedback before the next phase.**
+**Delivered: v0.11.0 Windows run-depth playtest. Current work: the v0.11.1 numeric tuning candidate and a planned 2–4 day human playtest pass. Outside-player feedback is still uncollected.**
 
 - Ten optional run mutators, with at most three selected and clear risks/rewards.
 - Rising heat and warned hunter squads, with finite arrival and population budgets.
 - Number-tier movement, collision and defence tradeoffs at 64, 256 and 1024.
 - Seeded window, key, number and boss exit conditions, alongside a permanent fallback route.
 
-See [run-depth rules](RUN_DEPTH_V011.md). Review whether these systems create a useful extract-or-push decision before expanding scope. Check save migration, interrupted extraction and high-heat stability as release gates; use playtesting to tune pressure and rewards.
+See the original [run-depth rules](RUN_DEPTH_V011.md), [v0.11.1 changes and diagnostic evidence](BALANCE_V0111.md), and [anonymous playtest kit](PLAYTEST_V0111.md). Review risky modifier combinations, high-heat pressure, 1024 movement and whether special exits offer a useful alternative to west. Check save migration, interrupted extraction and high-heat stability as release gates. Synthetic survival and native startup checks do not replace player feedback or complete the 2–4 day tuning window.
 
-## Phase 2 · Build and shelter depth · v0.13–0.14
+## Phase 2 · Build and shelter depth · v0.12
 
-**Planned; not implemented in v0.11.**
+**Planned; not implemented in v0.11.1. Start after reviewing the tuning pass and human playtest feedback.**
 
-- Enchantment interactions and meaningful set bonuses.
-- Cursed equipment with explicit benefits and costs.
-- Shelter NPC contracts and bounties with measurable objectives.
-- Faction reputation that unlocks selected gear pools and run modifiers.
-- Boss-codex rewards and small lore connections.
+1. **Equipment synergies and set bonuses:** build a small, distinct set of interactions using the existing 12 enchantments and 20 weapons.
+2. **Contracts and bounties:** introduce measurable objectives that encourage different builds and modifiers, with one complete objective/reward loop before adding volume.
+3. **Factions:** use contracts to earn reputation and unlock selected gear pools or modifiers.
 
-Start with one complete contract/reward loop and a small synergy set. Validate ownership, loss rules, reward idempotency and save migration before increasing the number of persistent systems.
+Cursed equipment and boss-codex rewards remain possible follow-up work within the broader build/shelter direction; they are not part of this numeric tuning pass. Validate ownership, loss rules, reward idempotency and save migration before increasing persistent scope.
 
 ## Phase 3 · Content scale · v0.15–0.17
 
-**Planned; not implemented in v0.11.**
+**Planned; not implemented in v0.11.1.**
 
 - A fifth map family and biome-specific encounters; expand the nine-boss roster toward roughly fourteen only when distinct mechanics are ready.
 - Rule-breaking enemies, potentially odd or prime numbers with clear exceptions to ordinary merge/division rules.
@@ -38,7 +36,7 @@ Keep attack warnings, counterplay and loot identity readable. Add content after 
 
 ## Phase 4 · Replay and reach · v0.18+
 
-**Planned; not implemented in v0.11.**
+**Planned; not implemented in v0.11.1.**
 
 - Daily seeded runs and local leaderboards, with a defined score and reproducible rules.
 - Controller support and broader browser/device validation.

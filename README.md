@@ -10,22 +10,24 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.11.0 · verified Windows run-depth preview |
+| Current version | v0.11.1 · balance playtest; Windows verification pending |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, mutators, heat and hunters, conditional extraction, combat and persistent shelter |
 | Content | 20 weapons, 12 enchantments, 12 enemy types, 9 bosses, 4 map families, 5 difficulties |
-| Verification | 271 automated tests; native Windows startup, layouts, persistence and portable EXE checks |
+| Verification | 290 automated tests; v0.11.1 native Windows verification pending |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**[Download v0.11.0 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.0-desktop.14/NumberExtraction-0.11.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.0-desktop.14). Run in a standalone window without Python or a separate browser. See [v0.11 run-depth rules and compatibility](docs/RUN_DEPTH_V011.md). Close an older running copy before opening the new EXE.
+**v0.11.1 Windows build pending; previous verified release:** **[Download v0.11.0 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.0-desktop.14/NumberExtraction-0.11.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.0-desktop.14). Run in a standalone window without Python or a separate browser. See [v0.11 run-depth rules and compatibility](docs/RUN_DEPTH_V011.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the current playtest web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
-[简体中文](README.zh-CN.md) · [v0.11 run depth](docs/RUN_DEPTH_V011.md) · [Phased roadmap](docs/ROADMAP.md) · [v0.10 warehouse and nine bosses](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.11.1 balance changes](docs/BALANCE_V0111.md) · [Anonymous playtest guide](docs/PLAYTEST_V0111.md) · [v0.11 run depth](docs/RUN_DEPTH_V011.md) · [Phased roadmap](docs/ROADMAP.md) · [v0.10 warehouse and nine bosses](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 The v0.11 rules and roadmap are documented in English; historical design and verification notes are mostly in Chinese.
+
+v0.11.1 adjusts heat escalation, high-tier movement, Fog, Volatile and Glass Firepower, and adds small rewards to existing special exits. It keeps the western fallback and warehouse progress intact. A finite-health diagnostic harness and an anonymous 2–4 day playtest guide accompany the tuning candidate; outside-player feedback remains uncollected. See [measured changes and limits](docs/BALANCE_V0111.md).
 
 v0.11 deepens the expedition loop before adding more content: choose up to three of ten mutators, manage rising heat and warned hunter squads, grow into number tiers with different movement and collision bodies, and plan around seeded extraction requirements. A western fallback exit remains available after its opening time. See the [run-depth rules](docs/RUN_DEPTH_V011.md). Later roadmap phases are planned, not included in this build.
 
@@ -35,7 +37,7 @@ v0.9.2 added automatic recycling of lower-number enemy remnants and an unlimited
 
 The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
 
-Actual v0.11 Windows desktop captures from release checks:
+Previous verified v0.11.0 Windows captures (v0.11.1 captures pending):
 
 ![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.0-desktop.14/portable-shelter-wide.png)
 
@@ -216,13 +218,13 @@ npm run check
 npm test
 ```
 
-No `npm install` is required for these checks. **271 tests pass**, including 38 new run-depth and production UI cases. Windows startup, seven layouts, settings, extraction briefing, combat, inventory and persistence pass in both the unpacked application and final portable EXE. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 27 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
+No `npm install` is required for these checks. **290 tests pass**, including 19 new tuning and briefing regressions. v0.11.1 native Windows verification is pending; the previous v0.11.0 release passed startup, seven layouts, settings, extraction briefing, combat, inventory and persistence checks. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 27 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
-v0.11 first copies v0.10 progress, then v0.9 and v0.7/v0.8 progress, with fallbacks for earlier saves, into the separate schema-5 `number-extraction-v11` key. Warehouse equipment, pending items and deployment selections are retained; mutator selections default to none for older saves. Original keys remain intact. Equipment that older versions already converted into resources cannot be reconstructed; those resources are retained. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
+v0.11.1 retains the same schema-5 key and existing v0.11.0 warehouse and progress. v0.11 first copies v0.10 progress, then v0.9 and v0.7/v0.8 progress, with fallbacks for earlier saves, into the separate schema-5 `number-extraction-v11` key. Warehouse equipment, pending items and deployment selections are retained; mutator selections default to none for older saves. Original keys remain intact. Equipment that older versions already converted into resources cannot be reconstructed; those resources are retained. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
 
 This is a single-player prototype with no multiplayer, cloud synchronisation, gameplay network requests or telemetry. Desktop dependencies are used for development and packaging; the built game runs offline. Enemies share a local navigation field and use crowd separation; full navigation meshes and globally optimal routes are not implemented. Windows desktop checks are performed by the release workflow; mobile devices, Safari, long sessions, display scaling, sound quality, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 

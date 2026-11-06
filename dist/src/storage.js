@@ -1,4 +1,4 @@
-import { normalizeMutators } from './run-rules.js';
+import { EXIT_BONUSES, normalizeMutators } from './run-rules.js';
 import { bossPool } from './bosses.js';
 import { defaultWarehouse, normalizeWarehouse, normalizeDeployment, warehouseCapacity, storeExtractedGear } from './warehouse.js';
 import { SAVE_KEY, PREVIOUS_SAVE_KEY, OLDER_SAVE_KEY, LEGACY_SAVE_KEY, V09_SAVE_KEY, V10_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf, MAP_LAYOUTS } from './config.js';
@@ -44,6 +44,7 @@ export function normalizeSave(data) {
     difficulty: difficultyOf(run.difficulty).id,
     materials: { alloy: integer(run.materials?.alloy), core: integer(run.materials?.core) },
     warehouse:{stored:integer(run.warehouse?.stored),pending:integer(run.warehouse?.pending)},
+    extractedVia:Object.hasOwn(EXIT_BONUSES,run.extractedVia)?run.extractedVia:null,exitBonus:Number.isFinite(run.exitBonus)?Math.max(0,Math.min(.2,run.exitBonus)):0,
     mutators:normalizeMutators(run.mutators),heat:integer(run.heat,100),seed:integer(run.seed,4294967295),
   })) : [];
   return save;
@@ -68,7 +69,7 @@ export function settleRun(save, result) {
   } else save.deaths++;
   save.best = Math.max(save.best,result.number);
   save.lastRuns.unshift({ id: result.id, success: result.success, value: result.success ? result.value : 0,
-    number: result.number, seconds: Math.floor(result.seconds), difficulty: difficultyOf(result.difficulty).id, materials, warehouse:result.warehouse||{stored:0,pending:0},mutators:normalizeMutators(result.mutators),heat:integer(result.heat,100),seed:integer(result.seed,4294967295) });
+    number: result.number, seconds: Math.floor(result.seconds), difficulty: difficultyOf(result.difficulty).id, materials, warehouse:result.warehouse||{stored:0,pending:0},extractedVia:result.success&&Object.hasOwn(EXIT_BONUSES,result.extractedVia)?result.extractedVia:null,exitBonus:result.success?result.exitBonus||0:0,mutators:normalizeMutators(result.mutators),heat:integer(result.heat,100),seed:integer(result.seed,4294967295) });
   save.lastRuns = save.lastRuns.slice(0,6);
   return true;
 }
