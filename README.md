@@ -10,20 +10,20 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.8.0 · playable single-player prototype |
+| Current version | v0.9.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, resource strongholds, crafting, enchantments, parries, bosses and extraction |
-| Content | 14 weapons, 4 enchantments, 12 enemy types, 3 bosses, 4 map families, 5 difficulties |
-| Verification | 157 automated tests; syntax/reference checks for 22 game modules + 4 desktop files |
+| Content | 20 weapons, 12 enchantments, 12 enemy types, 3 bosses, 4 map families, 5 difficulties |
+| Verification | 180 automated tests; syntax/reference checks for 23 game modules + 4 desktop files |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-Windows desktop previews are available in [GitHub Releases](https://github.com/GHZlove/number-extraction-/releases). Download the `.exe` to run in a standalone window without Python or a separate browser. See [desktop setup and save transfer](docs/DESKTOP_V08.md).
+Windows desktop previews are available in [GitHub Releases](https://github.com/GHZlove/number-extraction-/releases). Download the `.exe` to run in a standalone window without Python or a separate browser. See [v0.9 setup, arsenal and save migration](docs/BRIGHT_V09.md). Close an older running copy before opening the new EXE.
 
-The web/source version is available on the `feature/tactical-desktop-v08` playtest branch: [download the complete v0.8 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/tactical-desktop-v08.zip). The default branch and hosted demo follow separate release schedules.
+The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the complete v0.9 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
-[简体中文](README.zh-CN.md) · [v0.8 desktop and tactical UI](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
 
@@ -37,17 +37,17 @@ Extraction adds a second decision: carry on searching for better loot, or return
 
 **Prepare at the shelter → Deploy → Merge and explore → Fight or evade → Extract → Upgrade**
 
-- **Tactical interface:** restrained blue-grey terrain and panels keep fluorescent actors, attack cues and enchantments distinct. Shelter navigation separates deployment, facilities and forging; combat prioritises vitals, weapons and an engaged-boss health bar.
+- **Bright, raised number tiles:** a white shelter homepage, colourful terrain and rounded number faces with large white numerals. Player and hostile markers distinguish actors from neutral tiles. Deployment, facilities and forging retain separate tabs; combat keeps a compact HUD and dedicated boss bar.
 - **Windows desktop:** a portable Electron build bundles its runtime, starts in its own window, supports fullscreen and keeps progress across updates. A validated JSON export/import flow transfers browser progress with a recoverable backup.
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
 - **Four map families:** tangram ruins, radial fractures, split city blocks and clipped Voronoi wilderness. Select a family or randomise it. Maps contain 7–12 connected sectors with seeded shapes and risks, different landmark sequences and waterways, matching minimap boundaries and safe teaching anchors.
 - **Resource strongholds:** most enemies defend resource sites. Small wilderness patrols have their own cap; occupied sites can call limited reinforcements. Guards return when pulled too far away.
-- **Enchanted loadouts:** lifesteal, chain lightning, stun and poison clouds. Forge a permanent starter weapon up to Lv.5 and choose an enchantment; levels improve damage and knockback, while gun type, quality and number advantage also affect pushback.
+- **Twelve enchantments:** lifesteal, chain lightning, stun, poison clouds, burn, frost, bleed, sunder, on-kill detonation, critical hits, gravity and energy recovery. Forge a permanent starter weapon up to Lv.5 and choose an enchantment; levels improve damage and knockback, while gun type, quality and number advantage also affect pushback.
 - **Reactive defence:** aim toward an incoming attack and right-click for a short parry window. Reflect bullets or interrupt melee attackers, including bosses. Poison and ordinary explosions require movement.
 - **Traders, shelters and bosses:** spend carried loot at a field merchant; low-risk exits offer protective safehouses. Three boss archetypes cycle telegraphed moves and enter a second phase below half health. Some high-risk exits remain locked until their guardian falls.
 - **Combat impact:** directional hit sparks, enemy hit flashes, recoil, armour-break cues and shattering defeats. Heavy weapons add collision-safe knockback and a brief, throttled hit-stop with buffered controls. Synthesised weapon and impact sounds are opt-in; reduced-motion preferences suppress camera shake and hit deformation.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
-- **Fourteen weapons:** the original eight weapon types plus a burst carbine, LMG, crossbow, grenade launcher, spear and warhammer. Equip two slots, six quality tiers, durability-based armour and a laser sight.
+- **Twenty weapons:** pistols, automatic weapons, piercing and explosive firearms, plus directional melee weapons. v0.9 adds a heavy revolver, double-barrel shotgun, plasma pistol, flamethrower, rocket launcher and battleaxe. Equip two slots, six quality tiers, durability-based armour and a laser sight.
 - **Compact expeditions:** five arenas from 6,400 × 4,000 to 12,800 × 8,000. Each map has 1/25 the area of its v0.4.1 counterpart, with tighter landmark layouts and more concentrated encounters.
 - **Controlled reinforcements:** visible spawn warnings, a preparation window, local navigation and population budgets retain combat pressure around occupied sites while keeping wilderness encounters sparse.
 - **Terrain and enemies:** navigate open industrial compounds, container lanes, rock ridges, river bridges and brush. Twelve enemy types include fast scouts, slow armoured giants, strafing burst shooters, medics, summoners and radial-fire guards.
@@ -67,12 +67,12 @@ Extraction adds a second decision: carry on searching for better loot, or return
 
 ## Run locally
 
-Requirements: **Python 3**, a modern browser with JavaScript enabled, and optional **Node.js 22+** for automated checks. There are no third-party package dependencies or build steps.
+Requirements: **Python 3**, a modern browser with JavaScript enabled, and optional **Node.js 22+** for automated checks. The web game has no third-party runtime dependencies or build steps; desktop packaging uses the pinned development dependencies.
 
 Clone the repository, or extract the complete source ZIP:
 
 ```bash
-git clone --branch feature/tactical-desktop-v08 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
+git clone --branch feature/bright-arsenal-v09 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
 cd number-extraction
 ```
 
@@ -123,8 +123,9 @@ Exits open after **45/60/75/90/105 seconds**, depending on difficulty. Survive u
 3. Open the equipment chest at `(620, 1260)`. Press **F** for each item, then **B** to equip the yellow rifle, white armour and laser. Compare the two weapon slots and white/red aim guides.
 4. Practise **G**, **Q** and dodging against the nearby hunter, or evade it. The node at `(1180, 1270)` grants a temporary damage buff.
 5. The frontier cache at `(1500, 1420)` supplies the burst carbine, grenade launcher, spear and warhammer for an early test. A fast scout guards the road nearby.
-6. Return to the western green exit at `(310, 530)`. Stand still and hold **E** for four uninterrupted seconds.
-7. The shelter shows your banked rewards. Upgrade a facility when you can afford its listed resources, or prepare another expedition.
+6. The arsenal cache at `(1670, 1500)`, beside the frontier cache, supplies all six v0.9 weapons and the eight added enchantments. Use F to pick up and B to equip; trial items cannot be salvaged. The default backpack holds eight items, so choose or drop gear when full.
+7. Return to the western green exit at `(310, 530)`. Stand still and hold **E** for four uninterrupted seconds.
+8. The shelter shows your banked rewards. Upgrade a facility when you can afford its listed resources, or prepare another expedition.
 
 ## Combat and progression
 
@@ -140,6 +141,8 @@ Quality multipliers are **white 1.0, yellow 1.2, green 1.4, blue 1.6, purple 1.8
 
 Shotguns share one attack's base damage across five pellets; burst carbines share it across three timed shots. Switching weapons cancels remaining burst shots. Crossbows penetrate two distinct targets. Spears have a long, narrow attack arc; warhammers interrupt surviving targets. Grenades explode once on contact or at maximum range, with distance-based splash damage blocked by walls.
 
+Double-barrel shotguns share one attack budget across two four-pellet volleys. Plasma rounds penetrate two targets; flamethrowers apply intrinsic burn and battleaxes intrinsic bleed. Rockets have a larger splash radius than grenades. These mechanics still use the number-based damage system.
+
 Railguns can hit three distinct targets before stopping; walls block projectiles. A laser reduces actual firearm spread by **70%**. Switching or equipping does not reset the shared attack cooldown. Ammunition is unlimited in this prototype.
 
 | Shelter facility | Effect |
@@ -153,9 +156,9 @@ Picked-up equipment is converted into resources on extraction. Workshop equipmen
 
 ## Forge, trade and return
 
-Forge the selected starter weapon at the shelter using credits, alloy and cores. Each additional level adds 8% damage and increases knockback; choose one of four enchantments on forging or upgrading. A Lv.5 weapon can be re-enchanted for a separate cost. Crafted loadouts are reissued each raid, survive failed runs as a saved blueprint, and have no salvage value.
+Forge the selected starter weapon at the shelter using credits, alloy and cores. Each additional level adds 8% damage and increases knockback; choose one of twelve enchantments on forging or upgrading. A Lv.5 weapon can be re-enchanted for a separate cost. Crafted loadouts are reissued each raid, survive failed runs as a saved blueprint, and have no salvage value.
 
-The western safehouse has a merchant. Spend carried loot value on repair kits (24), division charges (30), green armour (65), a laser (36), or a green Lv.2 lightning rifle (110). Stock is limited per raid and equipment requires backpack space. Shelter savings are separate from raid trading.
+The western safehouse has a merchant. Spend carried loot value on repair kits (24), division charges (30), green armour (65), a laser (36), or a green Lv.2 lightning rifle (110). v0.9 also adds a green Lv.2 critical revolver (95) and frost plasma pistol (125). Stock is limited per raid and equipment requires backpack space. Shelter savings are separate from raid trading.
 
 Safehouse circles block incoming damage, provide one treatment per location and prohibit attacks from inside. Extraction still requires the survival deadline. Boss caches contain valuable loot, a purple Lv.3 enchanted weapon and supplies; their currency, alloy and bonus cores are banked only on successful extraction. Detailed costs and encounter rules are in [v0.7 design notes](docs/STRONGHOLDS_V07.md).
 
@@ -163,12 +166,12 @@ Safehouse circles block incoming damage, provide one treatment per location and 
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 22 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 23 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
 - Movement uses substeps; projectiles use ordered segment intersections. A static spatial grid narrows obstacle queries, and distant enemies skip active AI work.
-- Shelter progression is validated on load. v0.1/v0.2 saves migrate to a new key without overwriting the original; duplicate settlement is guarded within the current single-tab flow.
+- Shelter progression is validated on load. v0.9 copies older progress into an independent save key without overwriting the original; duplicate settlement is guarded within the current single-tab flow.
 - Canvas handles the world; DOM handles the shelter, HUD and dialogs. Artwork and sound are generated locally without external assets.
 
 ### Checks
@@ -180,19 +183,20 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **22 game modules and 4 desktop files passing syntax/reference checks, with 157 passing tests**: the 147 gameplay/application checks plus 10 desktop policy, bridge, save-transfer and HUD checks.
+No `npm install` is required. The current verification has **23 game modules and 4 desktop files passing syntax/reference checks, with 180 passing tests**. The latest 23 cases cover the new weapon mechanics, status effects, save migration, trial economy and raised-tile rendering.
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
-v0.7 migrates v0.3–v0.6 progression into a separate save key, leaving the original intact. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
+v0.9 first copies v0.7/v0.8 progress, with fallbacks for v0.3–v0.6 and earlier saves, into a separate save key. Original keys remain intact. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
 
 This is a single-player prototype with no multiplayer, cloud synchronisation, gameplay network requests or telemetry. Desktop dependencies are used for development and packaging; the built game runs offline. Enemies share a local navigation field and use crowd separation; full navigation meshes and globally optimal routes are not implemented. Windows desktop checks are performed by the release workflow; mobile devices, Safari, long sessions, display scaling, sound quality, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.9 bright tiles, twelve enchantments and twenty weapons](docs/BRIGHT_V09.md)
 - [v0.8 Windows desktop, tactical UI and save migration](docs/DESKTOP_V08.md)
 - [v0.7 strongholds, forge, enchantments, parry and bosses](docs/STRONGHOLDS_V07.md)
 - [v0.6 tangram sectors and combat impact](docs/TANGRAM_V06.md)
