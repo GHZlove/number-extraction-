@@ -58,6 +58,19 @@ async function run(window,app) {
   if (process.env.NUMBER_EXTRACTION_SMOKE_MODE === 'verify' && shelter.credits !== 37) throw Error('Saved progress did not survive restart');
   const previewLayouts=await checkPreviewLayouts(window);
   await fs.writeFile(file().replace(/\.json$/, '-shelter.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="vault"]').click();`);
+  await delay(100);
+  const warehouse=await window.webContents.executeJavaScript(`({tab:document.getElementById('shelter-screen').dataset.tab,capacity:document.querySelector('.warehouse-count').textContent,visible:getComputedStyle(document.querySelector('.warehouse-panel')).display!=='none',stored:JSON.parse(localStorage.getItem(document.documentElement.dataset.saveKey)||'null')?.warehouse?.items?.length})`);
+  if(warehouse.tab!=='vault'||!warehouse.visible||!warehouse.capacity.includes('/ 24'))throw Error('Warehouse tab failed: '+JSON.stringify(warehouse));
+  if(process.env.NUMBER_EXTRACTION_SMOKE_MODE==='verify'&&warehouse.stored!==1)throw Error('Warehouse equipment did not survive restart');
+  await fs.writeFile(file().replace(/\.json$/, '-warehouse.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="bosses"]').click();`);
+  await delay(100);
+  const codex=await window.webContents.executeJavaScript(`({count:document.querySelectorAll('.boss-card').length,visible:getComputedStyle(document.querySelector('.boss-codex')).display!=='none'})`);
+  if(codex.count!==9||!codex.visible)throw Error('Boss codex failed: '+JSON.stringify(codex));
+  await fs.writeFile(file().replace(/\.json$/, '-bosses.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="deploy"]').click();`);
+
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="start"]').click();`);
   await delay(250);
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));`);
@@ -75,11 +88,11 @@ async function run(window,app) {
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',bubbles:true}));`);
   const paused = await window.webContents.executeJavaScript(`!document.getElementById('overlay').hidden && document.getElementById('dialog').textContent.includes('行动暂停')`);
   if (!paused) throw Error('Pause control failed');
-  if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem(document.documentElement.dataset.saveKey,JSON.stringify({version:3,credits:37,materials:{alloy:0,core:0},shelter:{},lastRuns:[]}));`);
+  if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem(document.documentElement.dataset.saveKey,JSON.stringify({version:4,credits:37,materials:{alloy:0,core:0},shelter:{},warehouse:{nextId:2,items:[{id:'vault-1',kind:'weapon',weapon:'plasma',rarity:'purple',level:3,enchant:'frost'}],pending:[]},deployment:{},lastRuns:[]}));`);
   await window.webContents.session.flushStorageData();
   await delay(300);
   if (errors.length) throw Error(errors.join('\n'));
-  await report({ok:true,shelter,previewLayouts,raid,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
+  await report({ok:true,shelter,previewLayouts,warehouse,codex,raid,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
   app.quit();
 }
 module.exports = {run,report};

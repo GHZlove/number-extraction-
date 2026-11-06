@@ -6,9 +6,11 @@ import {
   moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree, zoneAt,
 } from './math.js';
 import { createLoot, createEnemy, generateWorld, lootForEnemy } from './world.js';
-import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, equipmentValue, HIT_FEEDBACK, knockbackFor, weaponPower, decorateWeapon, makeEquipment, isEquipment } from './equipment.js';
+import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, HIT_FEEDBACK, knockbackFor, weaponPower, decorateWeapon, makeEquipment, isEquipment } from './equipment.js';
 import { applyEnchantment, updateHazards, updateAfflictions, slowMultiplier } from './enchantments.js';
-import { updateBoss } from './bosses.js';
+import { updateBoss, BOSSES } from './bosses.js';
+import { updateBossZones } from './boss-hazards.js';
+import { applyWarehouseGear } from './warehouse.js';
 import { facilityLevel, starterLoadout, rewardMultiplier, salvageMaterials } from './shelter.js';
 import { SpatialGrid, obstaclesFor, terrainFor } from './spatial.js';
 
@@ -19,7 +21,7 @@ export class Raid {
     this.difficulty = difficultyOf(options.difficulty ?? save.selectedDifficulty);
     this.duration = this.difficulty.seconds;
     this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id);
-    this.world = generateWorld(seed,this.difficulty.id,{layout:options.layout||save.selectedMap});
+    this.world = generateWorld(seed,this.difficulty.id,{layout:options.layout||save.selectedMap,boss:options.boss||save.selectedBoss});
     this.status = 'playing';this.bursts=[];this.hitStop=0;this.hitStopCooldown=0;this.pendingInput={};
     this.elapsed = 0;
     this.director=options.pressure===false?null:new PressureDirector(seed,this.difficulty);
@@ -27,13 +29,13 @@ export class Raid {
     this.pressureState=this.director?.profile(0)||{speed:1,cooldown:1,windup:1};
     this.crowdGrid=null;this.hordeKills=0;
     this.result = null;
-    const loadout = starterLoadout(save,options.weapon);
+    const loadout = applyWarehouseGear(starterLoadout(save,options.weapon),options.warehouseGear);
     const supply = facilityLevel(save,'supply');
     this.player = {
       ...WORLD.spawn, radius: RULES.playerRadius, value: 1, hp: RULES.health, maxHp: RULES.health,
       dividers: RULES.startingDividers + supply, medkits: RULES.startingMedkits + Math.floor(supply/2),
       attackCooldown: 0, dashCooldown: 0, dashTime: 0, dashX: 1, dashY: 0,
-      invulnerable: 0, facingX: 1, facingY: 0, aimAngle: 0,
+      invulnerable: 0, chilled:0, facingX: 1, facingY: 0, aimAngle: 0,
       ...loadout, activeSlot: 0, energy: 0, overload: 0, buffs: { fury: 0, phase: 0, magnet: 0 },
     };
     Object.assign(this.player,{recoil:0,recoilMax:.1,sectorId:zoneAt(this.player,this.world.zones).id,parryWindow:0,parryCooldown:0,enchantCooldowns:{}});this.sectorNotice=0;
@@ -158,7 +160,8 @@ export class Raid {
     // A shared cooldown prevents switching from bypassing the previous weapon's cadence.
     return true;
   }
-  carriedValue() { return bagTotal(this.bag) + equipmentValue(this.player); }
+  carriedValue() { return bagTotal(this.bag.filter(item=>!isEquipment(item))); }
+  carriedEquipment() { return [...this.bag,...this.player.weapons,this.player.armor,this.player.laser].filter(item=>isEquipment(item)&&!item.starter); }
 
   shoot(origin, angle, speed, range, owner, value, rarity = 'white', options = {}) {
     this.world.projectiles.push({ x: origin.x, y: origin.y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
@@ -239,10 +242,29 @@ export class Raid {
     this.effect(enemy.x,enemy.y,'','#ff73b6','shatter',.35,{radius:48,seed:enemy.id.length*17+enemy.value});
     if(enemy.boss){
       const loot={...createLoot(enemy.x,enemy.y,2,220+enemy.bossRank*100,`boss-loot-${enemy.id}`),bossLoot:true,name:'首领核心物资'};
-      const gear=decorateWeapon(makeEquipment('weapon',['sniper','railgun','grenade'][enemy.bossStep%3],'purple',`boss-weapon-${enemy.id}`),['leech','lightning','poison'][enemy.bossStep%3],3);
+      const definition=BOSSES[enemy.boss];
+      const gear=decorateWeapon(makeEquipment('weapon',definition.weapon,'purple',`boss-weapon-${enemy.id}`),definition.enchant,3);
+      for(const add of this.world.enemies)if(add.bossOwnerId===enemy.id)add.dead=true;
+      this.world.hazards=this.world.hazards.filter(h=>h.sourceId!==enemy.id);
       this.world.chests.push({id:`boss-cache-${enemy.id}`,x:enemy.x,y:enemy.y,zone:2,value:loot.value,bossLoot:true,opened:false,gear:[gear],dividers:2,medkits:1});
       this.message(`${enemy.bossName}已击败！核心物资箱已出现，对应撤离点解除封锁。`);
     }
+  }
+  spawnBossAdds(boss,count,type){
+    if(this.status!=='playing'||this.safehouseAt())return 0;
+    let spawned=0;
+    for(let n=0;n<count;n++){
+      if((boss.summonedTotal||0)>=18||this.world.enemies.filter(e=>e.bossOwnerId===boss.id&&!e.dead).length>=6||this.world.enemies.filter(e=>e.bossOwnerId&&!e.dead).length>=24)break;
+      for(let attempt=0;attempt<16;attempt++){
+        const angle=(attempt+n*3+boss.bossStep)*Math.PI/8,point={x:boss.x+Math.cos(angle)*180,y:boss.y+Math.sin(angle)*180};
+        if(this.safehouseAt(point,80)||!isFree(point.x,point.y,24,obstaclesFor(this.world,point,point,24),this.world.bounds)||distance(point,this.player)<100)continue;
+        const serial=(this.world.bossAddSerial||0)+1;this.world.bossAddSerial=serial;
+        const child=createEnemy(`boss-add-${serial}`,point.x,point.y,Math.max(1,boss.value/4),type);
+        Object.assign(child,{bossOwnerId:boss.id,guard:true,horde:true,zone:boss.zone,sectorId:boss.sectorId,leash:550,cooldown:1.3});
+        this.world.enemies.push(child);boss.summonedTotal=(boss.summonedTotal||0)+1;spawned++;break;
+      }
+    }
+    return spawned;
   }
   divide() {
     const p = this.player;
@@ -499,6 +521,7 @@ export class Raid {
     this.elapsed += dt;this.sectorNotice=Math.max(0,this.sectorNotice-dt);
     for (const key of ['attackCooldown','dashCooldown','invulnerable','overload','recoil','parryWindow','parryCooldown']) p[key]=Math.max(0,p[key]-dt);
     for(const key of Object.keys(p.enchantCooldowns))p.enchantCooldowns[key]=Math.max(0,p.enchantCooldowns[key]-dt);
+    p.chilled=Math.max(0,(p.chilled||0)-dt);
     for(const key of Object.keys(p.buffs))p.buffs[key]=Math.max(0,p.buffs[key]-dt);
     let mx = input.x || 0, my = input.y || 0;
     const length = Math.hypot(mx, my);
@@ -519,7 +542,7 @@ export class Raid {
       this.move(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt);
       p.dashTime = Math.max(0, p.dashTime-dt);
     } else {
-      const speed = RULES.speed*terrainSpeed(p, terrainFor(this.world,p));
+      const speed = RULES.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
       this.move(p, mx*speed*dt, my*speed*dt);
     }
     const sector=zoneAt(p,this.world.zones);
@@ -565,6 +588,8 @@ export class Raid {
     if (this.status !== 'playing') return;
     updateHazards(this,dt);
     if (this.status !== 'playing') return;
+    updateBossZones(this,dt);
+    if (this.status !== 'playing') return;
     updateAfflictions(this,dt);
     if (this.status !== 'playing') return;
     this.world.effects = this.world.effects.filter(effect => (effect.life -= dt) > 0);
@@ -575,11 +600,11 @@ export class Raid {
     if (this.result) return;
     this.status = success ? 'success' : 'dead';
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
-    const items=[...this.bag,...equipped],materials=salvageMaterials(items);
+    const items=[...this.bag,...equipped],materials=salvageMaterials(this.bag.filter(item=>!isEquipment(item)));
     this.result = { id:this.id,success,reason,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*this.rewardMultiplier),number:this.player.value,
       seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,
       materials:{alloy:Math.round(materials.alloy*this.rewardMultiplier),core:Math.round(materials.core*this.rewardMultiplier)},
-      loot:items.map(item=>({...item})) };
+      gear:this.carriedEquipment().map(item=>({...item})),loot:items.map(item=>({...item})) };
     this.event('finish', { result: this.result });
   }
 }

@@ -20,10 +20,10 @@ function resolveAsset(root, value) {
   return {file,type:TYPES[path.extname(file)]};
 }
 function validSaveText(text) {
-  if (typeof text !== 'string' || Buffer.byteLength(text,'utf8') > 131072) return false;
+  if (typeof text !== 'string' || Buffer.byteLength(text,'utf8') > 524288) return false;
   try {
     const data = JSON.parse(text);
-    return !!data && !Array.isArray(data) && [1,2,3].includes(data.version) && Number.isFinite(data.credits) && data.credits >= 0;
+    return !!data && !Array.isArray(data) && [1,2,3,4].includes(data.version) && Number.isFinite(data.credits) && data.credits >= 0;
   } catch { return false; }
 }
 module.exports = {APP_URL,ORIGIN,CSP,isGameURL,resolveAsset,validSaveText};

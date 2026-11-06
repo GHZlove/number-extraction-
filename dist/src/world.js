@@ -2,7 +2,7 @@ import { createSectors, sampleSector, containsPoint } from './regions.js';
 import { WORLD, ZONES, LOOT, ENEMY_TYPES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { seededRandom, isFree, distance, zoneAt, maxEnemyHealth } from './math.js';
 import { makeEquipment, randomEquipment, decorateWeapon } from './equipment.js';
-import { empowerBoss, BOSSES } from './bosses.js';
+import { empowerBoss, BOSSES, bossPool } from './bosses.js';
 import { SHOP } from './commerce.js';
 import { buildLandscapes } from './landscapes.js';
 import { SpatialGrid } from './spatial.js';
@@ -142,13 +142,16 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
   const scout=createEnemy('frontier-scout',1900,1450,4*scale,'scout');scout.zone=0;world.enemies.push(scout);
   const guard=createEnemy('tutorial-guard',900,1280,8*scale,'hunter');guard.zone=0;world.enemies.push(guard);
   world.nodes.push({id:'tutorial-node',x:1180,y:1270,kind:'fury',used:false});
-  const bossKinds=Object.keys(BOSSES),bossAnchors=world.exits.filter(e=>!e.safehouse&&zoneAt(e,zones).risk===2).map(exit=>({exit,point:exit}));
+  const bossKinds=bossPool(mission.rank),bossAnchors=world.exits.filter(e=>!e.safehouse&&zoneAt(e,zones).risk===2).map(exit=>({exit,point:exit}));
   for(const site of sites.filter(s=>s.zone===2&&distance(s,WORLD.spawn)>1600))if(bossAnchors.length<2+Math.floor(rank/2))bossAnchors.push({point:site});
   if(!bossAnchors.length)bossAnchors.push({point:zones.find(z=>z.risk===2).center});
+  let spawnedBosses=0;
   for(const[index,anchor]of bossAnchors.slice(0,3).entries()){
     const zone=zoneAt(anchor.point,zones),p=spot(zone,52,true,anchor.point);if(!p)continue;
-    const kind=bossKinds[(index+(seed>>>0)%3)%bossKinds.length],boss=empowerBoss(createEnemy(`boss-${index}`,p.x,p.y,64*scale,{titan:'brute',prism:'orbiter',venom:'summoner'}[kind]),kind,mission.rank);
-    boss.zone=zone.risk;boss.sectorId=zone.id;world.enemies.push(boss);if(anchor.exit)anchor.exit.bossId=boss.id;
+    const requested=bossKinds.includes(options.boss)?options.boss:null;
+    const candidates=requested?[requested,...bossKinds.filter(k=>k!==requested)]:bossKinds;
+    const kind=candidates[(spawnedBosses+(requested?0:(seed>>>0)%candidates.length))%candidates.length],boss=empowerBoss(createEnemy(`boss-${index}`,p.x,p.y,64*scale,BOSSES[kind].type),kind,mission.rank);
+    boss.zone=zone.risk;boss.sectorId=zone.id;world.enemies.push(boss);spawnedBosses++;if(anchor.exit)anchor.exit.bossId=boss.id;
   }
   const west=world.exits[0];world.merchants.push({id:'trader-west',x:west.x+110,y:west.y+30,name:'边境行商',stock:Object.fromEntries(Object.entries(SHOP).map(([key,v])=>[key,v.stock]))});
   for(const item of [...world.tiles,...world.chests,...world.nodes,...world.enemies,...world.drops]){const sector=zoneAt(item,zones);item.sectorId=sector.id;}

@@ -171,16 +171,16 @@ test('gear pickup is blocked by a wall and does not auto-collect without F', () 
   assert.equal(r.pickupGear(), false); assert.equal(item.dead, false);
 });
 
-test('extracted equipped gear is converted once; a new raid starts with fresh starter weapons', () => {
+test('extracted gear is stored once while currency settles and default loadouts stay available', () => {
   const save = defaultSave(), r = raid();
   const gun = makeEquipment('weapon', 'rifle', 'yellow', 'extract-gun');
   const armor = makeEquipment('armor', '', 'green', 'extract-armor');
   r.bag = [gun, armor, { name: 'data', kind: 'loot', value: 24 }];
   r.equip(0, 0); r.equip(0);
-  const value = gun.value+armor.value+24;
+  const value = 24;
   assert.equal(r.carriedValue(), value); r.finish(true, 'test extraction');
   assert.equal(r.result.value, value); assert.equal(settleRun(save, r.result), true);
-  assert.equal(settleRun(save, r.result), false); assert.equal(save.credits, value);
+  assert.equal(settleRun(save, r.result), false); assert.equal(save.credits, value);assert.equal(save.warehouse.items.length,2);
   const next = new Raid(save, 999);
   assert.equal(next.player.armor, null); assert.equal(next.player.laser, null);
   assert.ok(next.player.weapons.every(item => item.starter && item.rarity === 'white'));

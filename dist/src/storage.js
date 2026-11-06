@@ -1,17 +1,20 @@
-import { SAVE_KEY, PREVIOUS_SAVE_KEY, OLDER_SAVE_KEY, LEGACY_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf, MAP_LAYOUTS } from './config.js';
+import { bossPool } from './bosses.js';
+import { defaultWarehouse, normalizeWarehouse, normalizeDeployment, warehouseCapacity, storeExtractedGear } from './warehouse.js';
+import { SAVE_KEY, PREVIOUS_SAVE_KEY, OLDER_SAVE_KEY, LEGACY_SAVE_KEY, V09_SAVE_KEY, UPGRADES, FACILITIES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { unlockedWeapons } from './shelter.js';
 import { ENCHANTS, WEAPONS, RARITIES } from './equipment.js';
 
 const integer = (value, max = 1e9) => Number.isFinite(value) ? Math.max(0,Math.min(max,Math.floor(value))) : 0;
 export const defaultSave = () => ({
-  version: 3, credits: 0, extractions: 0, deaths: 0, best: 1,
+  version: 4, credits: 0, extractions: 0, deaths: 0, best: 1,
   upgrades: { capacity: 0, divider: 0 }, materials: { alloy: 0, core: 0 },
-  shelter: { storage: 0, supply: 0, workshop: 0, recycler: 0 },
+  shelter: { warehouse:0, storage: 0, supply: 0, workshop: 0, recycler: 0 },
+  warehouse:defaultWarehouse(),deployment:{},selectedBoss:'random',
   selectedDifficulty: 'scout', selectedWeapon: 'pistol', selectedMap:'random',selectedEnchant:'leech',forged:{},lastRuns: [],
 });
 
 export function normalizeSave(data) {
-  if (!data || ![1,2,3].includes(data.version)) return defaultSave();
+  if (!data || ![1,2,3,4].includes(data.version)) return defaultSave();
   const save = defaultSave();
   for (const key of ['credits','extractions','deaths']) save[key] = integer(data[key]);
   save.best = Math.max(1,integer(data.best,2048));
@@ -29,17 +32,22 @@ export function normalizeSave(data) {
     const item=data.forged?.[key];if(!item||!Number.isInteger(item.level)||item.level<1||item.level>5)continue;
     save.forged[key]={level:item.level,rarity:RARITIES[item.level===5?5:item.level-1].id,enchant:Object.hasOwn(ENCHANTS,item.enchant)?item.enchant:'none'};
   }
+  save.warehouse=normalizeWarehouse(data.warehouse);
+  const excess=save.warehouse.items.splice(warehouseCapacity(save));save.warehouse.pending.unshift(...excess);
+  save.deployment=normalizeDeployment(save,data.deployment);
+  save.selectedBoss=bossPool(difficultyOf(save.selectedDifficulty).rank).includes(data.selectedBoss)?data.selectedBoss:'random';
   save.lastRuns = Array.isArray(data.lastRuns) ? data.lastRuns.slice(0,6).filter(run => run && typeof run.id === 'string').map(run => ({
     id: run.id.slice(0,100), success: run.success === true, value: integer(run.value),
     number: Math.max(1,integer(run.number,2048)), seconds: integer(run.seconds,1200),
     difficulty: difficultyOf(run.difficulty).id,
     materials: { alloy: integer(run.materials?.alloy), core: integer(run.materials?.core) },
+    warehouse:{stored:integer(run.warehouse?.stored),pending:integer(run.warehouse?.pending)},
   })) : [];
   return save;
 }
 export function readSave(storage) {
   try {
-    const current=storage.getItem(SAVE_KEY),legacy=current===null?(storage.getItem(PREVIOUS_SAVE_KEY)??storage.getItem(OLDER_SAVE_KEY)??storage.getItem(LEGACY_SAVE_KEY)):null;
+    const current=storage.getItem(SAVE_KEY),legacy=current===null?(storage.getItem(V09_SAVE_KEY)??storage.getItem(PREVIOUS_SAVE_KEY)??storage.getItem(OLDER_SAVE_KEY)??storage.getItem(LEGACY_SAVE_KEY)):null;
     return { save:normalizeSave(JSON.parse(current??legacy)),available:true,migrated:current===null&&legacy!==null };
   }
   catch { return { save: defaultSave(), available: false }; }
@@ -53,10 +61,11 @@ export function settleRun(save, result) {
   if (result.success) {
     save.credits += result.value; save.extractions++;
     save.materials.alloy += materials.alloy; save.materials.core += materials.core;
+    if(result.gear)result.warehouse=storeExtractedGear(save,result.gear);
   } else save.deaths++;
   save.best = Math.max(save.best,result.number);
   save.lastRuns.unshift({ id: result.id, success: result.success, value: result.success ? result.value : 0,
-    number: result.number, seconds: Math.floor(result.seconds), difficulty: difficultyOf(result.difficulty).id, materials });
+    number: result.number, seconds: Math.floor(result.seconds), difficulty: difficultyOf(result.difficulty).id, materials, warehouse:result.warehouse||{stored:0,pending:0} });
   save.lastRuns = save.lastRuns.slice(0,6);
   return true;
 }

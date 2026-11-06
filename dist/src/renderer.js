@@ -3,7 +3,8 @@ import { clamp, distance, tier, zoneAt, firstWallFraction, canRecycleRemnant } f
 import { activeWeapon, weaponOf, spreadOf, rarityOf, ENCHANTS } from './equipment.js';
 import { obstaclesFor, terrainFor } from './spatial.js';
 import { drawNumberTile } from './number-tiles.js';
-import { BOSSES } from './bosses.js';
+import { BOSSES, BOSS_MOVES, bossShotPattern } from './bosses.js';
+import { bossZoneRadius } from './boss-hazards.js';
 
 const TAU=Math.PI*2;
 function polygon(c,vertices,sx=1,sy=1){
@@ -60,12 +61,13 @@ export class Renderer {
     const left=this.camera.x-halfW,top=this.camera.y-halfH,right=left+2*halfW,bottom=top+2*halfH;
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
     this.drawTerrain(w,time);
+    this.drawPaint(w,{left,top,right,bottom});
     for(const cloud of w.hazards||[])if(this.visible(cloud.x,cloud.y,cloud.radius+30)){
+      if(cloud.bossZone){this.drawBossZone(cloud);continue;}
       c.fillStyle=cloud.owner==='player'?'#a8f43255':'#a849cf66';c.strokeStyle=cloud.owner==='player'?'#4c8c20':'#9d2eaa';c.lineWidth=2;
       c.beginPath();c.arc(cloud.x,cloud.y,cloud.radius,0,TAU);c.fill();c.stroke();
       this.text(cloud.owner==='player'?'附魔毒雾':'危险毒雾',cloud.x,cloud.y+5,11,PAINT.ink,'800');
     }
-    this.drawPaint(w,{left,top,right,bottom});
     // A surveying grid and hand-placed route make the map readable at a glance.
     c.lineWidth=1;
     for(let x=Math.floor(left/48)*48;x<right;x+=48){c.strokeStyle=x%240===0?'#30244d18':'#30244d08';c.beginPath();c.moveTo(x,Math.max(0,top));c.lineTo(x,Math.min(this.bounds.height,bottom));c.stroke();}
@@ -296,19 +298,38 @@ export class Renderer {
       for(const offset of offsets){c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(angle+offset)*definition.range,e.y+Math.sin(angle+offset)*definition.range);c.stroke();}c.setLineDash([]);
     }
   }
+  drawBossZone(zone){
+    const c=this.ctx,warning=zone.age<zone.warn,color=zone.color||'#e95769';
+    c.save();c.strokeStyle=color;c.fillStyle=color+(warning?'22':'66');c.lineWidth=2;
+    if(warning)c.setLineDash([7,6]);
+    if(zone.kind==='line'){
+      c.translate(zone.x,zone.y);c.rotate(zone.angle);c.fillRect(-zone.length/2,-zone.width/2,zone.length,zone.width);c.strokeRect(-zone.length/2,-zone.width/2,zone.length,zone.width);
+    }else if(zone.kind==='ring'){
+      const radius=bossZoneRadius(zone);c.lineWidth=zone.width;c.strokeStyle=color+(warning?'44':'88');c.beginPath();c.arc(zone.x,zone.y,radius,0,TAU);c.stroke();
+      c.lineWidth=2;c.strokeStyle=color;c.beginPath();c.arc(zone.x,zone.y,Math.max(1,radius-zone.width/2),0,TAU);c.stroke();c.beginPath();c.arc(zone.x,zone.y,radius+zone.width/2,0,TAU);c.stroke();
+    }else{
+      c.beginPath();c.arc(zone.x,zone.y,zone.radius,0,TAU);c.fill();c.stroke();
+      if(zone.kind==='gravity'){c.beginPath();c.arc(zone.x,zone.y,25+Math.sin(zone.age*4)*8,0,TAU);c.stroke();}
+    }
+    c.restore();this.text((warning?'预警 · ':'')+zone.label,zone.x,zone.y-12,11,PAINT.ink,'800','center','sans-serif');
+  }
   drawBossTelegraph(e){
     const c=this.ctx,progress=clamp(1-e.timer/e.windup,0,1),a=Math.atan2(e.aimY-e.y,e.aimX-e.x);
     c.lineWidth=3;c.strokeStyle='#e92c57';c.fillStyle='#ff406733';
-    if(['slam','poison'].includes(e.bossMove)){
+    if(['cross','icefield','icewave','bombard','furnace','well','collapse'].includes(e.bossMove))return;
+    if(e.bossMove==='cleave'){
+      c.beginPath();c.moveTo(e.x,e.y);c.arc(e.x,e.y,210,a-Math.PI*.575,a+Math.PI*.575);c.lineTo(e.x,e.y);c.fill();c.stroke();
+    }else if(['slam','poison'].includes(e.bossMove)){
       const r=e.bossMove==='poison'?205:e.bossPhase===2?220:175;
       c.beginPath();c.arc(e.aimX,e.aimY,r,0,TAU);c.fill();c.stroke();c.beginPath();c.arc(e.aimX,e.aimY,r*(1-progress),0,TAU);c.stroke();
       this.text(e.bossMove==='poison'?'毒雾 · 离开红圈':'震地 · 闪避 / 弹反',e.aimX,e.aimY,12,PAINT.ink,'900');
-    }else if(e.bossMove==='dash'){
-      c.save();c.translate(e.x,e.y);c.rotate(a);c.fillRect(0,-48,430,96);c.strokeRect(0,-48,430,96);c.restore();
+    }else if(['dash','shadowdash'].includes(e.bossMove)){
+      const length=(e.bossMove==='shadowdash'?740:590)*(e.bossPhase===2?.7:.5)+42;
+      c.save();c.translate(e.x,e.y);c.rotate(a);c.fillRect(0,-48,length,96);c.strokeRect(0,-48,length,96);c.restore();
     }else{
       c.setLineDash([8,7]);
-      const count=e.bossMove==='ring'?12:e.bossMove==='fan'?7:3;
-      for(let i=0;i<count;i++){const angle=a+(e.bossMove==='ring'?i*TAU/count:(i-(count-1)/2)*.14);c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(angle)*450,e.y+Math.sin(angle)*450);c.stroke();}c.setLineDash([]);
+      for(const shot of bossShotPattern(e)){c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(shot.angle)*450,e.y+Math.sin(shot.angle)*450);c.stroke();}c.setLineDash([]);
+      this.text(BOSS_MOVES[e.bossMove],e.x,e.y-85,11,BOSSES[e.boss].color,'900');
     }
   }
   drawEnemy(e,p,time,selected) {
@@ -322,6 +343,7 @@ export class Renderer {
     if(named){this.rect(e.x-45,e.y-s/2-27,90,17,4,PAINT.ink);}
     if(named)this.text((e.state==='windup'?'! ':'')+(e.bossName||definition.name),e.x,e.y-s/2-14,10,PAINT.paper,'700','center','sans-serif');
     if(e.boss){
+      const glyph=BOSSES[e.boss].glyph;this.rect(e.x-s/2-17,e.y-s/2-17,22,22,5,BOSSES[e.boss].color,PAINT.ink);this.text(glyph,e.x-s/2-6,e.y-s/2,16,PAINT.ink,'900');
       c.strokeStyle=BOSSES[e.boss].color;c.lineWidth=4;c.strokeRect(e.x-s/2-6,e.y-s/2-6,s+12,s+12);
       this.rect(e.x-75,e.y-s/2-52,150,10,4,PAINT.ink);this.rect(e.x-75,e.y-s/2-52,150*e.hp/e.maxHp,10,4,BOSSES[e.boss].color);
       this.text(`BOSS / 阶段 ${e.bossPhase}`,e.x,e.y+s/2+48,12,PAINT.ink,'900');

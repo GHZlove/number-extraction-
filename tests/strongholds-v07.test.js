@@ -100,7 +100,7 @@ test('forging is atomic, capped and produces repeatable non-salvageable starting
 test('v0.6 progression migrates to an isolated save key and forged records are validated',()=>{
   const previous={version:2,credits:640,materials:{alloy:21,core:4},shelter:{workshop:2},selectedWeapon:'rifle'};
   const data=new Map([[PREVIOUS_SAVE_KEY,JSON.stringify(previous)]]),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
-  const loaded=readSave(storage);assert.ok(loaded.migrated);assert.equal(loaded.save.version,3);assert.equal(loaded.save.credits,640);writeSave(storage,loaded.save);
+  const loaded=readSave(storage);assert.ok(loaded.migrated);assert.equal(loaded.save.version,4);assert.equal(loaded.save.credits,640);writeSave(storage,loaded.save);
   assert.deepEqual(JSON.parse(data.get(PREVIOUS_SAVE_KEY)),previous);assert.ok(data.has(SAVE_KEY));
   const save=normalizeSave({...loaded.save,forged:{rifle:{level:3,enchant:'poison',rarity:'red'},pistol:{level:999},evil:{level:5}},selectedMap:'bad'});
   assert.deepEqual(save.forged,{rifle:{level:3,enchant:'poison',rarity:'green'}});assert.equal(save.selectedMap,'random');
@@ -198,7 +198,7 @@ test('boss-gated extraction unlocks once and boss loot settles only after succes
   r.finish(true,'test');const save=defaultSave();assert.ok(settleRun(save,r.result));assert.ok(save.materials.core>=4);assert.ok(save.materials.alloy>=12);const credits=save.credits;assert.equal(settleRun(save,r.result),false);assert.equal(save.credits,credits);
 });
 
-test('all three bosses cycle different telegraphed attacks and enrage below half health',()=>{
+test('all boss types cycle different telegraphed attacks and enrage below half health',()=>{
   for(const kind of Object.keys(BOSSES)){
     const r=empty(true),e=empowerBoss(enemy(r,300,0,16),kind,1),seen=new Set();
     r.player.invulnerable=999;

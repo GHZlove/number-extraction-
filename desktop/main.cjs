@@ -36,7 +36,7 @@ function registerIPC() {
     const result = await dialog.showOpenDialog(window,{title:'导入数字进化存档',properties:['openFile'],filters:[{name:'JSON save',extensions:['json']}]});
     if (result.canceled || !result.filePaths[0]) return {ok:false,canceled:true};
     try {
-      const file = result.filePaths[0];if ((await fs.stat(file)).size > 131072) return {ok:false,error:'文件超过128KB。'};
+      const file = result.filePaths[0];if ((await fs.stat(file)).size > 524288) return {ok:false,error:'文件超过512KB。'};
       const text = await fs.readFile(file,'utf8');return validSaveText(text) ? {ok:true,text} : {ok:false,error:'这不是有效的数字进化存档。'};
     } catch { return {ok:false,error:'无法读取所选存档。'}; }
   });

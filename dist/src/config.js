@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.9.2';
+export const VERSION = '0.10.0';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
   {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
@@ -25,7 +25,8 @@ export const DIFFICULTIES = Object.freeze([
 ]);
 export const difficultyOf = id => DIFFICULTIES.find(item => item.id === id) || DIFFICULTIES[0];
 export const FACILITIES = Object.freeze({
-  storage: { name: '储备仓', en: 'STORAGE', icon: 'storage', max: 20, base: 80, alloy: 3, description: '每级增加 2 格装备背包，资源袋不限量。' },
+  warehouse: { name: '战备仓库', en: 'WAREHOUSE', icon: 'storage', max: 10, base: 160, alloy: 5, description: '保留撤离装备，每级增加12格局外仓库。' },
+  storage: { name: '行军背包', en: 'STORAGE', icon: 'storage', max: 20, base: 80, alloy: 3, description: '每级增加 2 格装备背包，资源袋不限量。' },
   supply: { name: '补给站', en: 'SUPPLIES', icon: 'medical', max: 20, base: 90, alloy: 3, description: '增加开局运算道具与修复剂。' },
   workshop: { name: '武器工坊', en: 'WORKSHOP', icon: 'weapon', max: 6, base: 120, alloy: 4, description: '解锁出击武器，提高基础装备品质。' },
   recycler: { name: '回收中心', en: 'RECYCLER', icon: 'core', max: 20, base: 100, alloy: 4, description: '每级提高 5% 撤离资源收益。' },
@@ -61,7 +62,8 @@ export const UPGRADES = Object.freeze({
 export const LEGACY_SAVE_KEY = 'number-extraction-v01';
 export const PREVIOUS_SAVE_KEY = 'number-extraction-v07';
 export const OLDER_SAVE_KEY = 'number-extraction-v03';
-export const SAVE_KEY = 'number-extraction-v09';
+export const V09_SAVE_KEY = 'number-extraction-v09';
+export const SAVE_KEY = 'number-extraction-v10';
 
 export const TERRAIN = Object.freeze({
   water: { name: '浅水', speed: 0.58, color: '#50bed5', line: '#d3fbff', priority: 1 },

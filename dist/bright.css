@@ -47,3 +47,21 @@ body { background:#f7f9fc; }
 .resource-stacks { display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:12px 0; }
 .resource-stack { display:flex;flex-direction:column;gap:5px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:7px; }
 .resource-stack b { color:var(--text);font-size:12px; }.resource-stack span { color:var(--gold);font-size:15px;font-weight:800; }.resource-stack small { color:var(--muted);font-size:10px; }
+
+/* Persistent shelter inventory and encounter intelligence. */
+.warehouse-panel,.boss-codex { display:none;background:#fff;color:#26354b;border:1px solid #d7e0e9;border-radius:15px;padding:24px; }
+.shelter-screen[data-tab="vault"] .shelter-layout,.shelter-screen[data-tab="bosses"] .shelter-layout { grid-template-columns:1fr; }
+.shelter-screen[data-tab="vault"] .shelter-hero,.shelter-screen[data-tab="vault"] .facilities-grid,.shelter-screen[data-tab="vault"] .forge-panel,.shelter-screen[data-tab="vault"] .shelter-stats,.shelter-screen[data-tab="vault"] .expedition-panel,.shelter-screen[data-tab="vault"] .shelter-main>.section-heading,
+.shelter-screen[data-tab="bosses"] .shelter-hero,.shelter-screen[data-tab="bosses"] .facilities-grid,.shelter-screen[data-tab="bosses"] .forge-panel,.shelter-screen[data-tab="bosses"] .shelter-stats,.shelter-screen[data-tab="bosses"] .expedition-panel,.shelter-screen[data-tab="bosses"] .shelter-main>.section-heading { display:none; }
+.shelter-screen[data-tab="vault"] .warehouse-panel,.shelter-screen[data-tab="bosses"] .boss-codex { display:block; }
+.warehouse-panel p,.boss-codex>p { color:#65778c;font-size:12px;line-height:1.8; }.warehouse-count { color:#168c80; }
+.vault-toolbar,.vault-actions { display:flex;flex-wrap:wrap;gap:8px; }.vault-toolbar { margin:16px 0; }
+.vault-toolbar button,.vault-actions button,.deployment-slots button,.boss-card button { background:#e7f7f0;color:#187e6e;border:1px solid #badacf;border-radius:7px;padding:9px 12px;font-weight:700;cursor:pointer; }
+.vault-actions button:disabled,.vault-toolbar button:disabled,.boss-card button:disabled { opacity:.4;cursor:default; }.vault-actions .vault-recycle { background:#fff1e7;color:#996331;border-color:#ead2bd; }
+.deployment-slots { display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:18px 0; }.deployment-slots>div { padding:12px;background:#f1f7fb;border:1px solid #d9e4ec;border-radius:8px;display:flex;flex-direction:column;gap:8px; }.deployment-slots small { color:#70849a; }.deployment-slots b { font-size:12px;overflow-wrap:anywhere; }
+.vault-grid,.boss-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:16px 0; }
+.vault-item { border:1px solid #d7e0e9;border-top:4px solid color-mix(in srgb,var(--rarity) 70%,#758290);border-radius:10px;padding:15px;background:#f9fbfd; }.vault-item small { color:#7b8da0; }.vault-item h3 { margin:9px 0;font-size:14px;overflow-wrap:anywhere; }.vault-item p { margin:9px 0;font-size:11px; }.vault-actions button { font-size:11px;padding:7px 9px; }
+.boss-card { padding:20px;background:#f8fbfe;border:1px solid #d6e1ea;border-top:4px solid var(--boss-color);border-radius:10px; }.boss-glyph { display:inline-grid;place-items:center;background:var(--boss-color);color:#24314b;width:40px;height:40px;border-radius:10px;font-size:25px; }.boss-card h3 { font-size:17px;margin:12px 0; }.boss-card p,.boss-card small { color:#687b91;font-size:11px;line-height:1.8; }.boss-card button { width:100%;margin-top:10px; }
+.shelter-tabs { flex-wrap:wrap; }.shelter-tabs button { min-width:130px; }
+.shelter-screen[data-tab="base"] .facilities-grid { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+@media(max-width:600px) { .warehouse-panel,.boss-codex { padding:16px; }.shelter-tabs button { min-width:95px; }.vault-grid,.boss-cards { grid-template-columns:1fr; } }
