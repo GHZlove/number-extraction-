@@ -4,7 +4,7 @@
 
 ## Windows 启动
 
-在 [GitHub Releases](https://github.com/GHZlove/number-extraction-/releases) 找到 v0.9 Windows Preview，下载 `NumberExtraction-0.9.0-Windows-x64.exe`，双击即可进入独立窗口。无需 Python、Node.js、本地服务或另开浏览器。F11 / Alt+Enter 切换全屏。
+**[直接下载 NumberExtraction-0.9.0-Windows-x64.exe](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/NumberExtraction-0.9.0-Windows-x64.exe)** · [v0.9发布页](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.0-desktop.8)。双击即可进入独立窗口。无需 Python、Node.js、本地服务或另开浏览器。F11 / Alt+Enter 切换全屏。
 
 先完全退出旧 EXE 再打开新版：桌面版采用单实例锁，旧版未退出时会聚焦已有窗口。首次启动会展开内置运行时。预览版未配置代码签名，Windows 可能提示未知发布者；不需要关闭安全防护。附件包含 SHA256 和真实桌面截图。
 
@@ -72,6 +72,14 @@
 2026-11-06：23 个游戏模块与四个桌面文件通过语法/引用检查，180 项测试通过，其中本轮新增 23 项。另在四地图×五难度中抽样运行 13,920 个模拟步，确认混合武器、状态和特效没有非有限坐标。详见 [测试说明](TESTING.md)。
 
 Windows 工作流在发布下载前执行原生启动、白底亮度、十二格预览、文字对比、出击按钮可见性、Canvas 绘制、键盘移动合成、暂停、关闭重启存档和实际 portable EXE 检查。真实截图随 Release 提供。自动检查不等于不同显卡/DPI、长期平衡、触屏、Safari 或音质验收。
+
+本次 [Windows原生构建](https://github.com/GHZlove/number-extraction-/actions/runs/42157079462) 已通过上述检查，启动、重启和实际 portable 三次检查均成功，37数据币测试进度跨重启保留；主页背景亮度约0.946，品牌文字对比约11.77:1，十二格预览和出击按钮均可见。已人工查看发布的主页/战局截图，并实际下载 EXE 验证 PE 格式和 SHA256。文件110,401,077字节，SHA256：
+
+```text
+4882c0e68827cf815825aa27d98f239bad53f607d085a4723d580b540636c196
+```
+
+游戏构建提交为 `d397406`；后续文档提交不改变 EXE 内的游戏代码。完整源码在 `feature/bright-arsenal-v09`，主分支与托管试玩未更新。
 
 ## 设计参考
 

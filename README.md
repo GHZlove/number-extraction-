@@ -19,13 +19,19 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-Windows desktop previews are available in [GitHub Releases](https://github.com/GHZlove/number-extraction-/releases). Download the `.exe` to run in a standalone window without Python or a separate browser. See [v0.9 setup, arsenal and save migration](docs/BRIGHT_V09.md). Close an older running copy before opening the new EXE.
+**[Download v0.9 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/NumberExtraction-0.9.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.0-desktop.8). Run in a standalone window without Python or a separate browser. See [v0.9 setup, arsenal and save migration](docs/BRIGHT_V09.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the complete v0.9 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
 [简体中文](README.zh-CN.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 Detailed design and verification notes are currently in Chinese.
+
+Actual Windows desktop captures from the release checks:
+
+![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/portable-shelter.png)
+
+![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/portable-raid.png)
 
 ## Design idea
 

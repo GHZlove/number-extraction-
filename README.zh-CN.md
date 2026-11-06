@@ -12,7 +12,7 @@
 
 ## 桌面启动
 
-从 [GitHub Releases](https://github.com/GHZlove/number-extraction-/releases) 下载Windows x64的EXE，双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+**[直接下载 v0.9 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.9.0-desktop.8/NumberExtraction-0.9.0-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.9.0-desktop.8)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
 
 浏览器进度可在v0.9网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
 
