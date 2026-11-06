@@ -10,7 +10,7 @@ export function browserStubs(t) {
     Object.defineProperty(globalThis, name, { configurable: true, writable: true, value });
   }
   const contextMethods = new Set(['beginPath','arc','fill','stroke','fillRect','strokeRect','clearRect','moveTo','lineTo',
-    'save','restore','translate','rotate','scale','setTransform','roundRect','setLineDash','fillText','createLinearGradient']);
+    'save','restore','translate','rotate','scale','setTransform','roundRect','setLineDash','fillText','createLinearGradient','createRadialGradient']);
   function context() {
     const state = {};
     return new Proxy(state, {
@@ -20,7 +20,7 @@ export function browserStubs(t) {
         return (...args) => {
           for (const arg of args.flat()) if (typeof arg === 'number' && !Number.isFinite(arg)) throw new Error(`Non-finite Canvas argument: ${key}`);
           drawCalls.push({ method: key, args, strokeStyle: target.strokeStyle });
-          if (key === 'createLinearGradient') return { addColorStop() {} };
+          if (key === 'createLinearGradient'||key==='createRadialGradient') return { addColorStop() {} };
         };
       },
     });

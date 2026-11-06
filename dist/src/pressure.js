@@ -25,7 +25,7 @@ export class PressureDirector {
     if(elapsed>85)choices.push('summoner','sniper');
     return choices[Math.floor(this.random()*choices.length)];
   }
-  enqueue(raid,count,profile,anchor=null){
+  enqueue(raid,count,profile,anchor=null,options={}){
     const w=raid.world,p=raid.player,near=w.enemies.filter(e=>!e.dead&&distance(e,p)<1500).length;
     const pending=w.spawnWarnings.length,budget=Math.max(0,Math.min(count,profile.nearCap-near-pending));
     const base=this.random()*Math.PI*2;
@@ -41,7 +41,7 @@ export class PressureDirector {
       const type=this.enemyType(raid.elapsed),zone=zoneAt(point,w.zones),tier=Math.min(11,1+zone.risk+this.difficulty.enemyShift+Math.floor(raid.elapsed/70));
       const elite=i===0&&raid.elapsed>30&&this.wave%3===0,offset=elite?2:this.random()<.35?-1:0;
       const value=2**Math.max(0,Math.min(13,tier+offset));
-      w.spawnWarnings.push({...point,id:`horde-${++this.serial}`,type,value,zone:zone.risk,sectorId:zone.id,elite,guard:!!anchor,readyAt:raid.elapsed+PRESSURE.warningSeconds,duration:PRESSURE.warningSeconds,moveScale:(.9+this.random()*.2)*(1+(this.difficulty.rank-1)*.04)});
+      w.spawnWarnings.push({...point,id:`horde-${++this.serial}`,type,value:value*(raid.run?.enemyNumbers||1),zone:zone.risk,sectorId:zone.id,elite,guard:!!anchor,hunter:!!options.hunter,readyAt:raid.elapsed+(options.warning||PRESSURE.warningSeconds),duration:options.warning||PRESSURE.warningSeconds,moveScale:(.9+this.random()*.2)*(1+(this.difficulty.rank-1)*.04)});
     }
   }
   update(raid,dt){
@@ -51,9 +51,10 @@ export class PressureDirector {
     for(const mark of w.spawnWarnings){
       if(mark.readyAt>raid.elapsed)continue;
       mark.done=true;
+      if(mark.hunter&&raid.safehouseAt(p,120))continue;
       if(near>=cap||w.enemies.filter(e=>!e.dead).length>=640||distance(mark,p)<PRESSURE.safetyRadius||raid.safehouseAt(mark,80)||!isFree(mark.x,mark.y,30,obstaclesFor(w,mark,mark,30),w.bounds)||w.enemies.some(e=>!e.dead&&distance(e,mark)<50))continue;
       const e=createEnemy(mark.id,mark.x,mark.y,mark.value,mark.type);
-      Object.assign(e,{horde:true,guard:mark.guard,leash:850,elite:mark.elite,zone:mark.zone,sectorId:mark.sectorId,moveScale:mark.moveScale,aggro:mark.guard?4:0,cooldown:.4,rarity:mark.elite?'yellow':'white'});
+      Object.assign(e,{horde:true,hunter:!!mark.hunter,guard:mark.guard,leash:850,elite:mark.elite,zone:mark.zone,sectorId:mark.sectorId,moveScale:mark.moveScale,aggro:mark.hunter?999:mark.guard?4:0,cooldown:.4,rarity:mark.elite?'yellow':'white'});
       w.enemies.push(e);this.spawned++;near++;
     }
     w.spawnWarnings=w.spawnWarnings.filter(mark=>!mark.done);
@@ -65,7 +66,7 @@ export class PressureDirector {
     }
     const profile=this.profile(raid.elapsed);
     if(raid.elapsed>=this.nextPulse&&!sheltered){
-      const risk=zoneAt(p,w.zones).risk,patrols=w.enemies.filter(e=>!e.dead&&e.horde&&!e.guard).length+w.spawnWarnings.filter(m=>!m.guard).length;
+      const risk=zoneAt(p,w.zones).risk,patrols=w.enemies.filter(e=>!e.dead&&e.horde&&!e.guard&&!e.hunter).length+w.spawnWarnings.filter(m=>!m.guard&&!m.hunter).length;
       this.wave++;this.enqueue(raid,anchor?Math.ceil(profile.batch*(1+risk*.15)*1.7):Math.max(0,Math.min(2+Math.floor(this.difficulty.rank/3),10-patrols)),profile,anchor);
       this.nextPulse=raid.elapsed+profile.interval/(1+risk*.1);
     }

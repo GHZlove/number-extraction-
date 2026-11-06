@@ -1,3 +1,5 @@
+import { runRules, updateNumberForm, configureExpedition, extractionStatus, updateRunHazards } from './run-rules.js';
+import { HeatDirector } from './heat.js';
 import { PressureDirector } from './pressure.js';
 import { NavigationField } from './navigation.js';
 import { RULES, WORLD, ENEMY_TYPES, PRESSURE, difficultyOf } from './config.js';
@@ -19,21 +21,25 @@ export class Raid {
     this.id = `${Date.now()}-${seed}`;
     this.random = seededRandom(seed ^ 0x5a91bd);
     this.difficulty = difficultyOf(options.difficulty ?? save.selectedDifficulty);
-    this.duration = this.difficulty.seconds;
-    this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id);
+    this.run=runRules(options.mutators??save.selectedMutators,options.runRules!==false);
+    this.duration = this.difficulty.seconds*this.run.duration;
+    this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id)*this.run.reward;
     this.world = generateWorld(seed,this.difficulty.id,{layout:options.layout||save.selectedMap,boss:options.boss||save.selectedBoss});
+    for(const e of this.world.enemies)e.value*=this.run.enemyNumbers;
     this.status = 'playing';this.bursts=[];this.hitStop=0;this.hitStopCooldown=0;this.pendingInput={};
     this.elapsed = 0;
     this.director=options.pressure===false?null:new PressureDirector(seed,this.difficulty);
     this.navigation=new NavigationField(this.world);
     this.pressureState=this.director?.profile(0)||{speed:1,cooldown:1,windup:1};
+    this.pressureState.speed*=this.run.enemySpeed;
+    this.heat=this.run.enabled?new HeatDirector(this.difficulty,this.run.heatRate):null;this.exitKeys=0;
     this.crowdGrid=null;this.hordeKills=0;
     this.result = null;
     const loadout = applyWarehouseGear(starterLoadout(save,options.weapon),options.warehouseGear);
     const supply = facilityLevel(save,'supply');
     this.player = {
-      ...WORLD.spawn, radius: RULES.playerRadius, value: 1, hp: RULES.health, maxHp: RULES.health,
-      dividers: RULES.startingDividers + supply, medkits: RULES.startingMedkits + Math.floor(supply/2),
+      ...WORLD.spawn, radius: RULES.playerRadius, value: 1, hp:this.run.health, maxHp:this.run.health,healAmount:this.run.scarcity?20:30,laserDisabled:this.run.jammed,
+      dividers: RULES.startingDividers + supply, medkits: this.run.scarcity?0:RULES.startingMedkits + Math.floor(supply/2),
       attackCooldown: 0, dashCooldown: 0, dashTime: 0, dashX: 1, dashY: 0,
       invulnerable: 0, chilled:0, facingX: 1, facingY: 0, aimAngle: 0,
       ...loadout, activeSlot: 0, energy: 0, overload: 0, buffs: { fury: 0, phase: 0, magnet: 0 },
@@ -47,6 +53,7 @@ export class Raid {
     this.events = []; this.lastMessage = ''; this.lastMessageTime = -10;
     this.tutorial = { merge: false, chest: false, extraction: false };
     this.nodesActivated = 0; this.combo = 0; this.lastMerge = -Infinity;
+    updateNumberForm(this);configureExpedition(this,seed);
     this.message(`守卫主要驻守资源点。${this.difficulty.extractAt} 秒后可撤离；右键弹反，西侧安全屋有商人。`);
   }
 
@@ -57,13 +64,15 @@ export class Raid {
   }
   ground(entity=this.player){return terrainAt(entity,terrainFor(this.world,entity));}
   safehouseAt(point=this.player,pad=0){return this.world.exits.find(e=>e.safehouse&&distance(e,point)<e.safetyRadius+pad)||null;}
-  extractionReady(exit=null){return this.elapsed>=this.difficulty.extractAt&&(!exit?.bossId||!this.world.enemies.some(e=>e.id===exit.bossId&&!e.dead));}
+  extractionStatus(exit){return extractionStatus(this,exit);}
+  extractionReady(exit=null){return exit?this.extractionStatus(exit).ready:this.world.exits.some(e=>this.extractionStatus(e).ready);}
+  enemyMoveScale(){return this.run.enemySpeed;}
   pressureInfo(){
     const profile=this.director?.profile(this.elapsed)||{stage:1,label:'独立模拟'};
-    return {...profile,wave:this.director?.wave||0,near:this.world.enemies.filter(e=>!e.dead&&distance(e,this.player)<1000).length,next:Math.max(0,(this.director?.nextPulse||this.elapsed)-this.elapsed)};
+    return {...profile,heat:this.heat?.value||0,heatLevel:this.heat?.level||0,hunters:this.world.enemies.filter(e=>e.hunter&&!e.dead).length,huntNext:Math.max(0,(this.heat?.nextHunt||0)-this.elapsed),wave:this.director?.wave||0,near:this.world.enemies.filter(e=>!e.dead&&distance(e,this.player)<1000).length,next:Math.max(0,(this.director?.nextPulse||this.elapsed)-this.elapsed)};
   }
   enemyCooldown(definition){return definition.cooldown*this.pressureState.cooldown;}
-  damagePower() { return (this.player.overload>0?1.25:1)*(this.player.buffs.fury>0?1.35:1); }
+  damagePower() { return this.run.weaponPower*(this.player.overload>0?1.25:1)*(this.player.buffs.fury>0?1.35:1); }
   activateOverload() {
     const p=this.player;
     if(this.status!=='playing'||p.energy<100||p.overload>0)return false;
@@ -76,7 +85,7 @@ export class Raid {
   }
   activateNode(node) {
     if(!node||node.used||!['fury','phase','magnet'].includes(node.kind)||this.status!=='playing')return false;
-    node.used=true;this.nodesActivated++;
+    node.used=true;this.nodesActivated++;this.heat?.add(2);
     const durations={fury:20,phase:16,magnet:30};
     this.player.buffs[node.kind]=durations[node.kind];this.player.energy=Math.min(100,this.player.energy+20);
     const names={fury:'增幅：伤害 +35%',phase:'相位：承受伤害降低30%',magnet:'牵引：扩大合成和物资拾取范围'};
@@ -93,13 +102,13 @@ export class Raid {
   }
   nearestEnemy(range = RULES.divideRange, predicate = () => true) {
     return this.world.enemies.filter(enemy => !enemy.dead && predicate(enemy) &&
-      distance(this.player, enemy) <= range && this.visible(this.player, enemy))
+      distance(this.player, enemy) <= Math.min(range,this.run.vision) && this.visible(this.player, enemy))
       .sort((a, b) => distance(this.player, a)-distance(this.player, b))[0] || null;
   }
   context() {
     const p = this.player;
     const exit = this.world.exits.find(target => distance(p, target) < target.radius);
-    if (exit) return { kind: 'exit', target: exit, locked:!this.extractionReady(exit),bossLocked:!!exit.bossId&&this.world.enemies.some(e=>e.id===exit.bossId&&!e.dead),progress: this.extractProgress / RULES.extractSeconds };
+    if (exit){const status=this.extractionStatus(exit);return {kind:'exit',target:exit,locked:!status.ready,bossLocked:status.bossLocked,status,progress:this.extractProgress/RULES.extractSeconds};}
     const merchant=this.world.merchants.find(m=>distance(p,m)<115&&this.visible(p,m));
     if(merchant)return{kind:'merchant',target:merchant,progress:0};
     const chest = this.world.chests.filter(target => !target.opened && distance(p, target) < 75 && this.visible(p, target))
@@ -193,7 +202,7 @@ export class Raid {
     const weapon=weaponOf(item),pellets=weapon.pellets||1,p=this.player;
     for(let i=0;i<pellets;i++){
       const offset=pellets===1?this.random()*2-1:i/(pellets-1)*2-1;
-      this.shoot(p,angle+offset*spreadOf(item,p.laser),weapon.speed,weapon.range,'player',p.value,item.rarity,{weapon:item.weapon,intrinsic:weapon.intrinsic,radius:weapon.radius,enchant:item.enchant,level:item.level,power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
+      this.shoot(p,angle+offset*spreadOf(item,p.laser&&!p.laserDisabled),weapon.speed,weapon.range,'player',p.value,item.rarity,{weapon:item.weapon,intrinsic:weapon.intrinsic,radius:weapon.radius,enchant:item.enchant,level:item.level,power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
     }
     this.effect(p.x,p.y,'','#fff2c5','muzzle',0.08,{angle});
   }
@@ -230,7 +239,8 @@ export class Raid {
   }
   kill(enemy,impact={}){
     if(enemy.dead)return;
-    enemy.dead=true;this.kills++;this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
+    enemy.dead=true;this.kills++;this.heat?.add(enemy.boss?8:.4);
+    if(this.run.volatile&&!enemy.boss&&this.world.hazards.filter(h=>h.runHazard).length<32)this.world.hazards.push({kind:'deathburst',runHazard:true,owner:'enemy',x:enemy.x,y:enemy.y,radius:95,age:0,warn:.9,life:1.1,color:'#ff8055',label:'残爆',done:false});this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
     this.world.tiles.push({id:`remnant-${enemy.id}`,x:enemy.x,y:enemy.y,value:enemy.value,remnant:true,coins:remnantCoins(enemy.value),dead:false});
     this.player.energy=Math.min(100,this.player.energy+(enemy.elite?8:enemy.horde?4:2));
     if(enemy.horde)this.hordeKills++;
@@ -283,7 +293,7 @@ export class Raid {
     const p = this.player;
     if (p.medkits < 1) { this.message('修复剂已用完。'); return; }
     if (p.hp >= p.maxHp) { this.message('生命值已满，无需修复。'); return; }
-    p.medkits--; p.hp = Math.min(p.maxHp, p.hp+30); this.event('heal'); this.effect(p.x, p.y-30, '修复 +30');
+    p.medkits--; p.hp = Math.min(p.maxHp, p.hp+p.healAmount); this.event('heal'); this.effect(p.x, p.y-30, `修复 +${p.healAmount}`);
   }
   tryParry(source,{projectile=false}={}){
     const p=this.player;if(p.parryWindow<=0||!source||this.status!=='playing'||this.safehouseAt())return false;
@@ -302,7 +312,7 @@ export class Raid {
     if(this.safehouseAt())return false;
     if(options.parryable&&this.tryParry(options.source))return false;
     if (p.invulnerable > 0 || p.dashTime > 0 || this.status !== 'playing') return false;
-    const hit = absorbDamage(amount*(p.buffs.phase>0?0.7:1), p.armor);
+    const hit = absorbDamage(amount*(p.buffs.phase>0?0.7:1)*(p.form?.damage||1), p.armor);
     if (p.armor) p.armor.durability = hit.durability;
     p.hp = Math.max(0, p.hp-hit.damage); p.invulnerable = 0.65;
     this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0;
@@ -343,7 +353,7 @@ export class Raid {
       const living=this.world.enemies.filter(e=>!e.dead&&e.summonerId===enemy.id).length;
       for(let i=0;i<Math.min(2,4-living);i++){
         if((this.world.summonedCount||0)>=RULES.summonBudget||this.world.enemies.filter(e=>!e.dead).length>=640)break;
-        if(enemy.horde&&!enemy.guard&&this.world.enemies.filter(e=>!e.dead&&e.horde&&!e.guard).length+this.world.spawnWarnings.filter(m=>!m.guard).length>=10)break;
+        if(enemy.horde&&!enemy.guard&&this.world.enemies.filter(e=>!e.dead&&e.horde&&!e.guard&&!e.hunter).length+this.world.spawnWarnings.filter(m=>!m.guard&&!m.hunter).length>=10)break;
         if(this.director&&this.world.enemies.filter(e=>!e.dead&&distance(e,p)<1500).length>=this.director.profile(this.elapsed).nearCap)break;
         let child=null;
         for(let j=0;j<12;j++){
@@ -382,7 +392,7 @@ export class Raid {
       if(d>15)this.move(enemy,(enemy.homeX-enemy.x)/d*120*dt,(enemy.homeY-enemy.y)/d*120*dt);return;
     }
     if(enemy.state==='charge'){
-      const before={x:enemy.x,y:enemy.y};this.move(enemy,enemy.chargeX*560*dt*slowMultiplier(enemy),enemy.chargeY*560*dt*slowMultiplier(enemy));enemy.chargeTime-=dt;
+      const before={x:enemy.x,y:enemy.y};this.move(enemy,enemy.chargeX*560*this.run.enemySpeed*dt*slowMultiplier(enemy),enemy.chargeY*560*this.run.enemySpeed*dt*slowMultiplier(enemy));enemy.chargeTime-=dt;
       if(enemy.chargeTime<=0||distance(before,enemy)<.1){enemy.state='idle';enemy.cooldown=this.enemyCooldown(definition);}return;
     }
     if(enemy.state==='burst'){
@@ -490,18 +500,18 @@ export class Raid {
     if (context.kind === 'exit') {
       if(context.locked){this.extractProgress=0;return;}
       this.extractProgress += dt; this.tutorial.extraction = true;
-      if (this.extractProgress >= RULES.extractSeconds) this.finish(true, '成功撤离');
+      if (this.extractProgress >= RULES.extractSeconds){if(context.target.kind==='key')this.exitKeys--;this.extractedVia=context.target.kind||'classic';this.finish(true, '成功撤离');}
     } else if(context.kind==='node'){
       this.nodeProgress+=dt;if(this.nodeProgress>=0.9){this.activateNode(context.target);this.nodeProgress=0;}
     } else {
       this.searchProgress += dt;
       if (this.searchProgress >= 0.75) {
         const chest = context.target;
-        chest.opened = true; this.opened++; this.tutorial.chest = true;
+        chest.opened = true; this.opened++;this.heat?.add(3);if(chest.keyCard)this.exitKeys++; this.tutorial.chest = true;
         this.addLoot({...createLoot(chest.x, chest.y, chest.zone, chest.value, chest.id),bossLoot:!!chest.bossLoot});
         this.player.dividers += chest.dividers; this.player.medkits += chest.medkits; this.searchProgress = 0;
         for (const gear of chest.gear || []) this.world.drops.push({ ...gear, x: chest.x, y: chest.y+24, dead: false });
-        this.message(chest.gear?.length ? '资源已收入不限量资源袋，装备留在箱边。按 F 拾取，按 B 换装。' : '补给已收入不限量资源袋。左上方绿圈可以撤离。');
+        this.message((chest.keyCard?'撤离钥卡 +1。':'')+(chest.gear?.length ? '资源已收入不限量资源袋，装备留在箱边。按 F 拾取，按 B 换装。' : '补给已收入不限量资源袋。左上方绿圈可以撤离。'));
       }
     }
   }
@@ -518,6 +528,7 @@ export class Raid {
     for(const key of ['attack','divide','heal','dash','pickup','overload','parry'])if(buffered[key])input={...input,[key]:true};
     if(buffered.slot!==undefined&&input.slot===undefined)input={...input,slot:buffered.slot};
     if(buffered.aimX!==undefined&&!Number.isFinite(input.aimX))input={...input,aimX:buffered.aimX,aimY:buffered.aimY};
+    updateNumberForm(this);
     this.elapsed += dt;this.sectorNotice=Math.max(0,this.sectorNotice-dt);
     for (const key of ['attackCooldown','dashCooldown','invulnerable','overload','recoil','parryWindow','parryCooldown']) p[key]=Math.max(0,p[key]-dt);
     for(const key of Object.keys(p.enchantCooldowns))p.enchantCooldowns[key]=Math.max(0,p.enchantCooldowns[key]-dt);
@@ -534,7 +545,8 @@ export class Raid {
     if (input.slot !== undefined) this.switchWeapon(input.slot);
     if(input.parry&&p.parryCooldown<=0){p.parryWindow=.18;p.parryCooldown=1.05;this.event('guard');}
     if (input.pickup) this.pickupGear();
-    if (input.dash && p.dashCooldown <= 0) {
+    if(input.dash&&this.run.noDodge)this.message('本局词条禁用闪避，仍可使用弹反。');
+    if (input.dash && !this.run.noDodge && p.dashCooldown <= 0) {
       p.dashTime = RULES.dashDuration; p.dashCooldown = RULES.dashCooldown;
       p.dashX = p.facingX; p.dashY = p.facingY; this.event('dash');
     }
@@ -542,7 +554,7 @@ export class Raid {
       this.move(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt);
       p.dashTime = Math.max(0, p.dashTime-dt);
     } else {
-      const speed = RULES.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
+      const speed = RULES.speed*this.run.playerSpeed*p.form.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
       this.move(p, mx*speed*dt, my*speed*dt);
     }
     const sector=zoneAt(p,this.world.zones);
@@ -561,7 +573,7 @@ export class Raid {
     for (const tile of this.world.tiles) {
       if (!tile.dead && distance(p, tile) < (p.buffs.magnet>0?135:p.radius+17) && canMerge(p.value, tile.value) && this.visible(p, tile)) {
         tile.dead = true; const old = p.value; p.value *= 2; p.hp = Math.min(p.maxHp, p.hp+8);
-        this.merges++; this.tutorial.merge = true;
+        updateNumberForm(this);this.merges++; this.tutorial.merge = true;
         this.combo=this.elapsed-this.lastMerge<4?Math.min(5,this.combo+1):1;this.lastMerge=this.elapsed;
         p.energy=Math.min(100,p.energy+RULES.energyPerMerge+(this.combo-1)*2);
         this.effect(p.x, p.y-35, `${old} + ${old} = ${p.value}`, '#a9edd1', 'text', 1.1); this.event('merge');
@@ -578,7 +590,8 @@ export class Raid {
           this.visible(p, loot) && this.addLoot(loot)) loot.dead = true;
     }
     this.navigation.update(p,dt);
-    this.director?.update(this,dt);this.pressureState=this.director?.profile(this.elapsed)||this.pressureState;
+    this.heat?.update(this,dt);
+    this.director?.update(this,dt);this.pressureState=this.director?.profile(this.elapsed)||{speed:1,cooldown:1,windup:1};this.pressureState.speed*=this.run.enemySpeed;
     this.crowdGrid=new SpatialGrid(this.world.enemies.filter(e=>!e.dead&&distance(e,p)<RULES.activeEnemyRadius),96);
     for (const enemy of this.world.enemies) {
       this.updateEnemy(enemy, dt); this.clash(enemy);
@@ -588,6 +601,8 @@ export class Raid {
     if (this.status !== 'playing') return;
     updateHazards(this,dt);
     if (this.status !== 'playing') return;
+    updateRunHazards(this,dt);
+    if(this.status!=='playing')return;
     updateBossZones(this,dt);
     if (this.status !== 'playing') return;
     updateAfflictions(this,dt);
@@ -602,7 +617,7 @@ export class Raid {
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
     const items=[...this.bag,...equipped],materials=salvageMaterials(this.bag.filter(item=>!isEquipment(item)));
     this.result = { id:this.id,success,reason,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*this.rewardMultiplier),number:this.player.value,
-      seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,
+      seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,mutators:[...this.run.ids],heat:this.heat?.value||0,seed:this.world.seed,extractedVia:this.extractedVia,
       materials:{alloy:Math.round(materials.alloy*this.rewardMultiplier),core:Math.round(materials.core*this.rewardMultiplier)},
       gear:this.carriedEquipment().map(item=>({...item})),loot:items.map(item=>({...item})) };
     this.event('finish', { result: this.result });

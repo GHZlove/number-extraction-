@@ -1,3 +1,4 @@
+import { MUTATORS, normalizeMutators } from './run-rules.js';
 import { prepareWarehouseDeployment, selectWarehouseGear, claimPendingGear, recycleWarehouseGear, repairWarehouseGear } from './warehouse.js';
 import { bossPool } from './bosses.js';
 import { RULES, difficultyOf, MAP_LAYOUTS, SAVE_KEY } from './config.js';
@@ -40,7 +41,7 @@ function start(){
 }
 function show(kind){
   if(view==='raid'){paused=true;clearInput();}modal=kind;
-  if(kind==='inventory')ui.inventory(raid);else if(kind==='merchant')ui.shop(raid,merchantId);else if(kind==='saves')ui.saveTransfer(save,pendingSave);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
+  if(kind==='inventory')ui.inventory(raid);else if(kind==='merchant')ui.shop(raid,merchantId);else if(kind==='exits')ui.exits(raid);else if(kind==='saves')ui.saveTransfer(save,pendingSave);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
 }
 function close(){
   modal=null;pendingRecycle=null;ui.hide(view==='raid');
@@ -51,8 +52,8 @@ function pause(){if(modal){close();return;}if(view==='raid'&&raid.status==='play
 function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==='inventory')close();else show('inventory');}
 const input=new Input(canvas,pause,inventory);
 const ui=new UI({
-  start,close,pause,inventory,help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
-  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses'].includes(key)){ui.shelterTab=key;refreshShelter();}},
+  start,close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
+  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules'].includes(key)){ui.shelterTab=key;refreshShelter();}},
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
   exportSave:async()=>{
     if(view!=='shelter')return;
@@ -74,6 +75,7 @@ const ui=new UI({
   },
   restoreBackup:()=>{if(view==='shelter'){try{reviewImport(storage.getItem(BACKUP_KEY));}catch{ui.toast('没有可读取的导入前备份。');}}},
   abandon:()=>{if(raid?.status==='playing'){raid.finish(false,'主动返回庇护所');handleEvents();}},
+  toggleMutator:key=>{if(!Object.hasOwn(MUTATORS,key)||view!=='shelter')return;const chosen=save.selectedMutators;if(chosen.length>=3&&!chosen.includes(key)){ui.toast('每局最多选择3个词条。');return;}warehouseChange(next=>{next.selectedMutators=normalizeMutators(chosen.includes(key)?chosen.filter(id=>id!==key):[...chosen,key]);return true;},'行动词条已保存。');},
   selectDifficulty:key=>{if(view!=='shelter')return;save.selectedDifficulty=difficultyOf(key).id;if(!bossPool(difficultyOf(key).rank).includes(save.selectedBoss))save.selectedBoss='random';persist();refreshShelter();},
   selectWeapon:key=>{if(view!=='shelter'||!unlockedWeapons(save).includes(key))return;save.selectedWeapon=key;persist();refreshShelter();},
   trackBoss:key=>{if(view==='shelter'&&bossPool(difficultyOf(save.selectedDifficulty).rank).includes(key)){save.selectedBoss=key;ui.shelterTab='deploy';persist();refreshShelter();ui.toast('首领追踪目标已设置。');}},

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RULES, ENEMY_TYPES, TERRAIN } from '../dist/src/config.js';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { attackDamage, damageFraction, distance } from '../dist/src/math.js';
 import { createEnemy, generateWorld } from '../dist/src/world.js';
 import { RARITIES, WEAPONS, makeEquipment, absorbDamage, spreadOf } from '../dist/src/equipment.js';

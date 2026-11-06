@@ -65,3 +65,22 @@ body { background:#f7f9fc; }
 .shelter-tabs { flex-wrap:wrap; }.shelter-tabs button { min-width:130px; }
 .shelter-screen[data-tab="base"] .facilities-grid { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
 @media(max-width:600px) { .warehouse-panel,.boss-codex { padding:16px; }.shelter-tabs button { min-width:95px; }.vault-grid,.boss-cards { grid-template-columns:1fr; } }
+
+/* v0.11: optional run rules, readable heat and explicit extraction conditions. */
+.rules-panel { display:none;background:#fff;border:1px solid #d8e4ed;border-radius:16px;padding:26px;color:#25374b; }
+.shelter-screen[data-tab="rules"] .shelter-layout { grid-template-columns:1fr; }
+.shelter-screen[data-tab="rules"] .shelter-hero,.shelter-screen[data-tab="rules"] .facilities-grid,.shelter-screen[data-tab="rules"] .forge-panel,.shelter-screen[data-tab="rules"] .shelter-stats,.shelter-screen[data-tab="rules"] .expedition-panel,.shelter-screen[data-tab="rules"] .shelter-main>.section-heading { display:none; }
+.shelter-screen[data-tab="rules"] .rules-panel { display:block; }
+.rules-panel h2 { font-size:25px;margin:10px 0; }.rules-panel p { color:#64768b;font-size:13px;line-height:1.7; }
+.rule-summary,.run-summary { border:1px solid #b7dcd0;background:#edf9f4;color:#296b60;border-radius:9px;padding:12px;font-size:12px;line-height:1.7; }
+.run-summary { margin:14px 0; }.run-summary small { display:block;color:#5f7b77; }
+.mutator-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0; }
+.mutator-card { display:flex;flex-direction:column;text-align:left;gap:10px;padding:17px;background:#f8fbfe;color:#354c63;border:1px solid #d6e1ec;border-radius:12px;min-height:132px;transition:border-color .15s,background .15s; }
+.mutator-card:hover { border-color:#48a99e; }.mutator-card.selected { border:2px solid #329f91;background:#e5f6f0;padding:16px; }.mutator-card b { font-size:15px; }.mutator-card span { font-size:12px;line-height:1.6; }.mutator-card small { margin-top:auto;color:#398276;font-size:11px; }.mutator-card:disabled { opacity:.5;cursor:not-allowed; }
+.number-form-info { background:#f5f8fc;border-radius:12px;padding:16px 20px; }.number-form-info h3 { margin:6px 0;font-size:14px; }.rules-return { background:#258f82;color:#fff;padding:12px 20px;border-radius:8px;margin-top:18px; }
+.heat-readout { min-width:140px;margin-top:7px;color:#f0d794;font:10px ui-monospace,monospace; }.heat-track { height:4px;border-radius:4px;background:#394a55;margin:6px 0;overflow:hidden; }.heat-track i { display:block;height:100%;width:0;background:#ffae64;transition:width .2s; }.raid-timer .heat-readout small { font:9px ui-monospace,monospace;letter-spacing:0;margin:0;color:#a9bdcb; }
+.form-label { display:block;color:#c0bce6;font-size:8px;line-height:1.5;margin-top:6px; }
+.boss-hud { top:132px; }.mission-chip { top:120px; }
+.exit-brief-list { display:grid;gap:10px;margin:18px 0; }.exit-brief-item { background:#172b3a;border:1px solid #385266;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:18px; }.exit-brief-item b { font-size:14px;color:#e1eef2; }.exit-brief-item small { display:block;margin-top:6px;font-size:11px;color:#8dbcc4; }.dialog .exit-brief-item p { font-size:12px;margin:8px 0 0; }.exit-brief-item strong { flex-shrink:0;max-width:42%;font-size:12px;color:#f4bb87; }.exit-brief-item strong.ready { color:#9be3b9; }
+@media(max-width:1100px) and (min-width:601px) { .hud-actions { gap:5px; }.icon-button { width:34px;height:36px; }.carried-chip { padding:8px; }.raid-timer { padding:9px 15px; }.heat-readout { min-width:125px; } }
+@media(max-width:600px) { .rules-panel { padding:18px; }.rules-panel h2 { font-size:21px; }.mutator-grid { grid-template-columns:1fr;gap:9px; }.mutator-card { min-height:110px; }.heat-readout { min-width:115px;font-size:9px; }.raid-timer .heat-readout small { font-size:8px; }.boss-hud { top:177px; }.mission-chip { top:117px;max-width:180px; }.exit-brief-item { align-items:start;flex-direction:column;gap:10px; }.exit-brief-item strong { max-width:100%; } }

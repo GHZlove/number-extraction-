@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { RULES, MAP_LAYOUTS } from '../dist/src/config.js';
 import { defaultSave } from '../dist/src/storage.js';
 import { BOSSES, BOSS_MOVES, bossPool, empowerBoss, bossShotPattern } from '../dist/src/bosses.js';

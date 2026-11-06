@@ -8,7 +8,7 @@ import { defaultSave, readSave } from '../dist/src/storage.js';
 import { SAVE_KEY } from '../dist/src/config.js';
 import { BACKUP_KEY, serializeSave, parseSaveFile, commitSaveImport } from '../dist/src/save-transfer.js';
 import { browserStubs } from './helpers/browser-stubs.js';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { UI } from '../dist/src/ui.js';
 import { createEnemy } from '../dist/src/world.js';
 import { empowerBoss } from '../dist/src/bosses.js';

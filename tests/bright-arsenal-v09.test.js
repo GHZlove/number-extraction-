@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { defaultSave, readSave, writeSave, normalizeSave } from '../dist/src/storage.js';
 import { SAVE_KEY, PREVIOUS_SAVE_KEY, OLDER_SAVE_KEY } from '../dist/src/config.js';
 import { ENCHANT_KEYS, ENCHANTS, WEAPONS, makeEquipment, decorateWeapon, randomEquipment } from '../dist/src/equipment.js';

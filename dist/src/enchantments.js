@@ -95,7 +95,7 @@ export function updateAfflictions(raid,dt){
 }
 export function updateHazards(raid,dt){
   for(const cloud of raid.world.hazards){
-    if(cloud.bossZone)continue;
+    if(cloud.bossZone||cloud.runHazard)continue;
     cloud.life-=dt;cloud.tick-=dt;if(cloud.tick>0)continue;cloud.tick=.5;
     if(cloud.owner==='player'){
       for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(enemy,cloud)<cloud.radius+enemy.radius&&raid.visible(cloud,enemy)){

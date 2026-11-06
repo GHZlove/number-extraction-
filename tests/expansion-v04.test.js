@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { generateWorld,createEnemy } from '../dist/src/world.js';
 import { defaultSave } from '../dist/src/storage.js';
 import { ENEMY_TYPES,TERRAIN,RULES } from '../dist/src/config.js';

@@ -7,7 +7,7 @@ import { makeEquipment, decorateWeapon } from '../dist/src/equipment.js';
 import { warehouseCapacity, storeExtractedGear, plannedWarehouseGear, prepareWarehouseDeployment, selectWarehouseGear, claimPendingGear, recycleWarehouseGear, repairWarehouseGear, hydrateEquipment } from '../dist/src/warehouse.js';
 import { upgradeFacility } from '../dist/src/shelter.js';
 import { serializeSave, parseSaveFile, commitSaveImport, BACKUP_KEY } from '../dist/src/save-transfer.js';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { UI } from '../dist/src/ui.js';
 import { browserStubs } from './helpers/browser-stubs.js';
 const {validSaveText}=createRequire(import.meta.url)('../desktop/policy.cjs');
@@ -81,7 +81,7 @@ test('damaged armour can be repaired atomically and repair state round trips',()
 
 test('v0.9 progress migrates without overwriting old keys and cannot erase a newer warehouse',()=>{
  const storage=memory(),old={version:3,credits:700,materials:{alloy:22,core:3},shelter:{storage:2},forged:{pistol:{level:2,enchant:'leech'}}};storage.setItem(V09_SAVE_KEY,JSON.stringify(old));
- const result=readSave(storage);assert.equal(result.migrated,true);assert.equal(result.save.version,4);assert.equal(result.save.credits,700);assert.equal(result.save.shelter.storage,2);assert.equal(result.save.forged.pistol.level,2);
+ const result=readSave(storage);assert.equal(result.migrated,true);assert.equal(result.save.version,5);assert.equal(result.save.credits,700);assert.equal(result.save.shelter.storage,2);assert.equal(result.save.forged.pistol.level,2);
  storeExtractedGear(result.save,[gun()]);writeSave(storage,result.save);storage.setItem(V09_SAVE_KEY,JSON.stringify({...old,credits:0}));const next=readSave(storage);
  assert.equal(next.save.credits,700);assert.equal(next.save.warehouse.items.length,1);assert.equal(next.migrated,false);assert.equal(storage.data.get(V09_SAVE_KEY),JSON.stringify({...old,credits:0}));
 });

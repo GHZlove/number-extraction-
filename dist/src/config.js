@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.10.0';
+export const VERSION = '0.11.0';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
   {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
@@ -63,7 +63,8 @@ export const LEGACY_SAVE_KEY = 'number-extraction-v01';
 export const PREVIOUS_SAVE_KEY = 'number-extraction-v07';
 export const OLDER_SAVE_KEY = 'number-extraction-v03';
 export const V09_SAVE_KEY = 'number-extraction-v09';
-export const SAVE_KEY = 'number-extraction-v10';
+export const V10_SAVE_KEY = 'number-extraction-v10';
+export const SAVE_KEY = 'number-extraction-v11';
 
 export const TERRAIN = Object.freeze({
   water: { name: '浅水', speed: 0.58, color: '#50bed5', line: '#d3fbff', priority: 1 },

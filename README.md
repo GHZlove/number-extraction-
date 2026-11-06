@@ -10,30 +10,32 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.10.0 · playable single-player prototype |
+| Current version | v0.11.0 · run-depth playtest; desktop build pending |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
-| Core systems | Number merging, resource strongholds, crafting, enchantments, parries, bosses and extraction |
+| Core systems | Number merging, mutators, heat and hunters, conditional extraction, combat and persistent shelter |
 | Content | 20 weapons, 12 enchantments, 12 enemy types, 9 bosses, 4 map families, 5 difficulties |
-| Verification | 233 automated tests; syntax/reference checks for 25 game modules + 4 desktop files |
+| Verification | v0.10 baseline: 233 tests; v0.11 verification in progress (see testing notes) |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**[Download v0.10.0 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/NumberExtraction-0.10.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.10.0-desktop.12). Run in a standalone window without Python or a separate browser. See [v0.10 warehouse, bosses and compatibility](docs/WAREHOUSE_BOSSES_V010.md). Close an older running copy before opening the new EXE.
+**v0.11 desktop build pending.** The previous verified desktop release remains available: **[Download v0.10.0 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/NumberExtraction-0.10.0-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.10.0-desktop.12). Run in a standalone window without Python or a separate browser. See [v0.10 warehouse, bosses and compatibility](docs/WAREHOUSE_BOSSES_V010.md). Close an older running copy before opening the new EXE.
 
-The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the complete v0.9 web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
+The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the current playtest web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
-[简体中文](README.zh-CN.md) · [v0.10 warehouse and nine bosses](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[简体中文](README.zh-CN.md) · [v0.11 run depth](docs/RUN_DEPTH_V011.md) · [Phased roadmap](docs/ROADMAP.md) · [v0.10 warehouse and nine bosses](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
-Detailed design and verification notes are currently in Chinese.
+The v0.11 rules and roadmap are documented in English; historical design and verification notes are mostly in Chinese.
 
-v0.10 adds an upgradeable warehouse that preserves extracted equipment, four-slot deployment planning, repairs and explicit recycling. Excess gear stays in a pending area. Six new bosses bring the roster to nine, with a codex, selectable targets, new warned attack geometry and distinct weapon rewards.
+v0.11 deepens the expedition loop before adding more content: choose up to three of ten mutators, manage rising heat and warned hunter squads, grow into number tiers with different movement and collision bodies, and plan around seeded extraction requirements. A western fallback exit remains available after its opening time. See the [run-depth rules](docs/RUN_DEPTH_V011.md). Later roadmap phases are planned, not included in this build.
+
+v0.10 added an upgradeable warehouse that preserves extracted equipment, four-slot deployment planning, repairs and explicit recycling. Excess gear stays in a pending area. Six new bosses bring the roster to nine, with a codex, selectable targets, new warned attack geometry and distinct weapon rewards.
 
 v0.9.2 added automatic recycling of lower-number enemy remnants and an unlimited resource pouch. Equipment alone uses backpack slots; coins can be spent at field traders or banked on extraction.
 
 The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
 
-Actual Windows desktop captures from the release checks:
+Previous v0.10 Windows desktop captures from release checks (v0.11 captures pending):
 
 ![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.10.0-desktop.12/portable-shelter-wide.png)
 
@@ -53,6 +55,10 @@ Extraction adds a second decision: carry on searching for better loot, or return
 
 **Prepare at the shelter → Deploy → Merge and explore → Fight or evade → Extract → Upgrade**
 
+- **Run choices:** ten optional mutators, at most three per run, with visible risks and additive settlement bonuses. Heat, number forms and variable exits are active even with no mutators selected.
+- **Rising heat:** time and activity raise a 0–100 meter; thresholds at 25/50/75/100 call warned, population-limited hunter squads. Safehouses suppress new hunter arrivals without resetting heat.
+- **Number identity:** 64, 256 and 1024 introduce larger physical bodies and movement/defence tradeoffs. Growth waits for enough collision space when beside a wall.
+- **Variable extraction:** seeded special exits require a time window, raid key, minimum number or guardian defeat. The western fallback has no extra requirement and stays open after its timer. The extraction briefing pauses play and explains current conditions.
 - **Bright, raised number tiles:** a white shelter homepage, colourful terrain and rounded number faces with large white numerals. Player and hostile markers distinguish actors from neutral tiles. Deployment, facilities and forging retain separate tabs; combat keeps a compact HUD and dedicated boss bar.
 - **Windows desktop:** a portable Electron build bundles its runtime, starts in its own window, supports fullscreen and keeps progress across updates. A validated JSON export/import flow transfers browser progress with a recoverable backup.
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
@@ -60,7 +66,7 @@ Extraction adds a second decision: carry on searching for better loot, or return
 - **Resource strongholds:** most enemies defend resource sites. Small wilderness patrols have their own cap; occupied sites can call limited reinforcements. Guards return when pulled too far away.
 - **Twelve enchantments:** lifesteal, chain lightning, stun, poison clouds, burn, frost, bleed, sunder, on-kill detonation, critical hits, gravity and energy recovery. Forge a permanent starter weapon up to Lv.5 and choose an enchantment; levels improve damage and knockback, while gun type, quality and number advantage also affect pushback.
 - **Reactive defence:** aim toward an incoming attack and right-click for a short parry window. Reflect bullets or interrupt melee attackers, including bosses. Poison and ordinary explosions require movement.
-- **Traders, shelters and bosses:** spend carried loot at a field merchant; low-risk exits offer protective safehouses. Nine boss archetypes cycle telegraphed moves and enter a second phase below half health. Some high-risk exits remain locked until their guardian falls.
+- **Traders, shelters and bosses:** spend carried loot at a field merchant; low-risk exits offer protective safehouses. Nine boss archetypes cycle telegraphed moves and enter a second phase below half health. A seeded boss-gated special exit remains locked until its guardian falls.
 - **Combat impact:** directional hit sparks, enemy hit flashes, recoil, armour-break cues and shattering defeats. Heavy weapons add collision-safe knockback and a brief, throttled hit-stop with buffered controls. Synthesised weapon and impact sounds are opt-in; reduced-motion preferences suppress camera shake and hit deformation.
 - **Overload:** merging charges energy. Press **G** at 100% for seven seconds of increased damage and attack speed, plus an initial nearby stun. Operation nodes grant temporary damage, protection or collection buffs.
 - **Twenty weapons:** pistols, automatic weapons, piercing and explosive firearms, plus directional melee weapons. v0.9 adds a heavy revolver, double-barrel shotgun, plasma pistol, flamethrower, rocket launcher and battleaxe. Equip two slots, six quality tiers, durability-based armour and a laser sight.
@@ -79,7 +85,7 @@ Extraction adds a second decision: carry on searching for better loot, or return
 | 核心危机 / Severe | 10,240 × 6,400 | 10.24× | 7:00 | 16–1,024 | 3.6× |
 | 零点噩梦 / Nightmare | 12,800 × 8,000 | 16× | 8:00 | 32–2,048 | 5.2× |
 
-*Horde numbers also grow with elapsed time. Fixed ranges include bosses; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
+*The table lists base difficulty settings before mutators. Horde numbers also grow with elapsed time. Fixed ranges include bosses; division can reduce these values. Player merging remains capped at 2048. World dimensions use game units, independent of display resolution.*
 
 ## Run locally
 
@@ -123,22 +129,22 @@ ES modules require an HTTP server; opening `dist/index.html` as a local file is 
 | B | Open the backpack, equip, switch or drop items; pauses the raid |
 | G | Activate Overload at full energy |
 | Q | Spend a ÷2 charge to weaken and interrupt an eligible enemy |
-| Shift | Dodge with brief invulnerability |
+| Shift | Dodge with brief invulnerability, unless disabled by a selected mutator |
 | Hold E | Search a chest, activate a node or extract while stationary |
-| R | Spend a repair kit to restore 30 health |
+| R | Spend a repair kit to restore 30 health (20 with Supply Shortage) |
 | Esc | Pause / resume |
 
 Touch controls provide a joystick, action buttons and assisted aiming; weapons can also be switched in the inventory. Physical-device touch input, screen rotation and Safari compatibility still need validation. Sound starts disabled.
 
 ### First expedition
 
-Exits open after **45/60/75/90/105 seconds**, depending on difficulty. Survive until they turn green, then hold E for four seconds. Watch the wave counter, nearby enemy count and pink spawn warnings.
+The **western fallback** opens after **45/60/75/90/105 seconds**, depending on difficulty, and stays open. Special exits open later and have additional conditions; use the top-right extraction briefing to inspect them. Hold E while stationary for four uninterrupted seconds to leave. Watch heat and spawn warnings before choosing another detour.
 
 1. Follow the fixed **1 → 2 → 4 → 8** neutral tile chain to reach player value **16** and full energy. The third tile is slightly above the others.
 2. Search the starter chest at `(485, 1190)` by standing still and holding **E** for 0.75 seconds. It provides 24 currency value and a ÷2 charge.
 3. Open the equipment chest at `(620, 1260)`. Press **F** for each item, then **B** to equip the yellow rifle, white armour and laser. Compare the two weapon slots and white/red aim guides.
 4. Practise **G**, **Q** and dodging against the nearby hunter, or evade it. The node at `(1180, 1270)` grants a temporary damage buff.
-5. The frontier cache at `(1500, 1420)` supplies the burst carbine, grenade launcher, spear and warhammer for an early test. A fast scout guards the road nearby.
+5. The frontier cache at `(1500, 1420)` provides one raid-only extraction key as well as the burst carbine, grenade launcher, spear and warhammer for an early test. A fast scout guards the road nearby.
 6. The arsenal cache at `(1670, 1500)`, beside the frontier cache, supplies all six v0.9 weapons and the eight added enchantments. Use F to pick up and B to equip; trial items cannot be salvaged. The default backpack holds eight items, so choose or drop gear when full.
 7. Return to the western green exit at `(310, 530)`. Stand still and hold **E** for four uninterrupted seconds.
 8. The shelter shows your banked rewards. Upgrade a facility when you can afford its listed resources, or prepare another expedition.
@@ -153,7 +159,7 @@ White Lv.1 weapons without enchantments or buffs use a fraction of the target's 
 | 16 vs 4 | 75% | 12.5% |
 | 32 vs 4 | 87.5% | 6.25% |
 
-Quality multipliers are **white 1.0, yellow 1.2, green 1.4, blue 1.6, purple 1.8, red 2.0**. Armour, Overload and node buffs modify the final damage. The examples exclude these effects.
+Quality multipliers are **white 1.0, yellow 1.2, green 1.4, blue 1.6, purple 1.8, red 2.0**. Armour, Overload and node buffs modify the final damage. The examples exclude these effects, number-form defence and mutator bonuses.
 
 Shotguns share one attack's base damage across five pellets; burst carbines share it across three timed shots. Switching weapons cancels remaining burst shots. Crossbows penetrate two distinct targets. Spears have a long, narrow attack arc; warhammers interrupt surviving targets. Grenades explode once on contact or at maximum range, with distance-based splash damage blocked by walls.
 
@@ -191,12 +197,12 @@ Safehouse circles block incoming damage, provide one treatment per location and 
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 25 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field and horde director, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 27 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field, horde/heat directors and run rules, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
 - Movement uses substeps; projectiles use ordered segment intersections. A static spatial grid narrows obstacle queries, and distant enemies skip active AI work.
-- Shelter progression is validated on load. v0.9 copies older progress into an independent save key without overwriting the original; duplicate settlement is guarded within the current single-tab flow.
+- Shelter progression is validated on load. v0.11 copies v0.10 and older progress into an independent schema-5 save key without overwriting the original; duplicate settlement is guarded within the current single-tab flow.
 - Canvas handles the world; DOM handles the shelter, HUD and dialogs. Artwork and sound are generated locally without external assets.
 
 ### Checks
@@ -208,19 +214,21 @@ npm run check
 npm test
 ```
 
-No `npm install` is required. The current verification has **25 game modules and 4 desktop files passing syntax/reference checks, with 233 passing tests**. The latest 35 cases cover warehouse ownership, checkout failure protection, pending gear, repair/recycling, save migration, new boss geometry, control/counterplay, summon limits, rewards and shelter UI flows.
+No `npm install` is required for these checks. **v0.11 verification is in progress.** The verified v0.10 baseline contains 233 tests. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 27 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 
 ## Persistence and limitations
 
-v0.10 first copies v0.9 progress, then v0.7/v0.8 progress, with fallbacks for v0.3–v0.6 and earlier saves, into a separate schema-4 save key. Original keys remain intact. Equipment that older versions already converted into resources cannot be reconstructed; those resources are retained. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
+v0.11 first copies v0.10 progress, then v0.9 and v0.7/v0.8 progress, with fallbacks for earlier saves, into the separate schema-5 `number-extraction-v11` key. Warehouse equipment, pending items and deployment selections are retained; mutator selections default to none for older saves. Original keys remain intact. Equipment that older versions already converted into resources cannot be reconstructed; those resources are retained. Existing desktop progress migrates automatically; browser-to-desktop transfer uses the JSON panel. Use the same browser and exact local URL to retain that progress. Saves belong to the current browser and origin. Local and hosted copies have separate progress. Clearing site data removes saves; simultaneous tabs can overwrite progress. Only settled runs are saved. Refreshing during a raid loses its unbanked loot.
 
 This is a single-player prototype with no multiplayer, cloud synchronisation, gameplay network requests or telemetry. Desktop dependencies are used for development and packaging; the built game runs offline. Enemies share a local navigation field and use crowd separation; full navigation meshes and globally optimal routes are not implemented. Windows desktop checks are performed by the release workflow; mobile devices, Safari, long sessions, display scaling, sound quality, low-performance hardware and economy balance need further validation. The in-game UI is currently Chinese.
 
 ## Documentation
 
 - [Chinese quick start](README.zh-CN.md)
+- [v0.11 mutators, heat, number forms and extraction](docs/RUN_DEPTH_V011.md)
+- [Phased development roadmap](docs/ROADMAP.md)
 - [v0.10 persistent warehouse, nine bosses and ten reference games](docs/WAREHOUSE_BOSSES_V010.md)
 - [v0.9.2 remnant recycling and unlimited resource storage](docs/REMNANTS_V092.md)
 - [v0.9 bright tiles, twelve enchantments and twenty weapons](docs/BRIGHT_V09.md)

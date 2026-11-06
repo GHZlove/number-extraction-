@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { createSectors, containsPoint, polygonArea } from '../dist/src/regions.js';
 import { generateWorld, createEnemy, createLoot } from '../dist/src/world.js';
 import { defaultSave, normalizeSave, readSave, writeSave, settleRun } from '../dist/src/storage.js';
@@ -100,7 +100,7 @@ test('forging is atomic, capped and produces repeatable non-salvageable starting
 test('v0.6 progression migrates to an isolated save key and forged records are validated',()=>{
   const previous={version:2,credits:640,materials:{alloy:21,core:4},shelter:{workshop:2},selectedWeapon:'rifle'};
   const data=new Map([[PREVIOUS_SAVE_KEY,JSON.stringify(previous)]]),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
-  const loaded=readSave(storage);assert.ok(loaded.migrated);assert.equal(loaded.save.version,4);assert.equal(loaded.save.credits,640);writeSave(storage,loaded.save);
+  const loaded=readSave(storage);assert.ok(loaded.migrated);assert.equal(loaded.save.version,5);assert.equal(loaded.save.credits,640);writeSave(storage,loaded.save);
   assert.deepEqual(JSON.parse(data.get(PREVIOUS_SAVE_KEY)),previous);assert.ok(data.has(SAVE_KEY));
   const save=normalizeSave({...loaded.save,forged:{rifle:{level:3,enchant:'poison',rarity:'red'},pistol:{level:999},evil:{level:5}},selectedMap:'bad'});
   assert.deepEqual(save.forged,{rifle:{level:3,enchant:'poison',rarity:'green'}});assert.equal(save.selectedMap,'random');

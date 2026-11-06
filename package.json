@@ -1,6 +1,6 @@
 {
   "name": "number-extraction",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
   "description": "数字进化：Canvas 单机搜打撤原型",

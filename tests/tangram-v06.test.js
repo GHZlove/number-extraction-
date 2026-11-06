@@ -4,7 +4,7 @@ import { createSectors, containsPoint, polygonArea, sampleSector, sectorAt } fro
 import { seededRandom, zoneAt, attackDamage, isFree } from '../dist/src/math.js';
 import { generateWorld, createEnemy } from '../dist/src/world.js';
 import { DIFFICULTIES, RULES } from '../dist/src/config.js';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { defaultSave } from '../dist/src/storage.js';
 import { makeEquipment } from '../dist/src/equipment.js';
 import { Renderer } from '../dist/src/renderer.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { WORLD,LEGACY_WORLD,DIFFICULTIES,FACILITIES,SAVE_KEY,LEGACY_SAVE_KEY,RULES } from '../dist/src/config.js';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { generateWorld,createEnemy,createLoot } from '../dist/src/world.js';
 import { isFree,lineOfSight,firstWallFraction,seededRandom,distance } from '../dist/src/math.js';
 import { SpatialGrid,obstaclesFor } from '../dist/src/spatial.js';
@@ -76,7 +76,7 @@ test('v1 saves migrate currency, upgrades and history without overwriting the le
   const stored=new Map([[LEGACY_SAVE_KEY,JSON.stringify(original)]]);
   const storage={getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)};
   const loaded=readSave(storage).save;
-  assert.equal(loaded.version,4);assert.equal(loaded.credits,432);assert.equal(loaded.best,128);
+  assert.equal(loaded.version,5);assert.equal(loaded.credits,432);assert.equal(loaded.best,128);
   assert.equal(loaded.shelter.storage,2);assert.equal(loaded.shelter.supply,1);assert.deepEqual(loaded.materials,{alloy:0,core:0});
   assert.equal(loaded.lastRuns[0].id,'old');writeSave(storage,loaded);assert.equal(JSON.parse(stored.get(SAVE_KEY)).credits,432);assert.deepEqual(JSON.parse(stored.get(LEGACY_SAVE_KEY)),original);
 });

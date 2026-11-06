@@ -69,6 +69,17 @@ async function run(window,app) {
   const codex=await window.webContents.executeJavaScript(`({count:document.querySelectorAll('.boss-card').length,visible:getComputedStyle(document.querySelector('.boss-codex')).display!=='none'})`);
   if(codex.count!==9||!codex.visible)throw Error('Boss codex failed: '+JSON.stringify(codex));
   await fs.writeFile(file().replace(/\.json$/, '-bosses.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="rules"]').click();`);
+  await delay(100);
+  const rules=await window.webContents.executeJavaScript(`(() => {
+    const panel=document.querySelector('.rules-panel'),cards=[...document.querySelectorAll('.mutator-card')],rich=cards.find(card=>card.dataset.key==='rich');
+    const persisted=JSON.parse(localStorage.getItem(document.documentElement.dataset.saveKey)||'null')?.selectedMutators||[];
+    if(rich.getAttribute('aria-pressed')!=='true')rich.click();
+    return {visible:getComputedStyle(panel).display!=='none',count:cards.length,persisted,selected:document.querySelector('.mutator-card[data-key="rich"]').getAttribute('aria-pressed'),saved:JSON.parse(localStorage.getItem(document.documentElement.dataset.saveKey)||'null')?.selectedMutators};
+  })()`);
+  if(!rules.visible||rules.count!==10||rules.selected!=='true'||!rules.saved.includes('rich'))throw Error('Run modifier controls failed: '+JSON.stringify(rules));
+  if(process.env.NUMBER_EXTRACTION_SMOKE_MODE==='verify'&&!rules.persisted.includes('rich'))throw Error('Run settings did not survive restart');
+  await fs.writeFile(file().replace(/\.json$/, '-rules.png'),(await window.webContents.capturePage()).toPNG());
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="deploy"]').click();`);
 
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="start"]').click();`);
@@ -76,9 +87,18 @@ async function run(window,app) {
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));`);
   await delay(700);
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyD',bubbles:true}));`);
-  const raid = await window.webContents.executeJavaScript(`({screen:document.body.dataset.screen,hp:document.getElementById('health-value').textContent,number:document.getElementById('player-value').textContent,painted:document.getElementById('game-canvas').getContext('2d').getImageData(20,20,1,1).data[3]})`);
+  const raid = await window.webContents.executeJavaScript(`({screen:document.body.dataset.screen,hp:document.getElementById('health-value').textContent,number:document.getElementById('player-value').textContent,heat:document.getElementById('heat-value').textContent,form:document.getElementById('form-label').textContent,painted:document.getElementById('game-canvas').getContext('2d').getImageData(20,20,1,1).data[3]})`);
   if (raid.screen !== 'raid' || !Number(raid.hp) || Number(raid.number) < 2 || raid.painted !== 255) throw Error('Raid did not run: '+JSON.stringify(raid));
+  if(!raid.heat.includes('热度')||!raid.form.includes('轻巧'))throw Error('Heat / number form HUD failed: '+JSON.stringify(raid));
   await fs.writeFile(file().replace(/\.json$/, '-raid.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.getElementById('extract-brief-button').click();`);
+  await delay(100);
+  const exitBrief=await window.webContents.executeJavaScript(`({open:!document.getElementById('overlay').hidden,count:document.querySelectorAll('.exit-brief-item').length,text:document.getElementById('dialog').textContent,time:document.getElementById('time-value').textContent})`);
+  await delay(200);
+  const briefTime=await window.webContents.executeJavaScript(`document.getElementById('time-value').textContent`);
+  if(!exitBrief.open||exitBrief.count!==4||!exitBrief.text.includes('西侧保底')||briefTime!==exitBrief.time)throw Error('Paused extraction intelligence failed: '+JSON.stringify(exitBrief));
+  await fs.writeFile(file().replace(/\.json$/, '-exits.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('#dialog [data-action="close"]').click();`);
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyB',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyB',bubbles:true}));`);
   await delay(100);
   const inventory=await window.webContents.executeJavaScript(`({open:!document.getElementById('overlay').hidden,unlimited:document.getElementById('dialog').textContent.includes('资源袋 · 不限量'),equipment:document.getElementById('dialog').textContent.includes('装备背包 0 / 8'),counter:document.getElementById('bag-count').textContent})`);
@@ -88,11 +108,11 @@ async function run(window,app) {
   await window.webContents.executeJavaScript(`window.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',bubbles:true}));`);
   const paused = await window.webContents.executeJavaScript(`!document.getElementById('overlay').hidden && document.getElementById('dialog').textContent.includes('行动暂停')`);
   if (!paused) throw Error('Pause control failed');
-  if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem(document.documentElement.dataset.saveKey,JSON.stringify({version:4,credits:37,materials:{alloy:0,core:0},shelter:{},warehouse:{nextId:2,items:[{id:'vault-1',kind:'weapon',weapon:'plasma',rarity:'purple',level:3,enchant:'frost'}],pending:[]},deployment:{},lastRuns:[]}));`);
+  if (process.env.NUMBER_EXTRACTION_SMOKE_MODE !== 'verify') await window.webContents.executeJavaScript(`localStorage.setItem(document.documentElement.dataset.saveKey,JSON.stringify({version:5,selectedMutators:['rich'],credits:37,materials:{alloy:0,core:0},shelter:{},warehouse:{nextId:2,items:[{id:'vault-1',kind:'weapon',weapon:'plasma',rarity:'purple',level:3,enchant:'frost'}],pending:[]},deployment:{},lastRuns:[]}));`);
   await window.webContents.session.flushStorageData();
   await delay(300);
   if (errors.length) throw Error(errors.join('\n'));
-  await report({ok:true,shelter,previewLayouts,warehouse,codex,raid,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
+  await report({ok:true,shelter,previewLayouts,warehouse,codex,rules,raid,exitBrief,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
   app.quit();
 }
 module.exports = {run,report};
