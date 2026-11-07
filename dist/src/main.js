@@ -1,3 +1,4 @@
+import { analyzePlaytestReports, MAX_REVIEW_REPORTS, MAX_REPORT_BYTES, MAX_REVIEW_BYTES } from './playtest-analysis.js';
 import { readJournal, writeJournal, recordStart, recordCheckpoint, recordFinish, interruptOpenRuns, setFeedback, serializeJournal } from './playtest.js';
 import { MUTATORS, normalizeMutators } from './run-rules.js';
 import { prepareWarehouseDeployment, selectWarehouseGear, claimPendingGear, recycleWarehouseGear, repairWarehouseGear } from './warehouse.js';
@@ -20,11 +21,12 @@ const initial=readSave(storage);let save=initial.save,saveAvailable=initial.avai
 if(initial.migrated)saveAvailable=writeSave(storage,save);
 const journalInitial=readJournal(storage);let journal=journalInitial.journal,journalAvailable=journalInitial.available;
 if(interruptOpenRuns(journal))journalAvailable=writeJournal(storage,journal);
+let playtestReview=null,selectedReviewCohort=null,reviewRequest=0;
 let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null,pendingSave=null,pendingRecycle=null;
 const canvas=document.getElementById('game-canvas'),renderer=new Renderer(canvas,document.getElementById('minimap')),sound=new Sound();
 const persist=()=>{saveAvailable=writeSave(storage,save);};
 function clearInput(){input.active=false;input.clear();accumulator=0;}
-function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable,journal,journalAvailable});}
+function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable,journal,journalAvailable,playtestReview,selectedReviewCohort});}
 function enterShelter(){
   view='shelter';paused=true;modal=null;clearInput();
   window.numberExtractionDesktop?.setRaidActive(false);
@@ -60,6 +62,16 @@ const ui=new UI({
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
   toggleRecording:()=>{if(view!=='shelter')return;changeJournal(next=>{next.enabled=!next.enabled;return true;});refreshShelter();ui.toast(!journalAvailable?'设置仅在本次会话生效，无法写入本机。':journal.enabled?'本机试玩记录已开启。':'本机试玩记录已停用。');},
   playtestFeedback:(id,field,value)=>{if(view!=='shelter'||!['extractReason','pressure','unfair'].includes(field))return;const parsed=value===''?null:field==='pressure'?Number(value):value;if(changeJournal(next=>setFeedback(next,id,{[field]:parsed}))){refreshShelter();ui.toast(journalAvailable?'体验反馈已保存在本机。':'反馈仅暂存于本次会话，可导出保留。');}},
+  importPlaytestReports:async()=>{
+    if(view!=='shelter')return;
+    const desktop=window.numberExtractionDesktop,ticket=++reviewRequest;
+    if(!desktop){document.getElementById('playtest-review-files').click();return;}
+    try{const result=await desktop.importPlaytests();if(ticket!==reviewRequest||view!=='shelter')return;if(result.ok)applyPlaytestReview(result.reports);else if(!result.canceled)ui.toast(result.error||'报告读取失败。');}
+    catch{if(ticket===reviewRequest)ui.toast('报告读取失败，请稍后重试。');}
+  },
+  reviewLocalJournal:()=>{if(view!=='shelter')return;reviewRequest++;applyPlaytestReview([serializeJournal(journal)]);},
+  selectReviewCohort:key=>{if(view==='shelter'&&playtestReview?.cohorts.some(cohort=>cohort.key===key)){selectedReviewCohort=key;refreshShelter();}},
+  clearReview:()=>{if(view==='shelter'){reviewRequest++;playtestReview=null;selectedReviewCohort=null;refreshShelter();}},
   exportPlaytest:async()=>{
     if(view!=='shelter')return;
     try{
@@ -108,6 +120,19 @@ const ui=new UI({
   slot:key=>{if(view==='raid'&&raid.switchWeapon(Number(key))){if(modal==='inventory')show('inventory');ui.update(raid,save,true,paused);}},
   overload:()=>{if(view==='raid'&&!paused)raid.activateOverload();},
   sound:()=>{const enabled=sound.toggle();document.getElementById('sound-state').textContent=enabled?'ON':'OFF';document.getElementById('sound-button').setAttribute('aria-label',enabled?'关闭音效':'开启音效');},
+});
+function applyPlaytestReview(texts){
+  try{const next=analyzePlaytestReports(texts);playtestReview=next;selectedReviewCohort=next.cohorts[0]?.key||null;ui.shelterTab='journal';refreshShelter();ui.toast('报告已在内存中分析，未写入对局或装备存档。');}
+  catch(error){ui.toast(error.message||'报告格式无效，未替换当前分析。');}
+}
+document.getElementById('playtest-review-files').addEventListener('change',async event=>{
+  const files=[...(event.target.files||[])],ticket=++reviewRequest;
+  if(view!=='shelter'||!files.length)return;
+  try{
+    if(files.length>MAX_REVIEW_REPORTS||files.some(file=>file.size>MAX_REPORT_BYTES)||files.reduce((sum,file)=>sum+file.size,0)>MAX_REVIEW_BYTES){ui.toast('一次最多8份报告，每份不超过256KB，总计不超过2MB。');return;}
+    const texts=await Promise.all(files.map(file=>file.text()));if(ticket===reviewRequest&&view==='shelter')applyPlaytestReview(texts);
+  }catch{if(ticket===reviewRequest)ui.toast('报告读取失败，原有分析保持。');}
+  finally{event.target.value='';}
 });
 function changeJournal(action){
   const next=structuredClone(journal);

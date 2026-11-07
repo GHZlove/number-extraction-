@@ -1,11 +1,13 @@
-# Balance playtest kit · v0.11.1 tuning / v0.11.2 local records
+# Balance playtest kit · v0.11.1 tuning / v0.11.3 batch review
 
-This is a short tuning pass before Phase 2 (v0.12). The v0.11.2 build adds local playtest records and review tools while retaining the v0.11.1 combat, heat and extraction values. Test the interaction of existing modifiers, heat, number forms and extraction routes; use observations before changing those numbers again.
+This is a short tuning pass before Phase 2 (v0.12). The v0.11.2 local journal and v0.11.3 temporary multi-report review retain the v0.11.1 combat, heat and extraction values. Test the interaction of existing modifiers, heat, number forms and extraction routes; use observations before changing those numbers again.
 
-**Human feedback status: uncollected.** The sessions below are planned, not completed playtests. Automated simulations, regression tests and native startup checks are separate evidence; they do not establish player comfort, fairness or win rates. A 2–4 day playtest window has not yet elapsed.
+**Evidence status:** no exported human JSON batch has been supplied for this review, so counts and outcomes have not been analysed. No outside volunteer has been contacted or confirmed by this workflow. The sessions and 2–4 day window below remain a plan, not a completed study. Automated simulations, regression tests and native startup checks are separate evidence; they do not establish player comfort, fairness or win rates.
 
-- Current logging build: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16).
+- Current batch-review build: **[REPLACE: verified v0.11.3 Windows release URL]**.
+- Prior verified logging build: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16).
 - Prior verified tuning candidate: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/NumberExtraction-0.11.1-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.1-desktop.15).
+- Next collection batch: [anonymous A/B/C assignments, invitation copy and patch protocol](PLAYTEST_BATCH_01.md).
 - Tuning changes: [numeric changes and measured diagnostic results](BALANCE_V0111.md).
 - Existing systems and controls: [run-depth rules](RUN_DEPTH_V011.md).
 - Future work only: [eight Phase 2 synergy and set proposals](SYNERGIES_V012_DESIGN.md). These are paper designs, not active effects in the tuning build.
@@ -35,6 +37,16 @@ Records stay on the player's device. Export is a deliberate player action produc
 
 Split exported records by build/balance version, difficulty, map and starting gear before comparing outcomes. The rolling 100-run window is a local sample, not a count of all players or lifetime choices. Export a useful review batch before older records roll out of that window. A seed alone is insufficient to recreate a run: preserve the recorded configuration and loadout too; there is no player-facing daily-run or seed-entry mode.
 
+## Temporary multi-report review
+
+The v0.11.3 review accepts up to **eight anonymous exports**, each containing at most 100 starts and no more than 256 KB. It reads reports for analysis only: importing does not append runs to the device's journal, replace progress or change equipment. Reports stay in memory, are not uploaded, and leave the review when the app closes; keep the original JSON files if you want to review them again.
+
+Ask each volunteer for **one latest export after about five runs**, rather than one export after every run. Exactly repeated report contents are counted once. A possible partial overlap between different reports is a warning to check which files were selected, not proof that they belong to one person. Resolve overlaps before considering tuning; a local session number is not a global player or run identifier. The number of imported files is not a player count, and importing JSON does not certify that it came from a human.
+
+Review build/balance-version/difficulty cohorts separately. Inspect map families and starting loadouts before comparing outcomes; mixing kits, routes and experience can create a pattern without any change in game balance. Cohorts with fewer than **10 finished runs** can show descriptive data but do not produce a tuning review queue. Only actual observations count: unknown hunter data is not zero, a blank response is not “fair,” and active/interrupted runs are not completed outcomes.
+
+The review can prioritise at most two investigation prompts. It does not propose or apply a numeric patch automatically. Use the [one-or-two-change patch protocol](PLAYTEST_BATCH_01.md#one-or-two-changes-per-patch) after checking the underlying cases and player explanations.
+
 ## Setup and comparisons
 
 Use anonymous session labels such as A1 or B2. A volunteer can describe their experience as “new to extraction games” or “experienced”; a name, account, email, age and location are unnecessary. Ask volunteers to play a build they choose to download; this guide does not contact or enrol anyone.
@@ -58,7 +70,7 @@ One tester need not finish the whole matrix. Aim for a few short sessions from p
 
 For session E, write **not reached** when 1024 was not reached; do not silently substitute a boosted character for normal progression. A developer-only high-tier fixture may test collision and attack geometry, but its results must be labelled separately. It cannot establish how often real players reach 1024.
 
-Success is not the only useful result. Record death, timeout or abandonment, including an understandable reason where possible. One failed run does not prove a modifier mix is unwinnable; one experienced player's success does not prove it is fair for new players. Compare repeated attempts, loadouts, difficulty and map variation before tuning.
+Success is not the only useful result. Record death, timeout or abandonment, including an understandable reason where possible. Do not discard failed or inconvenient runs to make the batch land on exactly 10 or 20. One failed run does not prove a modifier mix is unwinnable; one experienced player's success does not prove it is fair for new players. Compare repeated attempts, loadouts, difficulty and map variation before tuning.
 
 ## Per-run record
 
@@ -108,7 +120,7 @@ This guide does not enrol volunteers or upload records. The optional local journ
 | --- | --- | --- |
 | 1 | Baseline and first-time-player observation; let players explain exits before giving hints | Anonymous run records and the confusing wording they identify |
 | 2 | Risky combinations, heat, 1024 movement and special-exit decisions | Repeated failure patterns and at least one reason for accepting or rejecting each observed route |
-| 3, if available | Make a small numeric adjustment, state its rationale, repeat affected sessions | Before/after values and comparable run records; no new progression systems |
+| 3, if available | Make only one or two individually named parameter or wording changes, state their rationale, then repeat affected sessions | Exact before/after values, the supporting counts, expected effect, rollback and comparable run records |
 | 4, if available | Confirm the candidate, run regression/native checks and document unresolved feedback | Actual results, known limits and a release decision |
 
 For a two-day pass, combine tuning and confirmation into day 2 only if there is enough evidence. If volunteers or high-tier observations are unavailable, state that clearly and leave those conclusions open. Do not report this schedule as completed simply because a candidate build was produced.
@@ -117,20 +129,22 @@ For a two-day pass, combine tuning and confirmation into day 2 only if there is 
 
 Summarise observed results by scenario and route, including sample sizes and missing responses. Count modifier selection against **recorded starts**; count exit shares against **successful extractions only**. Exclude active and interrupted runs from completed-run rates. Report defeats, timeouts and voluntary abandonments separately; do not label every failed extraction a death. State the denominator whenever showing a success fraction.
 
-Use the following manual decision gates. They are prompts to inspect evidence, not automatic balance rules:
+Use the following manual decision gates. These are provisional investigation signals, not automatic balance conclusions. The review queue requires at least **10 finished runs in the same build/balance-version/difficulty cohort** and no unresolved report overlap. Signal-specific denominators still need to be large enough:
 
-| Check | Initial review gate | Follow-up before changing values |
+| Check | Initial review signal | Follow-up before changing values |
 | --- | --- | --- |
-| Special bonuses versus west | Once there are at least 10 successful extractions, zero western uses warrants a closer look | Compare starting location, map, conditions and player reasons. Repeated rejection of an accessible west because special routes feel equally safe and pay more supports investigating their risk/reward; zero uses alone does not prove west is pointless |
-| Heat still creates late pressure | Define **late** as an outcome at or after 75% of that run's time limit. Inspect late extractions with no materialised hunters | Ask whether the player travelled, sheltered, encountered a boss or felt pressure from guards. Repeated late, well-stocked extractions with low pressure ratings and no hunter contact warrant review, not an immediate heat increase |
-| Unfair or unreadable damage | Any repeatable defect deserves investigation immediately; look for repeated cause/feedback patterns | Reproduce the warning, visibility and available response at the same form and configuration before tuning damage or timing |
-| Avoided modifiers | Zero selections after a 10–20 run batch is an interview prompt | Check whether the modifier was noticed and understood; compare risk, reward and starting kit before declaring it weak or unfair |
+| Special bonuses versus west | At least 5 successful extractions with a known exit, with west below about 20% of those known exits | Show the raw fraction and missing exits. Compare route distance, map, conditions, starting kit and player reasons. A small west share alone does not establish that special routes are too safe |
+| Heat still creates pressure | At least 5 successful extractions with known actual-hunter data, with a majority occurring before any hunters materialised | Show the raw fraction, durations and missing hunter values. Inspect late extractions, defined as at least 75% of the run limit. Ask about safehouses, guards, bosses, route choice and pressure ratings before calling heat decorative |
+| Concentrated combat deaths | At least 5 combat deaths with a known cause, with one cause accounting for at least 60% of known causes | Check warnings and optional unfairness feedback, then reproduce the event at the same form and configuration. A common expected attack may dominate without being unfair; a repeatable defect can be investigated immediately without waiting for a cohort |
+| Avoided modifiers | A modifier has no selections in the retained sample | Treat this as a description or interview prompt. Ask whether the option was noticed and understood before changing its reward; prescribed session mixes can themselves leave some options unused |
+
+Each signal means “inspect these cases.” It is not evidence that the named system caused the outcome. Display unknowns and actual denominators alongside every percentage. Do not turn one unusual run, an empty batch or an unresolved overlap into a tuning recommendation.
 
 Resource storage is unlimited, so there is no objective “maximum loot” state. Carried resource value is a continuous measure. A full equipment bag is one stock/occupancy indicator, not proof of maximum earnings or optimal play. Report any high-loot threshold explicitly and keep it consistent within a comparison; do not invent one after looking at a tiny sample.
 
-Keep the western fallback reliable. Tune special-route opening times, window lengths, reward differences, heat values or form values only when observed tradeoffs support the change. Preserve save compatibility, warehouse ownership and interrupted extraction behaviour. Fix a reproducible defect before discussing balance around it. No values should change automatically because the sample is empty or small.
+Keep the western fallback reliable. Tune special-route opening times, window lengths, reward differences, heat values or form values only when observed tradeoffs support the change. Preserve save compatibility, warehouse ownership and interrupted extraction behaviour. Fix a reproducible defect before discussing balance around it. No values should change automatically because the sample is empty or small. After a pattern is corroborated, change at most one or two individually named parameters or explanations per patch, keep the other values fixed, and repeat a comparable batch. Do not hide several heat or exit changes inside one broad “system adjustment.”
 
-The v0.11.1 tuning candidate is already released; v0.11.2 supports collecting evidence without retuning its systems. After reviewing actual observations, Phase 2 (v0.12) proceeds in order: **equipment synergies and set bonuses → contracts → factions**. The [eight synergy/set proposals](SYNERGIES_V012_DESIGN.md) may be reviewed on paper now; they do not activate in the playtest build.
+The v0.11.1 tuning candidate is already released; v0.11.2 records runs and v0.11.3 prepares evidence for review without retuning those systems. After reviewing actual observations, Phase 2 (v0.12) proceeds in order: **equipment synergies and set bonuses → contracts → factions**. The [eight synergy/set proposals](SYNERGIES_V012_DESIGN.md) may be reviewed on paper now; they do not activate in the playtest build.
 
 ## 简短中文反馈模板
 

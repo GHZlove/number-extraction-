@@ -1,7 +1,7 @@
 const {app,BrowserWindow,Menu,protocol,session,ipcMain,dialog,screen} = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const {APP_URL,CSP,isGameURL,resolveAsset,validSaveText,validPlaytestText} = require('./policy.cjs');
+const {APP_URL,CSP,isGameURL,resolveAsset,validSaveText,validPlaytestText,PLAYTEST_EXPORT_LIMIT,PLAYTEST_REVIEW_MAX_FILES,PLAYTEST_REVIEW_TOTAL_LIMIT} = require('./policy.cjs');
 
 const smoke = process.env.NUMBER_EXTRACTION_SMOKE === '1';
 let window = null, raidActive = false;
@@ -40,6 +40,30 @@ function registerIPC() {
     if (result.canceled || !result.filePath) return {ok:false,canceled:true};
     try { await fs.writeFile(result.filePath,text,'utf8');return {ok:true}; }
     catch { return {ok:false,error:'无法写入所选文件，请选择其他位置。'}; }
+  });
+  ipcMain.handle('playtest:review-import',async event => {
+    if (!trusted(event)) return {ok:false,error:'不支持的来源。'};
+    // The renderer cannot supply paths. Only a user file selection (or fixed CI
+    // fixtures in smoke mode) determines which reports this read-only IPC reads.
+    const selection = smoke ? {canceled:false,filePaths:require('./smoke.cjs').playtestReviewPaths()} :
+      await dialog.showOpenDialog(window,{title:'选择匿名试玩报告进行合并分析',properties:['openFile','multiSelections'],filters:[{name:'Anonymous playtest JSON',extensions:['json']}]});
+    if (selection.canceled || !selection.filePaths?.length) return {ok:false,canceled:true};
+    if (selection.filePaths.length > PLAYTEST_REVIEW_MAX_FILES) return {ok:false,error:'每批最多选择8份匿名报告。'};
+    const reports=[];let total=0;
+    try {
+      for (const [index,file] of selection.filePaths.entries()) {
+        const stat=await fs.stat(file);
+        if (!Number.isFinite(stat.size) || stat.size < 0 || stat.size > PLAYTEST_EXPORT_LIMIT || typeof stat.isFile === 'function' && !stat.isFile()) return {ok:false,error:`第${index+1}份报告无效或超过256KB。`};
+        const text=await fs.readFile(file,'utf8'),bytes=Buffer.byteLength(text,'utf8');
+        // Check the actual read too: the selected file may grow after stat().
+        if (bytes > PLAYTEST_EXPORT_LIMIT) return {ok:false,error:`第${index+1}份报告超过256KB。`};
+        total+=bytes;
+        if (total > PLAYTEST_REVIEW_TOTAL_LIMIT) return {ok:false,error:'这批报告超过2MB。'};
+        if (!validPlaytestText(text)) return {ok:false,error:`第${index+1}份不是支持的匿名试玩报告。`};
+        reports.push(text);
+      }
+    } catch { return {ok:false,error:'无法读取所选报告，请选择有效的匿名JSON文件。'}; }
+    return {ok:true,reports};
   });
   ipcMain.handle('save:import',async event => {
     if (!trusted(event)) return {ok:false,error:'不支持的来源。'};

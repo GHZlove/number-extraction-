@@ -30,6 +30,8 @@ function validSaveText(text) {
 // This export boundary accepts only the anonymous, finite playtest schema.
 // It never accepts progress saves, local run identifiers, free text or file paths.
 const PLAYTEST_EXPORT_LIMIT = 262144;
+const PLAYTEST_REVIEW_MAX_FILES = 8;
+const PLAYTEST_REVIEW_TOTAL_LIMIT = PLAYTEST_EXPORT_LIMIT * PLAYTEST_REVIEW_MAX_FILES;
 const RUN_KEYS = ['session','buildVersion','balanceVersion','seed','difficulty','map','mutators','loadout','duration','seconds','number','heat','hpPercent','rawValue','gearCount','bagCapacity','chests','huntersSpawned','firstHunterAt','hunterWaves','kills','outcome','deathCause','exitType','feedback'];
 const WEAPON_KEYS = ['pistol','smg','rifle','sniper','greatsword','dualblades','shotgun','carbine','lmg','crossbow','grenade','spear','warhammer','railgun','revolver','doublebarrel','plasma','flamethrower','rocket','battleaxe'];
 const ENCHANT_KEYS = ['none','leech','lightning','stun','poison','burn','frost','bleed','sunder','detonate','critical','gravity','energize'];
@@ -65,4 +67,4 @@ function validPlaytestText(text) {
     return exactKeys(feedback,['extractReason','pressure','unfair']) && optionalEnum(feedback.extractReason,EXTRACT_REASONS) && optionalNumber(feedback.pressure,1,5,true) && optionalEnum(feedback.unfair,UNFAIR_REASONS);
   });
 }
-module.exports = {APP_URL,ORIGIN,CSP,isGameURL,resolveAsset,validSaveText,validPlaytestText,PLAYTEST_EXPORT_LIMIT};
+module.exports = {APP_URL,ORIGIN,CSP,isGameURL,resolveAsset,validSaveText,validPlaytestText,PLAYTEST_EXPORT_LIMIT,PLAYTEST_REVIEW_MAX_FILES,PLAYTEST_REVIEW_TOTAL_LIMIT};

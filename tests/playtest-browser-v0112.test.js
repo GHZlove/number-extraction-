@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { browserStubs } from './helpers/browser-stubs.js';
 import { defaultSave } from '../dist/src/storage.js';
-import { SAVE_KEY } from '../dist/src/config.js';
+import { SAVE_KEY, VERSION } from '../dist/src/config.js';
 import { Raid } from '../dist/src/game.js';
 import { emptyJournal, readJournal, writeJournal, recordStart, recordFinish, summarizeJournal, JOURNAL_KEY } from '../dist/src/playtest.js';
 
@@ -19,7 +19,7 @@ function finishedFixture(){
 
 test('actual application starts a journal row and separates voluntary return from combat death',async t=>{
  const env=browserStubs(t);storeGame(env);await import('../dist/src/main.js?playtest-real-start-finish');const c=controls(env);
- c.action('start');let journal=readJournal(env.window.localStorage).journal;assert.equal(journal.runs.length,1);assert.equal(journal.runs[0].outcome,'in_progress');assert.equal(journal.runs[0].buildVersion,'0.11.2');
+ c.action('start');let journal=readJournal(env.window.localStorage).journal;assert.equal(journal.runs.length,1);assert.equal(journal.runs[0].outcome,'in_progress');assert.equal(journal.runs[0].buildVersion,VERSION);
  c.abandon();journal=readJournal(env.window.localStorage).journal;assert.equal(journal.runs.length,1);assert.equal(journal.runs[0].outcome,'abandoned');const summary=summarizeJournal(journal);assert.equal(summary.finished,1);assert.equal(summary.defeated,0);assert.equal(summary.abandoned,1);
  const saved=JSON.parse(env.window.localStorage.getItem(SAVE_KEY));assert.equal(saved.credits,123);assert.deepEqual(saved.materials,{alloy:7,core:1});
  c.action('shelterTab','journal');assert.equal(env.ids.get('shelter-screen').dataset.tab,'journal');assert.match(env.ids.get('shelter-screen').innerHTML,/不自动上传/);

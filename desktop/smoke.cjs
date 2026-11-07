@@ -5,6 +5,8 @@ const {validPlaytestText} = require('./policy.cjs');
 const delay = milliseconds => new Promise(resolve => setTimeout(resolve,milliseconds));
 const file = () => process.env.NUMBER_EXTRACTION_SMOKE_REPORT || path.join(require('node:os').tmpdir(),'NumberExtraction-smoke.json');
 const playtestExportPath = () => file().replace(/\.json$/, '')+'-playtest-export.json';
+// Repeated selection is intentional: the review must not double-count a report.
+const playtestReviewPaths = () => [playtestExportPath(),playtestExportPath()];
 async function report(value) { await fs.writeFile(file(),JSON.stringify(value,null,2),'utf8'); }
 async function checkPreviewLayouts(window) {
   const bounds=window.getBounds(),minimum=window.getMinimumSize(),zoom=window.webContents.getZoomFactor(),layouts=[];
@@ -48,11 +50,11 @@ async function run(window,app) {
   const errors=[];window.webContents.on('console-message',details => { if (details.level === 'error') errors.push(String(details.message)); });
   await delay(600);
   const fixture=await window.webContents.executeJavaScript(`(async () => {
-    const log=await import('./src/playtest.js'),state=log.readJournal(localStorage);
+    const log=await import('./src/playtest.js'),{VERSION}=await import('./src/config.js'),state=log.readJournal(localStorage);
     const empty=state.journal.runs.length===0;
     if(${process.env.NUMBER_EXTRACTION_SMOKE_MODE === 'verify'})return{initiallyEmpty:empty,seeded:false};
     if(!empty)throw Error('Fresh smoke profile unexpectedly contains playtest records');
-    const snapshot={id:'native-playtest-fixture',buildVersion:'0.11.2',balanceVersion:'0.11.1',seed:1001,difficulty:'scout',map:'blocks',mutators:['fog'],loadout:{weapons:[{weapon:'pistol',rarity:'white',level:1,enchant:'none'}],armorRarity:'none',laser:false},duration:240,seconds:0,number:1,heat:0,hpPercent:100,rawValue:0,gearCount:0,bagCapacity:8,chests:0,huntersSpawned:0,firstHunterAt:null,hunterWaves:0};
+    const snapshot={id:'native-playtest-fixture',buildVersion:VERSION,balanceVersion:'0.11.1',seed:1001,difficulty:'scout',map:'blocks',mutators:['fog'],loadout:{weapons:[{weapon:'pistol',rarity:'white',level:1,enchant:'none'}],armorRarity:'none',laser:false},duration:240,seconds:0,number:1,heat:0,hpPercent:100,rawValue:0,gearCount:0,bagCapacity:8,chests:0,huntersSpawned:0,firstHunterAt:null,hunterWaves:0};
     if(!log.recordStart(state.journal,snapshot))throw Error('Native journal fixture could not start');
     const final={...snapshot,seconds:62,number:16,heat:30,hpPercent:80,rawValue:80,gearCount:2,chests:2,huntersSpawned:2,firstHunterAt:49,hunterWaves:1};
     if(!log.recordFinish(state.journal,{id:snapshot.id,success:true,reason:'成功撤离',extractedVia:'key',seconds:62,heat:30,number:16,seed:1001,mutators:['fog'],rawValue:80,value:88,kills:4,playtest:final})||!log.writeJournal(localStorage,state.journal))throw Error('Native journal fixture could not persist');
@@ -117,6 +119,39 @@ async function run(window,app) {
   const exportedData=JSON.parse(exported),exportedFixture=exportedData.runs.find(run=>run.session===1);
   if(exported.includes('native-playtest-fixture')||exportedData.runs.some(run=>Object.hasOwn(run,'id'))||exportedFixture?.feedback.pressure!==3)throw Error('Native export contains private ids or lost feedback');
   playtest.export={ok:true,records:exportedData.runs.length,privateIds:false};
+  const storageBeforeReview=await window.webContents.executeJavaScript(`(async () => {
+    const {JOURNAL_KEY}=await import('./src/playtest.js');
+    return{save:localStorage.getItem(document.documentElement.dataset.saveKey),journal:localStorage.getItem(JOURNAL_KEY)};
+  })()`);
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="importPlaytestReports"]').click();`);
+  let review;
+  for(let attempt=0;attempt<25;attempt++){
+    review=await window.webContents.executeJavaScript(`(() => {
+      const panel=document.querySelector('.playtest-review'),status=panel?.querySelector('.review-status');
+      return panel?{visible:getComputedStyle(panel).display!=='none',finished:Number(panel.dataset.finished),reports:Number(panel.dataset.reports),duplicates:Number(panel.dataset.duplicates),ready:status?.dataset.ready,text:panel.textContent}:null;
+    })()`);
+    if(review)break;await delay(100);
+  }
+  if(!review?.visible||review.finished!==1||review.reports!==2||review.duplicates!==1||review.ready!=='false'||!/(不足10|样本不足|少于10|积累10)/.test(review.text))throw Error('Read-only batch review failed: '+JSON.stringify(review));
+  const storageAfterReview=await window.webContents.executeJavaScript(`(async () => {
+    const {JOURNAL_KEY}=await import('./src/playtest.js');
+    return{save:localStorage.getItem(document.documentElement.dataset.saveKey),journal:localStorage.getItem(JOURNAL_KEY)};
+  })()`);
+  if(storageAfterReview.save!==storageBeforeReview.save||storageAfterReview.journal!==storageBeforeReview.journal)throw Error('Report review modified progress or local observations');
+  await window.webContents.executeJavaScript(`document.querySelector('.playtest-review').scrollIntoView({block:'start'});`);
+  await delay(100);
+  await fs.writeFile(file().replace(/\.json$/, '-review.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="clearReview"]').click();`);
+  const cleared=await window.webContents.executeJavaScript(`document.querySelector('.playtest-review')===null`);
+  if(!cleared)throw Error('Clearing the in-memory review failed');
+  await new Promise(resolve=>{window.webContents.once('did-finish-load',resolve);window.webContents.reload();});await delay(300);
+  const reviewRestart=await window.webContents.executeJavaScript(`(async () => {
+    const {JOURNAL_KEY}=await import('./src/playtest.js');
+    return{empty:document.querySelector('.playtest-review')===null,save:localStorage.getItem(document.documentElement.dataset.saveKey),journal:localStorage.getItem(JOURNAL_KEY)};
+  })()`);
+  if(!reviewRestart.empty||reviewRestart.save!==storageBeforeReview.save||reviewRestart.journal!==storageBeforeReview.journal)throw Error('Imported review persisted or modified local records across reload');
+  review={visible:review.visible,finished:review.finished,reports:review.reports,duplicates:review.duplicates,ready:false,storageIsolated:true,cleared:true,restartEmpty:true,fixture:'isolated CI report, not human data'};
+  await window.webContents.executeJavaScript(`window.scrollTo(0,0);document.querySelector('[data-action="shelterTab"][data-key="journal"]').click();`);
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="deploy"]').click();`);
 
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="start"]').click();`);
@@ -164,7 +199,7 @@ async function run(window,app) {
   await window.webContents.session.flushStorageData();
   await delay(300);
   if (errors.length) throw Error(errors.join('\n'));
-  await report({ok:true,shelter,previewLayouts,warehouse,codex,rules,playtest,fixture,raid,formContrast,exitBrief,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
+  await report({ok:true,shelter,previewLayouts,warehouse,codex,rules,playtest,review,fixture,raid,formContrast,exitBrief,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
   app.quit();
 }
-module.exports = {run,report,playtestExportPath};
+module.exports = {run,report,playtestExportPath,playtestReviewPaths};

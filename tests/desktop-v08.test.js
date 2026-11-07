@@ -33,14 +33,14 @@ test('desktop resource policy blocks remote connections, scripts, frames, object
   assert.match(CSP,/script-src 'self';/);assert.match(CSP,/connect-src 'none'/);assert.match(CSP,/frame-src 'none'/);assert.match(CSP,/object-src 'none'/);assert.doesNotMatch(CSP,/unsafe-eval/);
 });
 
-test('preload exposes fixed save and anonymous-playtest exports plus a Boolean raid indicator',()=>{
+test('preload exposes fixed save/report actions and a Boolean raid indicator',()=>{
   let exposed;const calls=[];
   vm.runInNewContext(readFileSync(new URL('../desktop/preload.cjs',import.meta.url),'utf8'),{require:name=>{
     assert.equal(name,'electron');return{contextBridge:{exposeInMainWorld:(name,api)=>{assert.equal(name,'numberExtractionDesktop');exposed=api;}},ipcRenderer:{invoke:(...args)=>calls.push(args),send:(...args)=>calls.push(args)}};
   }});
-  assert.deepEqual(Object.keys(exposed).sort(),['exportPlaytest','exportSave','importSave','isDesktop','setRaidActive']);
-  exposed.exportSave('json');exposed.exportPlaytest('anonymous');exposed.importSave();exposed.setRaidActive('true');exposed.setRaidActive(true);
-  assert.deepEqual(calls,[['save:export','json'],['playtest:export','anonymous'],['save:import'],['raid:active',false],['raid:active',true]]);
+  assert.deepEqual(Object.keys(exposed).sort(),['exportPlaytest','exportSave','importPlaytests','importSave','isDesktop','setRaidActive']);
+  exposed.exportSave('json');exposed.exportPlaytest('anonymous');exposed.importPlaytests('/ignored/renderer/path');exposed.importSave();exposed.setRaidActive('true');exposed.setRaidActive(true);
+  assert.deepEqual(calls,[['save:export','json'],['playtest:export','anonymous'],['playtest:review-import'],['save:import'],['raid:active',false],['raid:active',true]]);
 });
 
 test('export/import round trip retains progression and forged gear while dropping unrelated fields',()=>{
