@@ -120,6 +120,7 @@ test('CLI reads local reports, emits grouped JSON/Markdown and keeps input paths
  const input=join(directory,'private-player-name.json'),output=join(directory,'analysis.md');writeFileSync(input,report(rows(10)));
  const io={stdout:text=>{io.out+=text;},stderr:text=>{io.err+=text;},out:'',err:''};assert.equal(await runAnalysisCLI([input,'--format','json'],io),0);const json=io.out;assert.equal(JSON.parse(json).totalFinished,10);assert.equal(json.includes('private-player-name'),false);assert.equal(json.includes(directory),false);
  assert.equal(await runAnalysisCLI([input,'--format=markdown','--output',output],io),0);const markdown=readFileSync(output,'utf8');assert.match(markdown,/Choose at most one or two actual changes per patch/);assert.match(markdown,/known exits/);assert.equal(markdown.includes(input),false);assert.equal(markdown.includes('private-player-name'),false);
+ writeFileSync(output,'old output '.repeat(markdown.length));assert.equal(await runAnalysisCLI([input,'--output',output],io),0);assert.equal(readFileSync(output,'utf8'),markdown);assert.equal(readFileSync(input,'utf8'),report(rows(10)));
 });
 
 test('CLI rejects malformed input and unsupported options without printing raw contents or filenames',async t=>{

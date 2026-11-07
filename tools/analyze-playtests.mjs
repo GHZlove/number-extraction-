@@ -83,7 +83,14 @@ async function execute(argsList,io){
   try{
    // Open without truncating, then check the actual file before any data write.
    // This also protects aliases swapped between pathname inspection and open.
-   handle=await open(outputPath,'a');
+   // Windows append-only handles cannot reliably truncate. Use a non-truncating
+   // read/write handle, or exclusively create a new file, before checking it.
+   try{handle=await open(outputPath,'r+');}
+   catch(error){
+    if(error.code!=='ENOENT')throw error;
+    try{handle=await open(outputPath,'wx+');}
+    catch(created){if(created.code!=='EEXIST')throw created;handle=await open(outputPath,'r+');}
+   }
    const identity=await handle.stat({bigint:true});
    if(inputs.some(input=>input.dev===identity.dev&&input.ino===identity.ino))throw conflict;
    await handle.truncate(0);await handle.writeFile(output,'utf8');
