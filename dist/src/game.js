@@ -1,8 +1,9 @@
+import { BALANCE_VERSION } from './playtest.js';
 import { RUN_BALANCE, exitRewardMultiplier, runRules, updateNumberForm, configureExpedition, extractionStatus, updateRunHazards } from './run-rules.js';
 import { HeatDirector } from './heat.js';
 import { PressureDirector } from './pressure.js';
 import { NavigationField } from './navigation.js';
-import { RULES, WORLD, ENEMY_TYPES, PRESSURE, difficultyOf } from './config.js';
+import { VERSION, RULES, WORLD, ENEMY_TYPES, PRESSURE, difficultyOf } from './config.js';
 import {
   attackDamage, bagTotal, canMerge, canRecycleRemnant, remnantCoins, clamp, distance, lineOfSight, maxEnemyHealth,
   moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree, zoneAt,
@@ -45,6 +46,8 @@ export class Raid {
       ...loadout, activeSlot: 0, energy: 0, overload: 0, buffs: { fury: 0, phase: 0, magnet: 0 },
     };
     Object.assign(this.player,{recoil:0,recoilMax:.1,sectorId:zoneAt(this.player,this.world.zones).id,parryWindow:0,parryCooldown:0,enchantCooldowns:{}});this.sectorNotice=0;
+    this.playtestMetrics={huntersSpawned:0,firstHunterAt:null};
+    this.startingLoadout={weapons:this.player.weapons.map(({weapon,rarity,level=1,enchant='none'})=>({weapon,rarity,level,enchant})),armorRarity:this.player.armor?.rarity||'none',laser:!!this.player.laser};
     this.bag = [];
     this.capacity = RULES.bagCapacity + facilityLevel(save,'storage') * 2;
     this.kills = 0; this.merges = 0; this.opened = 0;
@@ -55,6 +58,12 @@ export class Raid {
     this.nodesActivated = 0; this.combo = 0; this.lastMerge = -Infinity;
     updateNumberForm(this);configureExpedition(this,seed);
     this.message(`守卫主要驻守资源点。${this.difficulty.extractAt} 秒后可撤离；右键弹反，西侧安全屋有商人。`);
+  }
+
+  playtestSnapshot(){
+    return {id:this.id,buildVersion:VERSION,balanceVersion:BALANCE_VERSION,seed:this.world.seed,difficulty:this.difficulty.id,map:this.world.layout,mutators:[...this.run.ids],loadout:this.startingLoadout,
+      duration:this.duration,seconds:this.elapsed,number:this.player.value,heat:this.heat?.value||0,hpPercent:100*this.player.hp/this.player.maxHp,rawValue:this.carriedValue(),gearCount:this.equipmentCount(),bagCapacity:this.capacity,chests:this.opened,kills:this.kills,
+      huntersSpawned:this.playtestMetrics.huntersSpawned,firstHunterAt:this.playtestMetrics.firstHunterAt,hunterWaves:this.heat?.waves||0};
   }
 
   visible(a,b,pad=0) { return lineOfSight(a,b,obstaclesFor(this.world,a,b,pad),pad); }
@@ -621,6 +630,7 @@ export class Raid {
       seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,mutators:[...this.run.ids],heat:this.heat?.value||0,seed:this.world.seed,extractedVia:this.extractedVia,
       materials:{alloy:Math.round(materials.alloy*multiplier),core:Math.round(materials.core*multiplier)},
       gear:this.carriedEquipment().map(item=>({...item})),loot:items.map(item=>({...item})) };
+    this.result.playtest=this.playtestSnapshot();
     this.event('finish', { result: this.result });
   }
 }

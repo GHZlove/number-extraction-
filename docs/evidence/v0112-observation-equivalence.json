@@ -1,0 +1,53 @@
+{
+  "method": "Synthetic finite-health fixed-input combat regression; no human playtest data.",
+  "beforeVersion": "0.11.1",
+  "afterVersion": "0.11.2",
+  "beforeSourceFingerprint": "fd7e7bbb34704a53816361496146b683ff5ec21c080f31515e6ab44d03cc949b",
+  "afterSourceFingerprint": "3adce7efea6be996a09f417a574f11397735bfd8261f08ab2770e9e1cab0088d",
+  "fixtures": 16,
+  "identicalCaseResults": true,
+  "identicalSummary": true,
+  "settings": {
+    "horizonSeconds": 60,
+    "timestep": 0.03333333333333333,
+    "difficulty": "hard",
+    "initialEnemies": 8,
+    "weapon": "white level-1 rifle",
+    "armor": false,
+    "laser": false
+  },
+  "summary": [
+    {
+      "configuration": "baseline",
+      "fixtures": 4,
+      "survivedHorizons": 4,
+      "deaths": 0,
+      "meanEndHpPercent": 78.875,
+      "meanKills": 18.5
+    },
+    {
+      "configuration": "surge-scarcity-fog",
+      "fixtures": 4,
+      "survivedHorizons": 4,
+      "deaths": 0,
+      "meanEndHpPercent": 71.041,
+      "meanKills": 17.75
+    },
+    {
+      "configuration": "bounty-haste-volatile",
+      "fixtures": 4,
+      "survivedHorizons": 4,
+      "deaths": 0,
+      "meanEndHpPercent": 94.625,
+      "meanKills": 24.5
+    },
+    {
+      "configuration": "no-dodge-fog-glass",
+      "fixtures": 4,
+      "survivedHorizons": 4,
+      "deaths": 0,
+      "meanEndHpPercent": 65.266,
+      "meanKills": 24
+    }
+  ]
+}

@@ -56,6 +56,7 @@ export class PressureDirector {
       const e=createEnemy(mark.id,mark.x,mark.y,mark.value,mark.type);
       Object.assign(e,{horde:true,hunter:!!mark.hunter,guard:mark.guard,leash:850,elite:mark.elite,zone:mark.zone,sectorId:mark.sectorId,moveScale:mark.moveScale,aggro:mark.hunter?999:mark.guard?4:0,cooldown:.4,rarity:mark.elite?'yellow':'white'});
       w.enemies.push(e);this.spawned++;near++;
+      if(e.hunter&&raid.playtestMetrics){raid.playtestMetrics.huntersSpawned++;raid.playtestMetrics.firstHunterAt??=raid.elapsed;}
     }
     w.spawnWarnings=w.spawnWarnings.filter(mark=>!mark.done);
     const anchor=(w.sites||[]).filter(s=>distance(s,p)<650&&w.enemies.some(e=>!e.dead&&e.guard&&distance(e,s)<650&&distance(e,p)<700)).sort((a,b)=>distance(a,p)-distance(b,p))[0];

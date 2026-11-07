@@ -1,3 +1,4 @@
+import { readJournal, writeJournal, recordStart, recordCheckpoint, recordFinish, interruptOpenRuns, setFeedback, serializeJournal } from './playtest.js';
 import { MUTATORS, normalizeMutators } from './run-rules.js';
 import { prepareWarehouseDeployment, selectWarehouseGear, claimPendingGear, recycleWarehouseGear, repairWarehouseGear } from './warehouse.js';
 import { bossPool } from './bosses.js';
@@ -17,11 +18,13 @@ let storage=null;try{storage=window.localStorage;}catch{}
 document.documentElement?.setAttribute('data-save-key',SAVE_KEY);
 const initial=readSave(storage);let save=initial.save,saveAvailable=initial.available;
 if(initial.migrated)saveAvailable=writeSave(storage,save);
+const journalInitial=readJournal(storage);let journal=journalInitial.journal,journalAvailable=journalInitial.available;
+if(interruptOpenRuns(journal))journalAvailable=writeJournal(storage,journal);
 let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null,pendingSave=null,pendingRecycle=null;
 const canvas=document.getElementById('game-canvas'),renderer=new Renderer(canvas,document.getElementById('minimap')),sound=new Sound();
 const persist=()=>{saveAvailable=writeSave(storage,save);};
 function clearInput(){input.active=false;input.clear();accumulator=0;}
-function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable});}
+function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable,journal,journalAvailable});}
 function enterShelter(){
   view='shelter';paused=true;modal=null;clearInput();
   window.numberExtractionDesktop?.setRaidActive(false);
@@ -34,13 +37,13 @@ function start(){
   const prepared=prepareWarehouseDeployment(save),nextRaid=new Raid(prepared.save,seed[0],{warehouseGear:prepared.gear});
   if(prepared.count&&!writeSave(storage,prepared.save)){ui.toast('无法保存出击装备变更，请检查存档权限后再试。');return;}
   if(prepared.count){save=prepared.save;saveAvailable=true;}
-  raid=nextRaid;view='raid';paused=false;modal=null;accumulator=0;
+  raid=nextRaid;changeJournal(next=>recordStart(next,raid.playtestSnapshot()));view='raid';paused=false;modal=null;accumulator=0;
   window.numberExtractionDesktop?.setRaidActive(true);
   document.body.dataset.screen='raid';document.getElementById('shelter-screen').hidden=true;document.getElementById('raid-screen').hidden=false;
   renderer.resize();renderer.camera={...raid.player};renderer.lastMapDraw=-Infinity;input.clear();input.active=true;ui.hide();ui.update(raid,save,true,false);
 }
 function show(kind){
-  if(view==='raid'){paused=true;clearInput();}modal=kind;
+  if(view==='raid'){checkpointJournal();paused=true;clearInput();}modal=kind;
   if(kind==='inventory')ui.inventory(raid);else if(kind==='merchant')ui.shop(raid,merchantId);else if(kind==='exits')ui.exits(raid);else if(kind==='saves')ui.saveTransfer(save,pendingSave);else if(kind==='pause')ui.pause();else if(kind==='abandonAsk')ui.abandonAsk();else ui.help();
 }
 function close(){
@@ -53,8 +56,18 @@ function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==
 const input=new Input(canvas,pause,inventory);
 const ui=new UI({
   start,close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
-  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules'].includes(key)){ui.shelterTab=key;refreshShelter();}},
+  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules','journal'].includes(key)){ui.shelterTab=key;refreshShelter();}},
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
+  toggleRecording:()=>{if(view!=='shelter')return;changeJournal(next=>{next.enabled=!next.enabled;return true;});refreshShelter();ui.toast(!journalAvailable?'设置仅在本次会话生效，无法写入本机。':journal.enabled?'本机试玩记录已开启。':'本机试玩记录已停用。');},
+  playtestFeedback:(id,field,value)=>{if(view!=='shelter'||!['extractReason','pressure','unfair'].includes(field))return;const parsed=value===''?null:field==='pressure'?Number(value):value;if(changeJournal(next=>setFeedback(next,id,{[field]:parsed}))){refreshShelter();ui.toast(journalAvailable?'体验反馈已保存在本机。':'反馈仅暂存于本次会话，可导出保留。');}},
+  exportPlaytest:async()=>{
+    if(view!=='shelter')return;
+    try{
+      const text=serializeJournal(journal),desktop=window.numberExtractionDesktop;
+      if(desktop){const result=await desktop.exportPlaytest(text);if(result.ok)ui.toast('匿名试玩记录已导出，由你选择是否分享。');else if(!result.canceled)ui.toast(result.error||'导出失败。');}
+      else{const url=URL.createObjectURL(new Blob([text],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='NumberExtraction-playtest.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0);ui.toast('匿名试玩记录已生成下载。');}
+    }catch{ui.toast('试玩记录导出失败，请稍后重试。');}
+  },
   exportSave:async()=>{
     if(view!=='shelter')return;
     const text=serializeSave(save),desktop=window.numberExtractionDesktop;
@@ -96,6 +109,13 @@ const ui=new UI({
   overload:()=>{if(view==='raid'&&!paused)raid.activateOverload();},
   sound:()=>{const enabled=sound.toggle();document.getElementById('sound-state').textContent=enabled?'ON':'OFF';document.getElementById('sound-button').setAttribute('aria-label',enabled?'关闭音效':'开启音效');},
 });
+function changeJournal(action){
+  const next=structuredClone(journal);
+  try{if(!action(next))return false;journal=next;journalAvailable=writeJournal(storage,journal);return true;}
+  catch{journalAvailable=false;return false;}
+}
+function checkpointJournal(){if(raid?.status==='playing')changeJournal(next=>recordCheckpoint(next,raid.playtestSnapshot()));}
+window.addEventListener('beforeunload',checkpointJournal);
 function warehouseChange(action,message){
   if(view!=='shelter')return false;
   const next=structuredClone(save);if(!action(next)){ui.toast('当前条件不足，未修改仓库。');return false;}
@@ -112,7 +132,7 @@ function handleEvents(){
   for(const event of raid.events.splice(0)){
     if(event.type==='message')ui.toast(event.text);
     else if(event.type==='trade'){merchantId=event.id;show('merchant');}
-    else if(event.type==='finish'){if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
+    else if(event.type==='finish'){changeJournal(next=>recordFinish(next,event.result));if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
     else{sound.play(event.type,event);renderer.feedback(event);}
   }
 }

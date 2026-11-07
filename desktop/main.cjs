@@ -1,7 +1,7 @@
 const {app,BrowserWindow,Menu,protocol,session,ipcMain,dialog,screen} = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const {APP_URL,CSP,isGameURL,resolveAsset,validSaveText} = require('./policy.cjs');
+const {APP_URL,CSP,isGameURL,resolveAsset,validSaveText,validPlaytestText} = require('./policy.cjs');
 
 const smoke = process.env.NUMBER_EXTRACTION_SMOKE === '1';
 let window = null, raidActive = false;
@@ -27,6 +27,16 @@ function registerIPC() {
   ipcMain.handle('save:export',async (event,text) => {
     if (!trusted(event) || !validSaveText(text)) return {ok:false,error:'存档格式无效。'};
     const result = await dialog.showSaveDialog(window,{title:'导出数字进化存档',defaultPath:'NumberExtraction-save.json',filters:[{name:'JSON save',extensions:['json']}]});
+    if (result.canceled || !result.filePath) return {ok:false,canceled:true};
+    try { await fs.writeFile(result.filePath,text,'utf8');return {ok:true}; }
+    catch { return {ok:false,error:'无法写入所选文件，请选择其他位置。'}; }
+  });
+  ipcMain.handle('playtest:export',async (event,text) => {
+    if (!trusted(event) || !validPlaytestText(text)) return {ok:false,error:'试玩记录格式无效。'};
+    // Only the fixed native smoke runner chooses a path without a user dialog.
+    // Renderer content never supplies a filesystem path or executable code.
+    const result = smoke ? {canceled:false,filePath:require('./smoke.cjs').playtestExportPath()} :
+      await dialog.showSaveDialog(window,{title:'导出匿名试玩记录',defaultPath:'NumberExtraction-playtest.json',filters:[{name:'Anonymous playtest JSON',extensions:['json']}]});
     if (result.canceled || !result.filePath) return {ok:false,canceled:true};
     try { await fs.writeFile(result.filePath,text,'utf8');return {ok:true}; }
     catch { return {ok:false,error:'无法写入所选文件，请选择其他位置。'}; }

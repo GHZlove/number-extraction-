@@ -1,8 +1,10 @@
 // Fixed native-app checks used by Windows CI; never accepts renderer-provided code.
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const {validPlaytestText} = require('./policy.cjs');
 const delay = milliseconds => new Promise(resolve => setTimeout(resolve,milliseconds));
 const file = () => process.env.NUMBER_EXTRACTION_SMOKE_REPORT || path.join(require('node:os').tmpdir(),'NumberExtraction-smoke.json');
+const playtestExportPath = () => file().replace(/\.json$/, '')+'-playtest-export.json';
 async function report(value) { await fs.writeFile(file(),JSON.stringify(value,null,2),'utf8'); }
 async function checkPreviewLayouts(window) {
   const bounds=window.getBounds(),minimum=window.getMinimumSize(),zoom=window.webContents.getZoomFactor(),layouts=[];
@@ -45,6 +47,20 @@ async function checkPreviewLayouts(window) {
 async function run(window,app) {
   const errors=[];window.webContents.on('console-message',details => { if (details.level === 'error') errors.push(String(details.message)); });
   await delay(600);
+  const fixture=await window.webContents.executeJavaScript(`(async () => {
+    const log=await import('./src/playtest.js'),state=log.readJournal(localStorage);
+    const empty=state.journal.runs.length===0;
+    if(${process.env.NUMBER_EXTRACTION_SMOKE_MODE === 'verify'})return{initiallyEmpty:empty,seeded:false};
+    if(!empty)throw Error('Fresh smoke profile unexpectedly contains playtest records');
+    const snapshot={id:'native-playtest-fixture',buildVersion:'0.11.2',balanceVersion:'0.11.1',seed:1001,difficulty:'scout',map:'blocks',mutators:['fog'],loadout:{weapons:[{weapon:'pistol',rarity:'white',level:1,enchant:'none'}],armorRarity:'none',laser:false},duration:240,seconds:0,number:1,heat:0,hpPercent:100,rawValue:0,gearCount:0,bagCapacity:8,chests:0,huntersSpawned:0,firstHunterAt:null,hunterWaves:0};
+    if(!log.recordStart(state.journal,snapshot))throw Error('Native journal fixture could not start');
+    const final={...snapshot,seconds:62,number:16,heat:30,hpPercent:80,rawValue:80,gearCount:2,chests:2,huntersSpawned:2,firstHunterAt:49,hunterWaves:1};
+    if(!log.recordFinish(state.journal,{id:snapshot.id,success:true,reason:'成功撤离',extractedVia:'key',seconds:62,heat:30,number:16,seed:1001,mutators:['fog'],rawValue:80,value:88,kills:4,playtest:final})||!log.writeJournal(localStorage,state.journal))throw Error('Native journal fixture could not persist');
+    return{initiallyEmpty:empty,seeded:true};
+  })()`);
+  if(fixture.seeded){
+    await new Promise(resolve=>{window.webContents.once('did-finish-load',resolve);window.webContents.reload();});await delay(300);
+  }
   const shelter = await window.webContents.executeJavaScript(`(() => {
     const button=document.querySelector('[data-action="start"]'),box=button?.getBoundingClientRect();
     const rgb=element=>getComputedStyle(element).color.match(/[0-9.]+/g).slice(0,3).map(Number);
@@ -80,6 +96,27 @@ async function run(window,app) {
   if(!rules.visible||rules.count!==10||rules.selected!=='true'||!rules.saved.includes('rich'))throw Error('Run modifier controls failed: '+JSON.stringify(rules));
   if(process.env.NUMBER_EXTRACTION_SMOKE_MODE==='verify'&&!rules.persisted.includes('rich'))throw Error('Run settings did not survive restart');
   await fs.writeFile(file().replace(/\.json$/, '-rules.png'),(await window.webContents.capturePage()).toPNG());
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="journal"]').click();`);
+  await delay(100);
+  const playtest=await window.webContents.executeJavaScript(`(async () => {
+    const log=await import('./src/playtest.js'),panel=document.querySelector('.playtest-panel'),row=document.querySelector('.playtest-run[data-session="1"]');
+    const original=log.readJournal(localStorage).journal,fixture=original.runs.find(run=>run.session===1);
+    const pressure=row?.querySelector('select[data-field="pressure"]');if(!pressure)throw Error('Playtest feedback control is missing');
+    const persisted=pressure.value;pressure.value='3';pressure.dispatchEvent(new Event('change',{bubbles:true}));
+    const state=log.readJournal(localStorage).journal,summary=log.summarizeJournal(state),saved=state.runs.find(run=>run.session===1),currentPanel=document.querySelector('.playtest-panel');
+    return{visible:getComputedStyle(currentPanel).display!=='none',localOnly:currentPanel.textContent.includes('本机')&&currentPanel.textContent.includes('不自动上传'),rows:document.querySelectorAll('.playtest-run[data-session]').length,fixtureOutcome:fixture?.outcome,persisted,savedPressure:saved?.feedback.pressure,started:summary.started,finished:summary.finished,defeated:summary.defeated,interrupted:summary.interrupted,bridge:typeof window.numberExtractionDesktop.exportPlaytest};
+  })()`);
+  if(!playtest.visible||!playtest.localOnly||playtest.rows<1||playtest.fixtureOutcome!=='extracted'||playtest.savedPressure!==3||playtest.finished!==1||playtest.defeated!==0||playtest.bridge!=='function')throw Error('Playtest journal navigation or feedback failed: '+JSON.stringify(playtest));
+  if(process.env.NUMBER_EXTRACTION_SMOKE_MODE==='verify'&&(playtest.persisted!=='3'||playtest.interrupted<1))throw Error('Playtest persistence/interrupted accounting failed: '+JSON.stringify(playtest));
+  await fs.writeFile(file().replace(/\.json$/, '-playtest.png'),(await window.webContents.capturePage()).toPNG());
+  await fs.rm(playtestExportPath(),{force:true});
+  await window.webContents.executeJavaScript(`document.querySelector('[data-action="exportPlaytest"]').click();`);
+  let exported;
+  for(let attempt=0;attempt<25;attempt++){try{exported=await fs.readFile(playtestExportPath(),'utf8');break;}catch(error){if(error.code!=='ENOENT')throw error;await delay(100);}}
+  if(!exported||!validPlaytestText(exported))throw Error('Anonymous native journal export failed validation');
+  const exportedData=JSON.parse(exported),exportedFixture=exportedData.runs.find(run=>run.session===1);
+  if(exported.includes('native-playtest-fixture')||exportedData.runs.some(run=>Object.hasOwn(run,'id'))||exportedFixture?.feedback.pressure!==3)throw Error('Native export contains private ids or lost feedback');
+  playtest.export={ok:true,records:exportedData.runs.length,privateIds:false};
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="shelterTab"][data-key="deploy"]').click();`);
 
   await window.webContents.executeJavaScript(`document.querySelector('[data-action="start"]').click();`);
@@ -127,7 +164,7 @@ async function run(window,app) {
   await window.webContents.session.flushStorageData();
   await delay(300);
   if (errors.length) throw Error(errors.join('\n'));
-  await report({ok:true,shelter,previewLayouts,warehouse,codex,rules,raid,formContrast,exitBrief,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
+  await report({ok:true,shelter,previewLayouts,warehouse,codex,rules,playtest,fixture,raid,formContrast,exitBrief,inventory,paused,persistence:process.env.NUMBER_EXTRACTION_SMOKE_MODE||'write',electron:process.versions.electron,chrome:process.versions.chrome});
   app.quit();
 }
-module.exports = {run,report};
+module.exports = {run,report,playtestExportPath};
