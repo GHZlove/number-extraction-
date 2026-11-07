@@ -1,61 +1,56 @@
 # Number Extraction
 
-### A 2048-inspired extraction game with tactical combat and a persistent shelter.
+**Grow your number. Shape your loadout. Bring something home.**
 
-**Merge your way up. Choose your fights. Bring something home.**
+Number Extraction is a single-player action-extraction prototype that combines **2048-style number merging**, aimed combat and a persistent shelter. Begin each expedition as the number **1**, merge your way into stronger tiers, and search colourful procedural maps for equipment and resources. Rising heat and conditional exits turn every detour into a decision: push for a better haul, or extract with what you can keep.
 
-Start as the number **1** in a procedurally generated combat zone. Merge equal numbers to grow, use division and temporary abilities to challenge stronger enemies, and decide when to extract with your loot. Each successful expedition funds a shelter that improves the next one.
+Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a simple numerical rule can drive combat, exploration and progression. The Windows desktop build packages the same game in an offline, standalone Electron window.
 
-Number Extraction is a game development portfolio project built with **vanilla JavaScript and HTML5 Canvas**. It explores how a simple numerical rule can support combat, exploration and persistent progression, with a modular simulation and automated verification.
+[Download Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) · [Release and screenshots](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) · [简体中文](README.zh-CN.md) · [Architecture](docs/ARCHITECTURE.md) · [Release history](docs/CHANGELOG.md)
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.11.3 · multi-report playtest review |
-| Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
-| Core systems | Number merging, mutators, heat and hunters, conditional extraction, combat and persistent shelter |
-| Content | 20 weapons, 12 enchantments, 12 enemy types, 9 bosses, 4 map families, 5 difficulties |
+| Current build | v0.11.3 · playable prototype with local playtest review |
+| Gameplay | Number merging, aimed combat, extraction and shelter progression |
+| Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
+| Run variety | 4 map families · 5 difficulties · 10 optional mutators |
+| Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage, Electron |
 | Verification | 355 automated tests; native Windows startup, restart and portable checks |
-| Game interface | Simplified Chinese; English and Chinese project documentation |
+| Languages | Simplified Chinese game interface; English and Chinese documentation |
 
-The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
+## What makes it different
 
-**[Download v0.11.3 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18). Run in a standalone window without Python or a separate browser. See [v0.11.1 tuning and compatibility](docs/BALANCE_V0111.md). Close an older running copy before opening the new EXE.
+- **Your number changes how you fight.** Merge equal numbers to grow, divide threatening opponents and adapt to movement, size and defence tradeoffs at higher tiers.
+- **The loadout supports your route.** Equip ranged or melee weapons, combine them with one of twelve enchantments, forge starter gear, trade in the field and time a directional parry.
+- **Staying longer creates pressure.** Resource strongholds, sparse patrols, escalating heat and warned hunter squads make route planning matter. Special exits ask for a key, a time window, a number tier or a defeated guardian.
+- **Extraction connects runs.** Bank resources, upgrade the shelter and store recovered equipment in an expandable warehouse. Gear taken back into a raid is at risk; equipment storage and the unlimited resource pouch follow separate rules.
+- **Playtesting is part of the toolset.** A local journal records outcomes and optional feedback. Deliberately selected anonymous exports can be reviewed together without changing progress or sending data to a server.
 
-The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the current playtest web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
+## Play v0.11.3
 
-[简体中文](README.zh-CN.md) · [Multi-report review](docs/MULTI_REPORT_REVIEW_V0113.md) · [First real-run batch plan](docs/PLAYTEST_BATCH_01.md) · [Local playtest journal](docs/LOCAL_PLAYTEST_V0112.md) · [Eight Phase 2 proposals](docs/SYNERGIES_V012_DESIGN.md) · [v0.11.1 balance changes](docs/BALANCE_V0111.md) · [Anonymous playtest guide](docs/PLAYTEST_V0111.md) · [v0.11 run depth](docs/RUN_DEPTH_V011.md) · [Phased roadmap](docs/ROADMAP.md) · [v0.10 warehouse and nine bosses](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2 remnants and resources](docs/REMNANTS_V092.md) · [v0.9 bright arsenal](docs/BRIGHT_V09.md) · [v0.8 desktop history](docs/DESKTOP_V08.md) · [v0.7 strongholds, forge and bosses](docs/STRONGHOLDS_V07.md) · [Combat feedback](docs/TANGRAM_V06.md) · [Colour theme](docs/VISUAL_V041.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+**Windows:** [download the portable x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) and open it directly. No Python, Node.js or separate browser is needed. Finish the current raid and close an older running copy first. **F11 / Alt+Enter** toggles fullscreen. [Screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) are attached to the verified prerelease.
 
-The v0.11 rules and roadmap are documented in English; historical design and verification notes are mostly in Chinese.
+**Web/source:** [download the current playtest ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip), or follow [Run locally](#run-locally). The current implementation is on `feature/bright-arsenal-v09`; the default branch and hosted demo follow separate release schedules. Hosted access is currently restricted.
 
-v0.11.3 adds temporary review of up to eight anonymous exports, duplicate/overlap checks, build/difficulty cohorts and at most two investigation priorities. It keeps imported reports out of progress/journal storage and retains the existing tuning while real data is collected. The matching CLI writes review reports without overwriting source data. See [review rules and sample limits](docs/MULTI_REPORT_REVIEW_V0113.md).
+## Latest update
 
-v0.11.2 adds a local 100-run journal, optional structured feedback and deliberate anonymous export. It records modifier choices, outcomes, exit usage and actual hunter arrivals to guide the next 10–20 real runs. Progress remains separate, v0.11.1 tuning is retained, and eight Phase 2 interactions are documented as paper proposals only. See [journal and privacy](docs/LOCAL_PLAYTEST_V0112.md).
+v0.11.3 adds temporary review of **up to eight anonymous reports**, complete-duplicate checks, possible-overlap warnings and separate build/balance/difficulty groups. Cohorts with fewer than ten finished runs remain descriptive; eligible groups receive at most two investigation priorities. Imports stay out of game and journal storage, and existing v0.11.1 combat tuning remains in place.
 
-v0.11.1 adjusts heat escalation, high-tier movement, Fog, Volatile and Glass Firepower, and adds small rewards to existing special exits. It keeps the western fallback and warehouse progress intact. A finite-health diagnostic harness and an anonymous 2–4 day playtest guide accompany the tuning candidate; outside-player feedback remains uncollected. See [measured changes and limits](docs/BALANCE_V0111.md).
+The review tools support the next **10–20 real playtests**; automated fixtures do not represent player feedback. Equipment synergies, contracts and factions are later roadmap work. Eight proposed synergy/set builds remain paper designs.
 
-v0.11 deepens the expedition loop before adding more content: choose up to three of ten mutators, manage rising heat and warned hunter squads, grow into number tiers with different movement and collision bodies, and plan around seeded extraction requirements. A western fallback exit remains available after its opening time. See the [run-depth rules](docs/RUN_DEPTH_V011.md). Later roadmap phases are planned, not included in this build.
+[Review rules](docs/MULTI_REPORT_REVIEW_V0113.md) · [First playtest batch](docs/PLAYTEST_BATCH_01.md) · [Local journal](docs/LOCAL_PLAYTEST_V0112.md) · [Roadmap](docs/ROADMAP.md)
 
-v0.10 added an upgradeable warehouse that preserves extracted equipment, four-slot deployment planning, repairs and explicit recycling. Excess gear stays in a pending area. Six new bosses bring the roster to nine, with a codex, selectable targets, new warned attack geometry and distinct weapon rewards.
-
-v0.9.2 added automatic recycling of lower-number enemy remnants and an unlimited resource pouch. Equipment alone uses backpack slots; coins can be spent at field traders or banked on extraction.
-
-The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
+## Screenshots
 
 Verified v0.11.3 native Windows captures:
 
-![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-shelter-wide.png)
+![White shelter, raised number tiles and expedition preparation](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-shelter-wide.png)
 
-![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-raid.png)
+![Colourful combat map with number actors, weapon slots and heat HUD](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-raid.png)
 
-[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-inventory.png).
+[Warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-warehouse.png) · [Boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-bosses.png) · [Equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-inventory.png) · [Run modifiers](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-rules.png) · [Extraction intelligence](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-exits.png)
 
-[View the persistent warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-warehouse.png) · [View the nine-boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-bosses.png).
-
-[View run modifiers](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-rules.png) · [View paused extraction intelligence](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-exits.png).
-
-[View the local playtest journal](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-playtest.png). This CI capture uses an isolated fixed test fixture, not human playtest feedback.
-
-[View temporary multi-report review](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-review.png). The repeated isolated CI export counts once and remains below the ten-run review gate; it is not a human batch.
+[Local journal](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-playtest.png) · [Multi-report review](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-review.png). These two captures use isolated CI fixtures, not human playtest results.
 
 ## Design idea
 

@@ -1,41 +1,51 @@
-# 数字进化 · Number Extraction v0.11.3
+# 数字进化 · Number Extraction
 
-**合成数字，启动过载，带资源撤离，建设庇护所。**
+**合成成长，搭配装备，决定何时带着收获撤离。**
 
-一款将 **2048 同数合成**融入探索、战斗与撤离的单机游戏。每局从数字 **1** 开始，在程序生成的战区里成长、换装，借助减半运算和技能挑战更强的敌人，再决定何时带着物资返回。成功撤离的资源用于建设庇护所，让下一次出击更有准备。
+《数字进化》是一款融合 **2048 同数合成、鼠标瞄准战斗与庇护所成长**的单机搜打撤原型。每次远征从数字 **1** 开始，在色彩丰富的程序地图中合成、探索和换装；随着热度升高、追猎逼近，你需要在继续搜刮与安全带出之间作出选择。
 
-项目使用原生 **JavaScript ES modules、HTML5 Canvas、CSS、Web Audio 与 localStorage** 实现，无第三方运行依赖。技术展示重点包括玩法系统设计、状态管理、程序地图、碰撞几何、空间查询、存档迁移和自动化验证。
+项目使用原生 **JavaScript、HTML5 Canvas、CSS、Web Audio 与 localStorage** 开发，Windows 版通过 Electron 打包为可离线运行的独立游戏窗口。工程重点包括玩法系统设计、程序地图、碰撞与导航、存档迁移，以及自动化验证。
 
-当前为 **v0.11.3 多报告分析版**，在四种地图、十二种附魔、二十类武器、十二类敌人、九种首领和五档难度的基础上，加入行动词条、热度追猎、数字体型和条件撤离。355项测试及Windows首启、重启、最终EXE原生验证通过。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
+[下载 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) · [发布页与截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) · [English](README.md) · [架构说明](docs/ARCHITECTURE.md) · [版本记录](docs/CHANGELOG.md)
 
-[English](README.md) · [多报告分析](docs/MULTI_REPORT_REVIEW_V0113.md) · [首批真实试玩安排](docs/PLAYTEST_BATCH_01.md) · [本地试玩记录](docs/LOCAL_PLAYTEST_V0112.md) · [8项联动设计](docs/SYNERGIES_V012_DESIGN.md) · [v0.11.1数值与诊断](docs/BALANCE_V0111.md) · [匿名试玩清单](docs/PLAYTEST_V0111.md) · [v0.11行动深度规则](docs/RUN_DEPTH_V011.md) · [分阶段路线](docs/ROADMAP.md) · [v0.10仓库与九类首领](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2残骸与资源袋](docs/REMNANTS_V092.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
+| 项目概览 | |
+| --- | --- |
+| 当前版本 | v0.11.3 · 可玩原型与本地试玩分析 |
+| 内容 | 20类武器、12种附魔、12类敌人、9种首领 |
+| 对局变化 | 4种地图、5档难度、10个可选行动词条 |
+| 局外成长 | 庇护所升级、永久打造、可扩容战备仓库 |
+| 验证 | 355项自动测试，Windows首启、重启与最终EXE检查通过 |
+| 语言 | 游戏界面为简体中文，项目文档提供中英文 |
+
+## 项目亮点
+
+- **数字决定战斗方式**：同数合成成长，用减半运算处理强敌；高等级数字在体型、移动和防御上产生取舍。
+- **装备与路线相互影响**：双武器槽、十二种附魔、打造、野外商人和方向弹反，让远程与近战形成不同选择。
+- **探索带来持续压力**：资源点重兵把守，野外巡游较少；热度与追猎让停留更有代价，特殊出口附带窗口、钥卡、数字或首领条件。
+- **撤离连接长线成长**：带回资源升级庇护所，把战利品存入可扩容仓库。再次携带出击的装备有丢失风险，碎片与金币使用独立的无限资源袋。
+- **反馈可以被记录和分析**：本地日志保存对局与自愿反馈，匿名JSON由玩家主动导出；临时合并分析不改存档，也不自动上传。
 
 ## 桌面启动
 
-**[直接下载 v0.11.3 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+[直接下载 v0.11.3 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe)，双击进入游戏，无需安装Python、Node.js或另开浏览器。先完成当前对局并关闭旧版，**F11 / Alt+Enter**可切换全屏。进度保存在本机应用数据目录，发布页附实际截图与SHA256。此预览未配置代码签名。
 
-浏览器进度可在v0.9网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
+浏览器进度可通过“存档”面板导出JSON，再导入EXE；导入前显示预览并备份原进度。详见[桌面与存档迁移](docs/DESKTOP_V08.md)。网页版源码启动方式见下方[快速启动](#快速启动)。
 
-## 这一版的变化
+## v0.11.3 更新
 
-**v0.11.3 合并审查**：可临时导入最多8份匿名报告，核对完全重复和可能重叠，按版本、数值版本与难度分组。样本不足10局时只展示数据；达到门槛后最多列两项优先排查信号，不自动调参。报告不写入游戏和日志存档，不上传。附两三位志愿者的匿名五局安排与每补丁1—2项变更模板；真人试玩和志愿者参与情况以实际交付的报告为准。
+在原有战斗、热度、条件撤离与仓库基础上，加入**最多8份匿名报告的临时合并分析**：检查完全重复与可能重叠，按版本、数值版本和难度分组；不足10局时只展示观察，满足条件后最多列两项优先排查重点。
 
-**v0.11.2 观察工具**：新增独立的本地100局试玩记录、结构化体验反馈和主动匿名导出。统计词条、时长、热度、真正刷出的追猎、死因和出口选择，中断、放弃与战斗死亡分开。仓库及v0.11.1战斗数值保留；8项附魔联动与武器套装仅为纸面方案。先收集10—20局真实记录，再决定调优方向。
+本轮保留v0.11.1战斗数值和原有进度，准备收集10—20局真实试玩后再调整。附魔联动、契约和阵营属于后续路线；八项联动与套装方案仍为纸面设计。
 
-**v0.11.1 调优**：降低战斗带来的热度正反馈，1024体型略小且移动更快，扩大浓雾视野，延长残爆预警；玻璃火力明确增加25%承伤。特殊出口等待缩短，窗口改为40/70秒，成功撤离额外获得8–15%币和材料；情报显示首领名字、钥卡位置与路线收益。西侧保底与仓库保留。提供有限生命诊断和2—4天匿名试玩清单；真人反馈尚未收集，第二阶段尚未开始。
+[分析规则](docs/MULTI_REPORT_REVIEW_V0113.md) · [五局试玩清单与邀请文案](docs/PLAYTEST_BATCH_01.md) · [本地日志](docs/LOCAL_PLAYTEST_V0112.md) · [后续路线](docs/ROADMAP.md) · [完整版本记录](docs/CHANGELOG.md)
 
-**v0.11 新增**：出击前从十个词条中最多选三个，风险与结算奖励提前展示；热度随时间、搜箱和战斗增长，25/50/75/100触发更强的有限追猎队；数字达到64、256、1024后体型、速度和防御产生取舍；特殊撤离点按种子分配窗口、钥卡、数字或首领条件。西侧保底出口按原时限开放且持续可用，局内右上角可暂停查看撤离情报。保留白底主页、彩色地图、仓库及旧进度。后续阵营、契约、套装、无尽与每日种子属于规划，尚未加入。见 [规则](docs/RUN_DEPTH_V011.md)。
+## 实际画面
 
-**v0.10 新增**：撤离装备存入局外战备仓库，初始24格、每级+12格、最高144格，满仓进入待收区。保留品质、附魔、等级和护甲耐久，可选装出击、修理或确认回收。仓库带入装备失败会丢失，未带入库存保留。首领从3类扩到9类，新增雷暴、霜核、影刃、熔炉、引力和虫巢机制，配套图鉴、目标选择和专属掉落，设计对照十款游戏的公开资料。见 [详细规则与参考](docs/WAREHOUSE_BOSSES_V010.md)。
+![白底庇护所、立体数字方块与远征准备](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-shelter-wide.png)
 
-**v0.9.2 新增**：低等级敌人残骸靠近后回收成金币，同数优先合成；2048时可回收同级残骸。金币可在局内消费，成功撤离后入库。只有武器、护甲和配件占装备格，碎片、金币与材料不限量；满装备包仍可开箱和拾取资源。B界面将资源汇总与装备分开，商人优先消费残骸金币。详见 [回收规则](docs/REMNANTS_V092.md)。
+![彩色战区、数字角色与紧凑战斗HUD](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-raid.png)
 
-**v0.9.1 修复**：首页字号按每个方块宽度和数字位数缩放，1024、2048、4096 保留边距，不再随窗口扩大溢出。兼容 v0.9.0 存档。
-
-- **白底主页与立体方块**：恢复白色庇护所和鲜艳多彩的战区。按参考图重绘圆角、厚边、高光和大号白字数字块；玩家有 YOU 标记，敌人有红边与警示。保留出击、基地、工坊页签和独立首领血条。
-- **新增八种附魔，总数十二种**：烈焰、寒霜、流血、破甲、爆裂、暴击、重力、回能；保留吸血、闪电、眩晕、毒雾，均有实际效果、状态限制与首领抗性。
-- **新增六类武器，总数二十类**：重型左轮、双管霰弹枪、能量手枪、火焰喷射器、火箭筒、战斧。新军械箱提供直接试用，商人新增两种武器。
-- **桌面版**：免安装EXE、独立窗口、全屏快捷键、固定存档目录、未结算退出确认。支持存档导入导出与备份恢复。
+[战备仓库](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-warehouse.png) · [首领图鉴](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-bosses.png) · [试玩记录](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-playtest.png) · [报告分析](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-review.png)。记录与分析截图使用隔离的CI测试样本，不代表真人反馈。
 
 ## 核心玩法
 
@@ -121,6 +131,6 @@ npm run check
 npm test
 ```
 
-无需 npm install。代码位于 `dist/src/`，静态入口 `dist/index.html`，样式 `dist/style.css`、`dist/tactical.css`、`dist/bright.css`，测试位于 `tests/`。共有27个游戏模块和4个桌面文件，边界见 [架构](docs/ARCHITECTURE.md)。[v0.7 规则](docs/STRONGHOLDS_V07.md) 记录据点、打造、附魔、商人、首领和弹反，[v0.4 规则](docs/EXPANSION_V04.md) 记录地形、敌人与武器，[v0.3 规则](docs/SHELTER_V03.md) 保留设施与技能基础，[v0.2 规则](docs/COMBAT_V02.md) 保留战斗基础，[原始设计](docs/GAME_DESIGN.md) 保留 v0.1 历史。
+无需 npm install。代码位于 `dist/src/`，静态入口 `dist/index.html`，样式 `dist/style.css`、`dist/tactical.css`、`dist/bright.css`，测试位于 `tests/`。共有29个游戏模块和4个桌面文件，边界见 [架构](docs/ARCHITECTURE.md)。[v0.7 规则](docs/STRONGHOLDS_V07.md) 记录据点、打造、附魔、商人、首领和弹反，[v0.4 规则](docs/EXPANSION_V04.md) 记录地形、敌人与武器，[v0.3 规则](docs/SHELTER_V03.md) 保留设施与技能基础，[v0.2 规则](docs/COMBAT_V02.md) 保留战斗基础，[原始设计](docs/GAME_DESIGN.md) 保留 v0.1 历史。
 
 项目尚未选择开源许可证，托管试玩仍限制访问。桌面开发与构建需要安装package-lock锁定的开发依赖，详见桌面文档。
