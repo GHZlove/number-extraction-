@@ -1,0 +1,72 @@
+name: Windows desktop preview
+
+on:
+  push:
+    branches: [feature/bright-arsenal-v09]
+    paths: ['desktop/**', 'dist/**', 'build/**', 'tests/**', 'tools/**', 'package*.json', 'electron-builder.json', '.github/workflows/windows-desktop.yml', 'docs/DESKTOP_RELEASE.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run desktop:build
+      - name: Native Windows startup, combat, restart and portable checks
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force desktop-smoke | Out-Null
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $env:NUMBER_EXTRACTION_SMOKE = '1'
+          $env:NUMBER_EXTRACTION_SMOKE_PROFILE = Join-Path $env:RUNNER_TEMP 'number-extraction-smoke-profile'
+          function Test-Game($exe, $mode, $report) {
+            $env:NUMBER_EXTRACTION_SMOKE_MODE = $mode
+            $env:NUMBER_EXTRACTION_SMOKE_REPORT = Join-Path $PWD "desktop-smoke/$report.json"
+            $process = Start-Process -FilePath $exe -PassThru
+            if (-not $process.WaitForExit(60000)) {
+              Stop-Process -Id $process.Id -Force
+              throw "Game timed out: $report"
+            }
+            if (-not (Test-Path $env:NUMBER_EXTRACTION_SMOKE_REPORT)) { throw "No smoke report: $report" }
+            $result = Get-Content $env:NUMBER_EXTRACTION_SMOKE_REPORT -Raw | ConvertFrom-Json
+            if (-not $result.ok) { throw $result.error }
+            Get-Content $env:NUMBER_EXTRACTION_SMOKE_REPORT
+          }
+          Test-Game (Join-Path $PWD 'release/win-unpacked/NumberExtraction.exe') 'write' 'startup'
+          Test-Game (Join-Path $PWD 'release/win-unpacked/NumberExtraction.exe') 'verify' 'restart'
+          Test-Game (Join-Path $PWD "release/NumberExtraction-$version-Windows-x64.exe") 'verify' 'portable'
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $file = Get-Item "release/NumberExtraction-$version-Windows-x64.exe"
+          $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($file.Name)" | Set-Content -Encoding utf8 release/SHA256SUMS.txt
+      - name: Save native test reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-native-checks
+          path: desktop-smoke/
+          if-no-files-found: ignore
+      - name: Publish a downloadable preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$version-desktop.${{ github.run_number }}"
+          gh release create $tag "release/NumberExtraction-$version-Windows-x64.exe" release/SHA256SUMS.txt desktop-smoke/portable-shelter.png desktop-smoke/portable-shelter-wide.png desktop-smoke/portable-raid.png desktop-smoke/portable-inventory.png desktop-smoke/portable-warehouse.png desktop-smoke/portable-bosses.png desktop-smoke/portable-rules.png desktop-smoke/portable-exits.png desktop-smoke/portable-playtest.png desktop-smoke/portable-review.png --target $env:GITHUB_SHA --title "Number Extraction v$version · Windows Preview" --notes-file docs/DESKTOP_RELEASE.md --prerelease

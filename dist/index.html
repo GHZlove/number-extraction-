@@ -3,35 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#080e14">
-  <meta name="description" content="数字进化：建设庇护所，选择远征难度，合成数字、探索战区并带资源回来。">
+  <meta name="theme-color" content="#ff49ac">
+  <meta name="description" content="数字进化：合成数字，探索资源据点，挑战首领，带物资撤离并打造装备。">
   <title>数字进化 · 庇护所远征</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./tactical.css">
+  <link rel="stylesheet" href="./bright.css">
 </head>
 <body data-screen="shelter">
   <main id="shelter-screen" class="shelter-screen" aria-label="庇护所与出击准备"></main>
   <main id="raid-screen" class="raid-screen" hidden aria-label="远征战区">
     <div class="arena" id="arena">
-      <canvas id="game-canvas" tabindex="0" aria-label="游戏画面：WASD移动，鼠标瞄准，左键攻击，G过载，F拾取，B背包，1和2切武器。"></canvas>
+      <canvas id="game-canvas" tabindex="0" aria-label="游戏画面：WASD移动，鼠标瞄准，左键攻击，右键或C弹反，G过载，F拾取，B背包，1和2切武器。"></canvas>
       <div class="hud-top">
-        <div class="mission-chip"><span class="signal-dot"></span><div><b id="mission-name">边境巡查</b><small><span id="zone-name">边缘缓冲区</span> · <span id="coordinates">0300 / 1060</span></small></div></div>
-        <div class="raid-timer"><small>撤离窗口</small><b id="time-value">08:00</b></div>
-        <div class="hud-actions"><div class="carried-chip"><small>待带出</small><b><span id="loot-value">0</span> ◇</b></div><button class="icon-button" id="loadout-button" aria-label="装备背包 B" title="装备背包 B"></button><button class="icon-button" id="help-button" aria-label="操作说明" title="操作说明"></button><button class="icon-button" id="sound-button" aria-label="开启音效" title="音效"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9h5l5-5v16l-5-5H3V9Zm14-2c3 3 3 7 0 10"/></svg><span id="sound-state">OFF</span></button><button class="icon-button" id="pause-button" aria-label="暂停 Esc" title="暂停 Esc"></button></div>
+        <div class="mission-chip"><span class="signal-dot"></span><div><b id="mission-name">边境巡查</b><small><span id="zone-name">边缘缓冲区</span><span class="hud-meta-secondary"> · <span id="pressure-readout">第0波 / 近敌0</span> · <span id="terrain-label">开阔地</span></span></small></div></div>
+        <div class="raid-timer"><small id="exit-status">撤离校准中</small><b id="time-value">08:00</b><div class="heat-readout"><span id="heat-value">热度 0 · 追猎0</span><div class="heat-track"><i id="heat-fill"></i></div><small id="heat-hunters">猎手 0 · 钥卡 0</small></div></div>
+        <div class="hud-actions"><div class="carried-chip"><small>待带出</small><b><span id="loot-value">0</span> ◇</b></div><button class="icon-button" id="loadout-button" aria-label="装备背包 B" title="装备背包 B"></button><button class="icon-button" id="extract-brief-button" aria-label="撤离情报" title="撤离情报"></button><button class="icon-button" id="help-button" aria-label="操作说明" title="操作说明"></button><button class="icon-button" id="sound-button" aria-label="开启音效" title="音效"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 9h5l5-5v16l-5-5H3V9Zm14-2c3 3 3 7 0 10"/></svg><span id="sound-state">OFF</span></button><button class="icon-button" id="pause-button" aria-label="暂停 Esc" title="暂停 Esc"></button></div>
       </div>
+      <div class="boss-hud" id="boss-hud" hidden><div><b id="boss-name"></b><span id="boss-stage"></span></div><div class="boss-meter"><i id="boss-health-fill"></i></div><small id="boss-health-text"></small></div>
       <div class="hud-bottom">
-        <div class="player-readout"><div class="number-badge"><small>NUMBER</small><strong id="player-value">1</strong></div><div class="vitals"><div class="vital-label"><span>生命</span><b id="health-value">100</b></div><div class="meter"><i id="health-bar"></i></div><div class="vital-label armor-label"><span id="armor-name">未穿护甲</span><b id="armor-durability">0</b></div><div class="meter armor-meter"><i id="armor-fill"></i></div></div></div>
+        <div class="player-readout"><div class="number-badge"><small>NUMBER</small><strong id="player-value">1</strong></div><div class="vitals"><div class="vital-label"><span>生命</span><b id="health-value">100</b></div><div class="meter"><i id="health-bar"></i></div><div class="vital-label armor-label"><span id="armor-name">未穿护甲</span><b id="armor-durability">0</b></div><div class="meter armor-meter"><i id="armor-fill"></i></div><small id="form-label">轻巧 · 标准机动</small></div></div>
         <div class="energy-readout"><div class="vital-label"><span>合成能量</span><b id="energy-value">0%</b></div><div class="meter energy-meter"><i id="energy-fill"></i></div><button class="overload-button" id="overload-button" title="G 释放过载"><kbd>G</kbd><span id="energy-label">过载未就绪</span></button></div>
         <div class="quick-loadout"><button id="quick-slot-0" class="quick-weapon active"></button><button id="quick-slot-1" class="quick-weapon"></button><span id="laser-label" class="laser-label">白线瞄准</span></div>
       </div>
-      <div class="supply-strip"><span><kbd>Q</kbd> ÷2 <b id="divider-count">2</b></span><span><kbd>R</kbd> 修复 <b id="medkit-count">1</b></span><button id="inventory-shortcut"><kbd>B</kbd> 背包 <b id="bag-count">0 / 8</b></button><span id="buff-label" class="buff-label"></span></div>
+      <div class="supply-strip"><span><kbd>Q</kbd> ÷2 <b id="divider-count">2</b></span><span><kbd>R</kbd> 修复 <b id="medkit-count">1</b></span><span><kbd>右键 / C</kbd> <b id="parry-status">弹反就绪</b></span><button id="inventory-shortcut"><kbd>B</kbd> 装备 <b id="bag-count">0 / 8</b></button><span id="buff-label" class="buff-label"></span></div>
       <div class="nearby-gear" id="nearby-gear" hidden></div>
       <div class="interaction" id="interaction" hidden><div><kbd>E</kbd><span id="interaction-text">保持静止</span><b id="interaction-count"></b></div><div class="interaction-track"><i id="interaction-fill"></i></div></div>
       <aside class="mini-wrap" aria-label="区域小地图"><div class="mini-label"><span>区域信号</span><span id="map-scale">16×</span></div><canvas id="minimap" width="220" height="138" aria-label="小地图：玩家与撤离点"></canvas><small id="map-theme">雨后废墟</small></aside>
-      <div class="touch-controls"><div id="joystick" aria-label="移动摇杆"><span id="joystick-knob"></span></div><div class="touch-actions"><button data-control="KeyQ" class="touch-button">÷2<small>运算</small></button><button data-control="ShiftLeft" class="touch-button">↗<small>闪避</small></button><button data-control="Space" class="touch-button attack">✦<small>攻击</small></button><button data-control="KeyF" class="touch-button">F<small>拾取</small></button><button data-control="KeyG" class="touch-button">G<small>过载</small></button><button data-control="KeyE" class="touch-button">E<small>交互</small></button><button data-control="KeyR" class="touch-button repair">+<small>修复</small></button></div></div>
+      <div class="touch-controls"><div id="joystick" aria-label="移动摇杆"><span id="joystick-knob"></span></div><div class="touch-actions"><button data-control="KeyQ" class="touch-button">÷2<small>运算</small></button><button data-control="ShiftLeft" class="touch-button">↗<small>闪避</small></button><button data-control="Space" class="touch-button attack">✦<small>攻击</small></button><button data-control="KeyF" class="touch-button">F<small>拾取</small></button><button data-control="KeyG" class="touch-button">G<small>过载</small></button><button data-control="KeyE" class="touch-button">E<small>交互</small></button><button data-control="KeyC" class="touch-button">◈<small>弹反</small></button><button data-control="KeyR" class="touch-button repair">+<small>修复</small></button></div></div>
     </div>
   </main>
   <div id="message" class="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="playtest-review-files" accept="application/json,.json" multiple hidden>
+  <input type="file" id="save-import-file" accept="application/json,.json" hidden>
   <div class="overlay" id="overlay" hidden><section class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"></section></div>
   <noscript>请开启 JavaScript 运行游戏。</noscript>
   <script type="module" src="./src/main.js"></script>

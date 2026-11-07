@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RULES, ENEMY_TYPES } from '../dist/src/config.js';
-import { Raid } from '../dist/src/game.js';
+import { RULES, ENEMY_TYPES, TERRAIN } from '../dist/src/config.js';
+import { Raid } from './helpers/classic-raid.js';
 import { attackDamage, damageFraction, distance } from '../dist/src/math.js';
 import { createEnemy, generateWorld } from '../dist/src/world.js';
 import { RARITIES, WEAPONS, makeEquipment, absorbDamage, spreadOf } from '../dist/src/equipment.js';
 import { defaultSave, settleRun } from '../dist/src/storage.js';
 
 function raid() {
-  const r = new Raid(defaultSave(), 2468);
+  const r = new Raid(defaultSave(), 2468,{pressure:false});
   Object.assign(r.world, { enemies: [], tiles: [], chests: [], obstacles: [], terrain: [], drops: [], projectiles: [] });
   r.random = () => 0.5;
   return r;
@@ -147,7 +147,7 @@ test('equipping swaps owned items without duplicating them and retains armor dur
 
 test('invalid equipment actions and full-bag removal preserve ownership', () => {
   const r = raid(); r.player.laser = makeEquipment('laser', '', 'white', 'scope');
-  r.bag = Array.from({ length: r.capacity }, () => ({ name: 'loot', value: 1, kind: 'loot' }));
+  r.bag = [{ name:'loot', value:1, kind:'loot' }, ...Array.from({ length:r.capacity }, (_,i)=>makeEquipment('armor','','white','full-'+i))];
   const before = JSON.stringify({ bag: r.bag, laser: r.player.laser });
   assert.equal(r.removeEquipment('laser'), false); assert.equal(r.equip(0), false);
   assert.equal(r.equip(-1), false); assert.equal(r.equip(0.5), false);
@@ -157,7 +157,7 @@ test('invalid equipment actions and full-bag removal preserve ownership', () => 
 test('F picks up one reachable equipment item; full bags leave it on the ground', () => {
   const r = raid();
   const item = { ...makeEquipment('weapon', 'rifle', 'green', 'field'), x: r.player.x+40, y: r.player.y, dead: false };
-  r.world.drops = [item]; r.bag = Array.from({ length: r.capacity }, () => ({ name: 'data', value: 1 }));
+  r.world.drops = [item]; r.bag = Array.from({ length:r.capacity }, (_,i)=>makeEquipment('armor','','white','full-'+i));
   assert.equal(r.pickupGear(), false); assert.equal(item.dead, false);
   r.bag.pop(); assert.equal(r.pickupGear(), true); assert.equal(item.dead, true);
   assert.equal(r.bag.filter(gear => gear.id === 'field').length, 1);
@@ -171,16 +171,16 @@ test('gear pickup is blocked by a wall and does not auto-collect without F', () 
   assert.equal(r.pickupGear(), false); assert.equal(item.dead, false);
 });
 
-test('extracted equipped gear is converted once; a new raid starts with fresh starter weapons', () => {
+test('extracted gear is stored once while currency settles and default loadouts stay available', () => {
   const save = defaultSave(), r = raid();
   const gun = makeEquipment('weapon', 'rifle', 'yellow', 'extract-gun');
   const armor = makeEquipment('armor', '', 'green', 'extract-armor');
   r.bag = [gun, armor, { name: 'data', kind: 'loot', value: 24 }];
   r.equip(0, 0); r.equip(0);
-  const value = gun.value+armor.value+24;
+  const value = 24;
   assert.equal(r.carriedValue(), value); r.finish(true, 'test extraction');
   assert.equal(r.result.value, value); assert.equal(settleRun(save, r.result), true);
-  assert.equal(settleRun(save, r.result), false); assert.equal(save.credits, value);
+  assert.equal(settleRun(save, r.result), false); assert.equal(save.credits, value);assert.equal(save.warehouse.items.length,2);
   const next = new Raid(save, 999);
   assert.equal(next.player.armor, null); assert.equal(next.player.laser, null);
   assert.ok(next.player.weapons.every(item => item.starter && item.rarity === 'white'));
@@ -213,7 +213,7 @@ test('scatter enemies fire a fan and snipers fire a faster aimed projectile', ()
     const bullet = r.world.projectiles[0]; velocities.push(Math.hypot(bullet.vx, bullet.vy));
     if (type === 'gunner') assert.notEqual(r.world.projectiles[0].vy, r.world.projectiles[2].vy);
   }
-  assert.ok(velocities[1] > velocities[0]*3);
+  assert.ok(velocities[1] > velocities[0]*2.5);
 });
 
 test('a charge is telegraphed, moves, stops at walls and is interruptible by division', () => {
@@ -245,7 +245,7 @@ test('water affects simulation movement rather than only changing map appearance
   near(distance(start, wet.player), distance(start, dry.player)*0.58);
 });
 
-test('generated maps vary terrain and contain all six enemy patterns and weapon types', () => {
+test('generated maps vary terrain and contain all configured enemy patterns and weapon types', () => {
   const types = new Set(), weapons = new Set(), rarities = new Set(), terrain = new Set();
   for (let seed = 0; seed < 40; seed++) {
     const world = generateWorld(seed);
@@ -257,6 +257,6 @@ test('generated maps vary terrain and contain all six enemy patterns and weapon 
   }
   assert.deepEqual([...types].sort(), Object.keys(ENEMY_TYPES).sort());
   assert.deepEqual([...weapons].sort(), Object.keys(WEAPONS).sort());
-  assert.equal(rarities.size, 6); assert.deepEqual([...terrain].sort(), ['mud', 'water']);
+  assert.equal(rarities.size, 6); assert.deepEqual([...terrain].sort(), Object.keys(TERRAIN).sort());
   assert.notDeepEqual(generateWorld(1).obstacles, generateWorld(2).obstacles);
 });

@@ -4,7 +4,7 @@ import { browserStubs } from './helpers/browser-stubs.js';
 import { Input } from '../dist/src/input.js';
 import { Renderer } from '../dist/src/renderer.js';
 import { UI } from '../dist/src/ui.js';
-import { Raid } from '../dist/src/game.js';
+import { Raid } from './helpers/classic-raid.js';
 import { defaultSave } from '../dist/src/storage.js';
 import { makeEquipment, WEAPONS } from '../dist/src/equipment.js';
 import { ENEMY_TYPES } from '../dist/src/config.js';
@@ -61,10 +61,15 @@ test('render paths cover all weapon types, enemy warnings and white/red aim guid
     raid.player.weapons[0] = makeEquipment('weapon', type, 'red'); raid.player.activeSlot = 0;
     renderer.draw(raid, 1, 1/60);
   }
+  raid.world.spawnWarnings=[{x:raid.player.x+250,y:raid.player.y+80,readyAt:.8,duration:.9}];
   raid.player.weapons[0] = makeEquipment('weapon', 'rifle'); raid.player.laser = makeEquipment('laser');
   renderer.draw(raid, 1, 1/60);
   assert.ok(env.drawCalls.some(call => call.method === 'stroke' && call.strokeStyle === '#ffffff66'));
   assert.ok(env.drawCalls.some(call => call.method === 'stroke' && call.strokeStyle === '#ff5d65cc'));
+  for(const site of raid.world.sites.slice(0,6)){
+    raid.player.x=site.x;raid.player.y=site.y;renderer.camera={x:site.x,y:site.y};
+    renderer.draw(raid,2,1/60);
+  }
 });
 
 test('HUD and equipment dialog use actual HTML ids and display equipped values and quality labels', t => {
@@ -106,23 +111,23 @@ test('main module starts, routes Start and B inventory controls, and advances a 
 
 test('shelter difficulty and workshop selections persist and apply to the next expedition', async t => {
   const env=browserStubs(t),save=defaultSave();save.credits=1000;save.materials={alloy:100,core:10};
-  env.window.localStorage.setItem('number-extraction-v03',JSON.stringify(save));
+  env.window.localStorage.setItem('number-extraction-v11',JSON.stringify(save));
   await import('../dist/src/main.js?shelter-flow-v03');
   const shelter=env.ids.get('shelter-screen');
   const action=(name,key)=>shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action===name&&(key===undefined||button.dataset.key===key))});
   action('upgradeFacility','workshop');
   shelter.dispatch('change',{target:{dataset:{action:'selectWeapon'},value:'smg'}});
   action('selectDifficulty','nightmare');
-  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v03'));
+  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v11'));
   assert.equal(stored.shelter.workshop,1);assert.equal(stored.selectedWeapon,'smg');assert.equal(stored.selectedDifficulty,'nightmare');
-  assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/25600 × 16000/);
-  action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.equal(env.ids.get('mission-name').textContent,'零点噩梦');
+  assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/12800 × 8000/);
+  action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.match(env.ids.get('mission-name').textContent,/零点噩梦/);
   assert.match(env.ids.get('quick-slot-0').innerHTML,/冲锋枪/);
 });
 
 test('ending a raid returns directly to the shelter and preserves banked resources', async t => {
   const env=browserStubs(t),save=defaultSave();save.credits=91;save.materials={alloy:8,core:2};
-  env.window.localStorage.setItem('number-extraction-v03',JSON.stringify(save));
+  env.window.localStorage.setItem('number-extraction-v11',JSON.stringify(save));
   await import('../dist/src/main.js?return-shelter-v03');
   const shelter=env.ids.get('shelter-screen'),dialog=env.ids.get('dialog');
   shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action==='start')});
@@ -131,13 +136,13 @@ test('ending a raid returns directly to the shelter and preserves banked resourc
   dialog.dispatch('click',{target:dialog.children.find(button=>button.dataset.action==='abandon')});
   assert.equal(env.document.body.dataset.screen,'shelter');assert.equal(env.ids.get('raid-screen').hidden,true);assert.equal(shelter.hidden,false);
   assert.match(shelter.innerHTML,/已返回庇护所/);assert.equal(env.ids.get('overlay').hidden,true);
-  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v03'));
+  const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v11'));
   assert.equal(stored.credits,91);assert.deepEqual(stored.materials,{alloy:8,core:2});assert.equal(stored.deaths,1);
 });
 
 test('camera and minimap use the largest expedition bounds rather than the minimum map',t=>{
   const env=browserStubs(t),renderer=new Renderer(env.canvas,env.ids.get('minimap'));
-  const raid=new Raid(defaultSave(),49,{difficulty:'nightmare'});raid.player.x=24000;raid.player.y=14500;
-  renderer.camera={x:24000,y:14500};renderer.draw(raid,10,1/60);
-  assert.ok(renderer.camera.x>23000);assert.ok(renderer.camera.y>14000);assert.equal(renderer.bounds.width,25600);
+  const raid=new Raid(defaultSave(),49,{difficulty:'nightmare'});raid.player.x=12000;raid.player.y=7400;
+  renderer.camera={x:12000,y:7400};renderer.draw(raid,10,1/60);
+  assert.ok(renderer.camera.x>11000);assert.ok(renderer.camera.y>7000);assert.equal(renderer.bounds.width,12800);
 });

@@ -1,4 +1,5 @@
-import { RULES, WORLD, ZONES } from './config.js';
+import { sectorAt } from './regions.js';
+import { RULES, WORLD, ZONES, TERRAIN } from './config.js';
 import { rarityOf } from './equipment.js';
 
 export const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -6,7 +7,9 @@ export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export const tier = value => Math.log2(value);
 export const isPowerOfTwo = value => Number.isInteger(value) && value > 0 && Number.isInteger(Math.log2(value));
 export const canMerge = (a, b) => isPowerOfTwo(a) && a === b && a < RULES.maxValue;
-export const zoneAt = (x, zones = ZONES) => zones.find(z => x >= z.from && x < z.to) || zones[zones.length-1];
+export const canRecycleRemnant = (value, tile) => !!tile.remnant && !tile.dead && tile.value <= value && !canMerge(value, tile.value);
+export const remnantCoins = value => isPowerOfTwo(value) ? 4 + 2*tier(value) : 0;
+export const zoneAt = (point, sectors = []) => sectorAt(typeof point==='number'?{x:point,y:0}:point,sectors)||ZONES[0];
 export const maxEnemyHealth = () => 100;
 export function damageFraction(attackerValue, defenderValue) {
   if (!isPowerOfTwo(attackerValue) || !isPowerOfTwo(defenderValue)) return 0;
@@ -104,12 +107,13 @@ export function inAttackArc(origin, target, angle, arc, range) {
   return distance(origin, target) <= range + (target.radius || 0) && Math.abs(wrapped) <= arc / 2;
 }
 
-export function terrainSpeed(entity, terrain = []) {
-  let speed = 1;
-  for (const patch of terrain) {
-    if (entity.x >= patch.x && entity.x <= patch.x+patch.w && entity.y >= patch.y && entity.y <= patch.y+patch.h) {
-      speed = Math.min(speed, patch.kind === 'water' ? 0.58 : patch.kind === 'mud' ? 0.74 : 1);
-    }
+export function terrainAt(entity, terrain = []) {
+  let selected=null;
+  for(const patch of terrain){
+    if(entity.x<patch.x||entity.x>patch.x+patch.w||entity.y<patch.y||entity.y>patch.y+patch.h)continue;
+    const info=TERRAIN[patch.kind];if(!info)continue;
+    if(!selected||info.priority>selected.priority||(info.priority===selected.priority&&info.speed<selected.speed))selected={...info,kind:patch.kind};
   }
-  return speed;
+  return selected;
 }
+export const terrainSpeed = (entity,terrain=[]) => terrainAt(entity,terrain)?.speed ?? 1;

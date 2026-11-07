@@ -1,5 +1,5 @@
 import { FACILITIES, difficultyOf } from './config.js';
-import { WEAPONS, RARITIES, makeEquipment } from './equipment.js';
+import { WEAPONS, RARITIES, makeEquipment, decorateWeapon, ENCHANTS } from './equipment.js';
 
 export function facilityLevel(save, key) {
   const legacy = key === 'storage' ? save.upgrades?.capacity : key === 'supply' ? save.upgrades?.divider : 0;
@@ -46,8 +46,11 @@ export function starterLoadout(save, requested = save.selectedWeapon) {
   const secondary = WEAPONS[primary].mode === 'melee' ? 'pistol' : 'greatsword';
   const grade = workshopGrade(save).id, level = facilityLevel(save,'workshop');
   const starter = (kind,type,rarity,id) => ({ ...makeEquipment(kind,type,rarity,id), starter: true, value: 0 });
+  const forged=save.forged?.[primary];
+  const primaryGrade=forged?RARITIES[Math.max(RARITIES.findIndex(r=>r.id===forged.rarity),RARITIES.findIndex(r=>r.id===grade))].id:grade;
+  const issued=starter('weapon',primary,primaryGrade,'starter-primary');
   return {
-    weapons: [starter('weapon',primary,grade,'starter-primary'),starter('weapon',secondary,grade,'starter-secondary')],
+    weapons: [forged?{...decorateWeapon(issued,forged.enchant,forged.level),forged:true}:issued,starter('weapon',secondary,grade,'starter-secondary')],
     armor: level >= 2 ? starter('armor','',RARITIES[Math.min(2,Math.floor(level/3))].id,'starter-armor') : null,
     laser: level >= 4 ? starter('laser','','white','starter-laser') : null,
   };
@@ -55,8 +58,24 @@ export function starterLoadout(save, requested = save.selectedWeapon) {
 
 export const rewardMultiplier = (save, difficulty) => difficultyOf(difficulty).reward * (1+facilityLevel(save,'recycler')*0.05);
 export const shelterLevel = save => 1+Math.floor(Object.keys(FACILITIES).reduce((sum,key) => sum+facilityLevel(save,key),0)/3);
+export function forgeCost(save,weapon=save.selectedWeapon){
+  if(!unlockedWeapons(save).includes(weapon))return null;
+  const record=save.forged?.[weapon],level=record?.level||0;
+  if(level>=5)return record.enchant!==save.selectedEnchant?{credits:180,alloy:8,core:1}:null;
+  return{credits:Math.round(120*(level+1)**1.4),alloy:6*(level+1),core:level>=2?level-1:0};
+}
+export function canForge(save){
+  const cost=forgeCost(save);return !!cost&&save.credits>=cost.credits&&save.materials.alloy>=cost.alloy&&save.materials.core>=cost.core;
+}
+export function forgeWeapon(save){
+  if(!canForge(save)||!Object.hasOwn(ENCHANTS,save.selectedEnchant))return false;
+  const cost=forgeCost(save),level=Math.min(5,(save.forged?.[save.selectedWeapon]?.level||0)+1);
+  save.credits-=cost.credits;save.materials.alloy-=cost.alloy;save.materials.core-=cost.core;
+  save.forged||={};save.forged[save.selectedWeapon]={level,rarity:RARITIES[level===5?5:level-1].id,enchant:save.selectedEnchant};return true;
+}
 export function facilityBenefit(key, level) {
-  if (key === 'storage') return `背包 ${8+level*2} 格`;
+  if (key === 'warehouse') return `局外装备 ${24+level*12} 格 · 满仓装备进入待收区`;
+  if (key === 'storage') return `装备背包 ${8+level*2} 格 · 资源袋不限量`;
   if (key === 'supply') return `开局 ÷2 ${2+level} · 修复 ${1+Math.floor(level/2)}`;
   if (key === 'recycler') return `撤离资源收益 +${level*5}%`;
   const count = Object.values(WEAPONS).filter(weapon => weapon.unlock <= level).length;
@@ -66,10 +85,11 @@ export function facilityBenefit(key, level) {
 export function salvageMaterials(items) {
   const result = { alloy: 0, core: 0 };
   for (const item of items) {
-    if (item.starter) continue;
+    if (item.starter || item.currencyOnly) continue;
     const rank = RARITIES.findIndex(grade => grade.id === item.rarity);
     result.alloy += item.kind === 'loot' || !item.kind ? Math.max(1,Math.floor(item.value/16)) : Math.max(1,rank+1);
     result.core += item.zone === 2 || rank >= 4 ? 1 : 0;
+    if(item.bossLoot){result.alloy+=12;result.core+=3;}
   }
   return result;
 }

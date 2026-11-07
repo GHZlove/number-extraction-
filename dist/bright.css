@@ -1,0 +1,106 @@
+/* v0.9: white shelter, colourful worlds and the user's raised number tiles. */
+:root,.shelter-screen { color-scheme:light;--bg:#f7f9fc;--panel:#ffffff;--panel-2:#f0f5fa;--line:#d7e0e9;--text:#26354b;--muted:#66788e;--mint:#12bcae;--gold:#d49b24;--red:#e65877;--ink:#223048;--paper:#fffdf7; }
+body { background:#f7f9fc; }
+.raid-screen,.overlay,.toast { color-scheme:dark;--bg:#0b111a;--panel:#121d2a;--panel-2:#192838;--line:#2c3e50;--text:#e6f0f6;--muted:#8da4b9;--mint:#2cddca;--gold:#f1cf65;--red:#ff6d87;--ink:#0a111c;--paper:#ecf5f8; }
+.shelter-screen { padding-top:24px; }.shelter-screen .shelter-top { border-color:#dbe4ed; }
+.shelter-screen .brand strong { color:#25354c; }.shelter-screen .brand small { color:#718397; }
+.shelter-screen .brand-logo { background:#cef5ef;color:#157e81;border:2px solid #223048;box-shadow:3px 3px 0 #dce4ec;transform:rotate(-5deg); }
+.shelter-screen .resource-chip { background:#e7f6ef;border:1px solid #c4dfd7;color:#26354b;box-shadow:0 3px 10px #213d5510; }
+.shelter-screen .resource-chip.alloy { background:#e7f1fc;border-color:#c7dbef; }.shelter-screen .resource-chip.core { background:#f6eafa;border-color:#e3cce9; }
+.shelter-screen .resource-chip b { color:#26354b; }.shelter-screen .resource-chip small { color:#66788e; }
+.shelter-screen .resource-chip .icon { color:#168f83; }.shelter-screen .resource-chip.alloy .icon { color:#4588bd; }.shelter-screen .resource-chip.core .icon { color:#a46bbb; }
+.shelter-tabs { background:#fff;border:1px solid #d7e0e9;box-shadow:0 3px 12px #24476808; }
+.shelter-tabs button { color:#66788e; }.shelter-tabs button[aria-pressed="true"] { color:#168b83;background:#e4f7f2;border-color:#a8dad1; }
+.shelter-screen .shelter-hero { background:linear-gradient(140deg,#ffffff,#f0f8fc);border:1px solid #d2dfea;box-shadow:0 9px 28px #2447680b; }
+.shelter-screen .shelter-hero::before { opacity:.08; }.shelter-screen .hero-heading h1 { color:#27374f; }.shelter-screen .hero-heading p { color:#6d7e90; }
+.shelter-screen .eyebrow { color:#6f8ca0; }.shelter-screen .safe-tag { color:#258665;background:#e5f6e9;border-color:#b5dcc4; }.safe-tag .signal-dot { background:#50b780; }
+.shelter-screen .hero-footer { background:#eef5fa;border-color:#d6e2ec; }.shelter-screen .hero-footer b { color:#27374f; }.shelter-screen .hero-footer span { color:#6f8194; }
+.shelter-screen .hero-stage i { background:#d3dfeb; }.shelter-screen .hero-stage i.on { background:#49bbac; }
+.number-preview { display:grid;grid-template-columns:repeat(4,1fr);gap:13px;max-width:420px;padding:7px;margin:25px auto 28px; }
+.preview-number { container-type:inline-size;aspect-ratio:1;display:grid;place-items:center;min-width:0;border-radius:17px;border:1px solid #1e2e4740;background:linear-gradient(150deg,color-mix(in srgb,var(--number-face) 82%,white),var(--number-face) 35%);box-shadow:inset 0 3px 4px #ffffff50,inset 0 -7px 0 color-mix(in srgb,var(--number-face) 68%,black),0 8px 11px #20345230; }
+/* Scale against this tile, not the viewport; longer numbers need smaller type. */
+.preview-number strong { color:#fff;font-family:Arial,sans-serif;font-size:56cqi;font-weight:900;line-height:1;letter-spacing:0;white-space:nowrap;text-shadow:0 3px 3px #17263b95; }
+.preview-number[data-digits="3"] strong { font-size:40cqi; }
+.preview-number[data-digits="4"] strong { font-size:31cqi; }
+.shelter-screen .facility-card,.shelter-screen .expedition-panel,.shelter-screen .forge-panel { background:#fff;border:1px solid #d7e0e9;box-shadow:0 5px 18px #2447680a;color:#26354b; }
+.shelter-screen .facility-title h3,.shelter-screen .forge-panel h2,.shelter-screen .expedition-panel h2,.shelter-screen .section-heading h2 { color:#26354b; }
+.shelter-screen .facility-card { border-top:4px solid var(--accent); }.shelter-screen .facility-icon { background:var(--accent);border:1px solid #b6cbd5;color:#304451; }
+.shelter-screen .facility-level { color:#5c7186;background:#eef4fa;border-color:#d0dce6; }.shelter-screen .facility-title small { color:#77889a; }
+.shelter-screen .facility-card p,.shelter-screen .facility-next,.shelter-screen .forge-panel p,.shelter-screen .forge-panel small { color:#687b8e; }
+.shelter-screen .upgrade-button { background:#e5f6ef;border:1px solid #add5c6;color:#25806a;box-shadow:none; }.shelter-screen .upgrade-button:disabled { background:#f0f3f7;border-color:#dbe1e8;color:#92a0b0; }
+.shelter-screen .stat-card { background:#f0f6fb;border:1px solid #d5e1eb;color:#26354b; }.shelter-screen .stat-card small { color:#6c8093; }.shelter-screen .stat-card b { color:#388e9e; }
+.shelter-screen .difficulty-card { background:#f6f9fc;color:#26354b;border:1px solid #d9e3ed; }.shelter-screen .difficulty-card.selected { background:#ecf9ec;border-color:#b4d8b8;box-shadow:inset 3px 0 var(--difficulty); }
+.shelter-screen .difficulty-top b { color:#30465b; }.shelter-screen .difficulty-top span { color:color-mix(in srgb,var(--difficulty) 65%,#305165); }.shelter-screen .difficulty-meta { color:#74889b; }.shelter-screen .difficulty-meta span:last-child { color:#368c74; }
+.shelter-screen .weapon-choice label,.shelter-screen .forge-panel label { color:#576f83; }
+.shelter-screen select,.shelter-screen .forge-panel select { background:#f6f9fc;color:#304359;border:1px solid #cbd9e5; }
+.shelter-screen .expedition-summary { border-color:#dbe4ec; }.shelter-screen .expedition-summary small { color:#7b8d9f; }.shelter-screen .expedition-summary b { color:#476175; }
+.shelter-screen .deploy-button { background:#1ec8b6;border:1px solid #0d9d92;color:#fff;box-shadow:0 5px 14px #12a69525; }
+.shelter-screen .run-report { background:#e8f8e9;border-color:#bddfc0; }.shelter-screen .run-report.failed { background:#fff0f1;border-color:#edccd0; }.shelter-screen .run-report b { color:#334e43; }.shelter-screen .run-report p { color:#6a8478; }.shelter-screen .run-rewards { color:#368564; }
+.shelter-screen .shelter-footer { color:#7d8d9c; }.shelter-screen .shelter-footer button { color:#408d95; }
+@media(max-width:1100px) { .number-preview { max-width:330px;gap:11px;margin:22px auto; }.preview-number { border-radius:14px; } }
+@media(max-width:600px) { .number-preview { max-width:310px;gap:10px;padding:0 10px; }.preview-number { border-radius:13px; } }
+
+/* Resource storage is independent of the equipment slot grid. */
+.resource-pouch { margin:20px 0;padding:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px; }
+.resource-pouch .section-heading { margin:0;gap:12px;flex-wrap:wrap; }.resource-pouch .section-heading h2 { font-size:17px; }
+.resource-pouch p,.resource-pouch>small { color:var(--muted);font-size:11px;line-height:1.7; }
+.resource-stacks { display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:12px 0; }
+.resource-stack { display:flex;flex-direction:column;gap:5px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:7px; }
+.resource-stack b { color:var(--text);font-size:12px; }.resource-stack span { color:var(--gold);font-size:15px;font-weight:800; }.resource-stack small { color:var(--muted);font-size:10px; }
+
+/* Persistent shelter inventory and encounter intelligence. */
+.warehouse-panel,.boss-codex { display:none;background:#fff;color:#26354b;border:1px solid #d7e0e9;border-radius:15px;padding:24px; }
+.shelter-screen[data-tab="vault"] .shelter-layout,.shelter-screen[data-tab="bosses"] .shelter-layout { grid-template-columns:1fr; }
+.shelter-screen[data-tab="vault"] .shelter-hero,.shelter-screen[data-tab="vault"] .facilities-grid,.shelter-screen[data-tab="vault"] .forge-panel,.shelter-screen[data-tab="vault"] .shelter-stats,.shelter-screen[data-tab="vault"] .expedition-panel,.shelter-screen[data-tab="vault"] .shelter-main>.section-heading,
+.shelter-screen[data-tab="bosses"] .shelter-hero,.shelter-screen[data-tab="bosses"] .facilities-grid,.shelter-screen[data-tab="bosses"] .forge-panel,.shelter-screen[data-tab="bosses"] .shelter-stats,.shelter-screen[data-tab="bosses"] .expedition-panel,.shelter-screen[data-tab="bosses"] .shelter-main>.section-heading { display:none; }
+.shelter-screen[data-tab="vault"] .warehouse-panel,.shelter-screen[data-tab="bosses"] .boss-codex { display:block; }
+.warehouse-panel p,.boss-codex>p { color:#65778c;font-size:12px;line-height:1.8; }.warehouse-count { color:#168c80; }
+.vault-toolbar,.vault-actions { display:flex;flex-wrap:wrap;gap:8px; }.vault-toolbar { margin:16px 0; }
+.vault-toolbar button,.vault-actions button,.deployment-slots button,.boss-card button { background:#e7f7f0;color:#187e6e;border:1px solid #badacf;border-radius:7px;padding:9px 12px;font-weight:700;cursor:pointer; }
+.vault-actions button:disabled,.vault-toolbar button:disabled,.boss-card button:disabled { opacity:.4;cursor:default; }.vault-actions .vault-recycle { background:#fff1e7;color:#996331;border-color:#ead2bd; }
+.deployment-slots { display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:18px 0; }.deployment-slots>div { padding:12px;background:#f1f7fb;border:1px solid #d9e4ec;border-radius:8px;display:flex;flex-direction:column;gap:8px; }.deployment-slots small { color:#70849a; }.deployment-slots b { font-size:12px;overflow-wrap:anywhere; }
+.vault-grid,.boss-cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:16px 0; }
+.vault-item { border:1px solid #d7e0e9;border-top:4px solid color-mix(in srgb,var(--rarity) 70%,#758290);border-radius:10px;padding:15px;background:#f9fbfd; }.vault-item small { color:#7b8da0; }.vault-item h3 { margin:9px 0;font-size:14px;overflow-wrap:anywhere; }.vault-item p { margin:9px 0;font-size:11px; }.vault-actions button { font-size:11px;padding:7px 9px; }
+.boss-card { padding:20px;background:#f8fbfe;border:1px solid #d6e1ea;border-top:4px solid var(--boss-color);border-radius:10px; }.boss-glyph { display:inline-grid;place-items:center;background:var(--boss-color);color:#24314b;width:40px;height:40px;border-radius:10px;font-size:25px; }.boss-card h3 { font-size:17px;margin:12px 0; }.boss-card p,.boss-card small { color:#687b91;font-size:11px;line-height:1.8; }.boss-card button { width:100%;margin-top:10px; }
+.shelter-tabs { flex-wrap:wrap; }.shelter-tabs button { min-width:130px; }
+.shelter-screen[data-tab="base"] .facilities-grid { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+@media(max-width:600px) { .warehouse-panel,.boss-codex { padding:16px; }.shelter-tabs button { min-width:95px; }.vault-grid,.boss-cards { grid-template-columns:1fr; } }
+
+/* v0.11: optional run rules, readable heat and explicit extraction conditions. */
+.rules-panel { display:none;background:#fff;border:1px solid #d8e4ed;border-radius:16px;padding:26px;color:#25374b; }
+.shelter-screen[data-tab="rules"] .shelter-layout { grid-template-columns:1fr; }
+.shelter-screen[data-tab="rules"] .shelter-hero,.shelter-screen[data-tab="rules"] .facilities-grid,.shelter-screen[data-tab="rules"] .forge-panel,.shelter-screen[data-tab="rules"] .shelter-stats,.shelter-screen[data-tab="rules"] .expedition-panel,.shelter-screen[data-tab="rules"] .shelter-main>.section-heading { display:none; }
+.shelter-screen[data-tab="rules"] .rules-panel { display:block; }
+.rules-panel h2 { font-size:25px;margin:10px 0; }.rules-panel p { color:#64768b;font-size:13px;line-height:1.7; }
+.rule-summary,.run-summary { border:1px solid #b7dcd0;background:#edf9f4;color:#296b60;border-radius:9px;padding:12px;font-size:12px;line-height:1.7; }
+.run-summary { margin:14px 0; }.run-summary small { display:block;color:#5f7b77; }
+.mutator-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0; }
+.mutator-card { display:flex;flex-direction:column;text-align:left;gap:10px;padding:17px;background:#f8fbfe;color:#354c63;border:1px solid #d6e1ec;border-radius:12px;min-height:132px;transition:border-color .15s,background .15s; }
+.mutator-card:hover { border-color:#48a99e; }.mutator-card.selected { border:2px solid #329f91;background:#e5f6f0;padding:16px; }.mutator-card b { font-size:15px; }.mutator-card span { font-size:12px;line-height:1.6; }.mutator-card small { margin-top:auto;color:#398276;font-size:11px; }.mutator-card:disabled { opacity:.5;cursor:not-allowed; }
+.number-form-info { background:#f5f8fc;border-radius:12px;padding:16px 20px; }.number-form-info h3 { margin:6px 0;font-size:14px; }.rules-return { background:#258f82;color:#fff;padding:12px 20px;border-radius:8px;margin-top:18px; }
+.heat-readout { min-width:140px;margin-top:7px;color:#f0d794;font:10px ui-monospace,monospace; }.heat-track { height:4px;border-radius:4px;background:#394a55;margin:6px 0;overflow:hidden; }.heat-track i { display:block;height:100%;width:0;background:#ffae64;transition:width .2s; }.raid-timer .heat-readout small { font:9px ui-monospace,monospace;letter-spacing:0;margin:0;color:#a9bdcb; }
+#form-label { display:block;color:#c0bce6;font-size:9px;line-height:1.5;margin-top:6px; }
+.boss-hud { top:132px; }.mission-chip { top:120px; }
+.exit-brief-list { display:grid;gap:10px;margin:18px 0; }.exit-brief-item { background:#172b3a;border:1px solid #385266;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:18px; }.exit-brief-item b { font-size:14px;color:#e1eef2; }.exit-brief-item small { display:block;margin-top:6px;font-size:11px;color:#8dbcc4; }.dialog .exit-brief-item p { font-size:12px;margin:8px 0 0; }.exit-brief-item strong { flex-shrink:0;max-width:42%;font-size:12px;color:#f4bb87; }.exit-brief-item strong.ready { color:#9be3b9; }
+@media(max-width:1100px) and (min-width:601px) { .hud-actions { gap:5px; }.icon-button { width:34px;height:36px; }.carried-chip { padding:8px; }.raid-timer { padding:9px 15px; }.heat-readout { min-width:125px; } }
+@media(max-width:600px) { .rules-panel { padding:18px; }.rules-panel h2 { font-size:21px; }.mutator-grid { grid-template-columns:1fr;gap:9px; }.mutator-card { min-height:110px; }.heat-readout { min-width:115px;font-size:9px; }.raid-timer .heat-readout small { font-size:8px; }.boss-hud { top:177px; }.mission-chip { top:117px;max-width:180px; }.exit-brief-item { align-items:start;flex-direction:column;gap:10px; }.exit-brief-item strong { max-width:100%; } }
+
+/* Local playtest records: a shelter tool, separate from the raid HUD. */
+.playtest-panel { display:none;background:#fff;border:1px solid #d7e0e9;border-radius:16px;padding:26px;color:#26354b; }
+.shelter-screen[data-tab="journal"] .shelter-layout { grid-template-columns:1fr; }
+.shelter-screen[data-tab="journal"] .shelter-hero,.shelter-screen[data-tab="journal"] .facilities-grid,.shelter-screen[data-tab="journal"] .forge-panel,.shelter-screen[data-tab="journal"] .shelter-stats,.shelter-screen[data-tab="journal"] .expedition-panel,.shelter-screen[data-tab="journal"] .shelter-main>.section-heading { display:none; }
+.shelter-screen[data-tab="journal"] .playtest-panel { display:block; }
+.playtest-panel h2 { margin:10px 0;font-size:25px; }.playtest-panel p { font-size:12px;line-height:1.8;color:#5c7185; }
+.journal-privacy,.journal-sample-note { padding:13px 16px;background:#edf8f4;border:1px solid #b9dccc;border-radius:9px;color:#286c60!important; }.journal-warning { padding:12px;border:1px solid #ead5a2;border-radius:8px;background:#fff8e8;color:#795b27!important; }
+.journal-toolbar { display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0; }.journal-toolbar button { padding:11px 15px;background:#e5f6f0;color:#216f64;border:1px solid #b0d6c9;border-radius:8px;font-weight:700; }.journal-toolbar button:disabled { opacity:.45; }.journal-toolbar span { font-size:11px;color:#647b8f; }
+.journal-kpis { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px; }.journal-kpis article { border:1px solid #d4e2ed;background:#f3f8fc;border-radius:10px;padding:16px; }.journal-kpis small { display:block;color:#617b90;font-size:11px; }.journal-kpis b { display:block;font-size:27px;margin-top:9px;color:#247f80; }
+.journal-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0; }.journal-card { border:1px solid #d8e4ee;border-radius:12px;padding:20px;background:#f9fbfd; }.journal-card h3,.playtest-panel>h3 { font-size:16px;margin:0 0 12px; }.journal-card h4 { font-size:12px;margin:17px 0 9px; }.journal-modifiers { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }.journal-modifiers>div { display:flex;gap:10px;justify-content:space-between;background:#edf3f8;border-radius:6px;padding:8px 10px;font-size:11px; }.journal-counts { list-style:none;margin:8px 0;padding:0; }.journal-counts li { display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #e0e8ef;font-size:12px;color:#4b647a; }.journal-counts li span { overflow-wrap:anywhere; }.journal-counts li b { white-space:nowrap; }
+.playtest-run { background:#f8fbfd;border:1px solid #d7e3ec;border-radius:12px;padding:17px;margin:12px 0; }.journal-run-header { display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap; }.journal-run-header b { font-size:14px; }.journal-run-header span { font:10px ui-monospace,monospace;color:#6d8295; }.journal-feedback { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }.journal-feedback label { font-size:11px;color:#586f84; }.journal-feedback select { width:100%;margin-top:7px;padding:10px;border-radius:7px; }.journal-feedback select:disabled { opacity:.5; }
+@media(max-width:700px) { .playtest-panel { padding:18px; }.journal-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }.journal-grid,.journal-feedback { grid-template-columns:1fr; }.journal-card { padding:16px; }.journal-run-header { align-items:start;flex-direction:column; }.journal-toolbar button { flex:1; } }
+
+.playtest-review { border:1px solid #a6cecb;background:#f3fbf8;padding:20px;border-radius:12px;margin:20px 0 28px; }
+.review-heading { display:flex;align-items:center;justify-content:space-between;gap:12px; }.review-heading h3 { margin:9px 0;font-size:20px; }.review-heading button { background:#fff;color:#416b69;border:1px solid #bad3d0;padding:9px 12px;border-radius:8px; }
+.review-totals { display:flex;gap:10px;flex-wrap:wrap;margin:13px 0; }.review-totals span { padding:8px 12px;background:#e2f2ee;border-radius:7px;font-size:12px;color:#2c7064; }
+.review-cohort-label { display:block;font-size:12px;color:#4b6c7a;margin:18px 0 12px; }.review-cohort-label select { display:block;width:100%;padding:11px;border-radius:7px;margin-top:8px; }.review-status,.review-warning { border:1px solid #dfd2ae;background:#fff8e7;padding:12px;border-radius:8px;color:#775c2e!important; }.review-status[data-ready="true"] { border-color:#add2c1;background:#e9f7ef;color:#2d6c59!important; }
+.review-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0; }.review-grid article { background:#fff;border:1px solid #d2e0e5;border-radius:10px;padding:17px; }.playtest-review h4 { font-size:14px;margin:10px 0; }.playtest-review li { font-size:12px;line-height:1.9;color:#516b7c;margin:4px 0;overflow-wrap:anywhere; }.review-grid small { color:#6e8192;font-size:11px;line-height:1.7; }.review-context { background:#fff;border-radius:9px;padding:14px;margin:16px 0; }.review-context summary { color:#327669;font-size:13px;cursor:pointer; }.review-findings b { color:#3d626d; }
+@media(max-width:700px) { .playtest-review { padding:15px; }.review-grid { grid-template-columns:1fr; }.review-heading { align-items:start;flex-direction:column; } }

@@ -2,10 +2,10 @@ export class Input {
   constructor(canvas, onPause, onInventory = () => {}) {
     this.keys = new Set(); this.pressed = new Set(); this.touchKeys = new Map();
     this.joy = { x: 0, y: 0 }; this.active = false;
-    this.pointer = null; this.mouseAttack = false;
+    this.pointer = null; this.mouseAttack = false;this.parryPressed=false;this.rightHeld=false;
     const typing = target => /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName) || target?.isContentEditable;
     const controlled = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2']);
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'KeyC', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2']);
     window.addEventListener('keydown', event => {
       if (typing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.code === 'Escape' && !event.repeat) { onPause(); return; }
@@ -24,12 +24,17 @@ export class Input {
     canvas.addEventListener('pointermove', aim);
     canvas.addEventListener('pointerdown', event => {
       aim(event);
+      if(this.active&&event.button===2&&!this.rightHeld){this.parryPressed=true;this.rightHeld=true;canvas.focus();event.preventDefault();}
       if (event.pointerType === 'mouse' && this.active && event.button === 0) {
         canvas.focus(); canvas.setPointerCapture(event.pointerId); this.mouseAttack = true;
       }
     });
+    canvas.addEventListener('mousedown',event=>{
+      if(this.active&&event.button===2&&!this.rightHeld){aim(event);this.parryPressed=true;this.rightHeld=true;event.preventDefault();}
+    });
+    window.addEventListener('mouseup',event=>{if(event.button===2)this.rightHeld=false;});
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-      window.addEventListener(type, () => { this.mouseAttack = false; });
+      window.addEventListener(type, event => { if(type!=='pointerup'||event.button!==2)this.mouseAttack=false;if(type!=='pointerup'||event.button===2)this.rightHeld=false; });
     }
     canvas.addEventListener('pointerleave', () => { if (!this.mouseAttack) this.pointer = null; });
     canvas.addEventListener('contextmenu', event => event.preventDefault());
@@ -67,7 +72,7 @@ export class Input {
   }
   clear() {
     this.keys.clear(); this.pressed.clear(); this.touchKeys.clear();
-    this.mouseAttack = false; this.pointer = null; this.joy = { x: 0, y: 0 };
+    this.mouseAttack = false; this.parryPressed=false;this.rightHeld=false;this.pointer = null; this.joy = { x: 0, y: 0 };
     this.resetJoystick?.(); document.querySelectorAll('.held').forEach(element => element.classList.remove('held'));
   }
   consume() {
@@ -78,10 +83,11 @@ export class Input {
       y: (held('KeyS') || held('ArrowDown') ? 1 : 0)-(held('KeyW') || held('ArrowUp') ? 1 : 0)+this.joy.y,
       attack: held('Space') || this.mouseAttack, autoAim: touch('Space'),
       interact: held('KeyE'), divide: this.pressed.has('KeyQ'), heal: this.pressed.has('KeyR'),
+      parry:this.parryPressed||this.pressed.has('KeyC'),
       dash: this.pressed.has('ShiftLeft') || this.pressed.has('ShiftRight'), pickup: this.pressed.has('KeyF'), overload: this.pressed.has('KeyG'),
       slot: this.pressed.has('Digit1') ? 0 : this.pressed.has('Digit2') ? 1 : undefined,
       pointer: this.pointer ? { ...this.pointer } : null,
     };
-    this.pressed.clear(); return state;
+    this.pressed.clear();this.parryPressed=false;return state;
   }
 }
