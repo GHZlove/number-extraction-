@@ -145,7 +145,7 @@ Before an experiment ships, repeat game/save regression checks and native Window
 
 ## How 10–20 recorded runs should influence priority
 
-The planned local journal can establish selected modifiers, run length, final heat, outcome, exit type and whether hunters actually appeared. It can help stratify the existing balance questions, but **it does not yet measure a synergy that has not been implemented**. Human feedback remains uncollected at the time of this design.
+The v0.11.2 local journal can establish selected modifiers, run length, final heat, outcome, exit type and whether hunters actually appeared. It can help stratify the existing balance questions, but **it does not yet measure a synergy that has not been implemented**. Human feedback remains uncollected at the time of this design.
 
 For the first 10–20 real runs, retain counts and missing observations rather than infer a population win rate. Read the records alongside the four questions in the playtest guide:
 

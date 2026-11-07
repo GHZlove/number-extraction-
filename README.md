@@ -10,16 +10,16 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.11.2 · local playtest records; Windows verification pending |
+| Current version | v0.11.2 · verified Windows local playtest journal |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, mutators, heat and hunters, conditional extraction, combat and persistent shelter |
 | Content | 20 weapons, 12 enchantments, 12 enemy types, 9 bosses, 4 map families, 5 difficulties |
-| Verification | 319 automated tests; v0.11.2 native Windows verification pending |
+| Verification | 319 automated tests; native Windows journal, anonymous export, restart and portable EXE checks |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**v0.11.2 build pending; previous verified release:** **[Download v0.11.1 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/NumberExtraction-0.11.1-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.1-desktop.15). Run in a standalone window without Python or a separate browser. See [v0.11.1 tuning and compatibility](docs/BALANCE_V0111.md). Close an older running copy before opening the new EXE.
+**[Download v0.11.2 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16). Run in a standalone window without Python or a separate browser. See [v0.11.1 tuning and compatibility](docs/BALANCE_V0111.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the current playtest web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
@@ -39,17 +39,19 @@ v0.9.2 added automatic recycling of lower-number enemy remnants and an unlimited
 
 The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
 
-Previous verified v0.11.1 captures (v0.11.2 captures pending):
+Actual v0.11.2 Windows captures from native checks:
 
-![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-shelter-wide.png)
+![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-shelter-wide.png)
 
-![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-raid.png)
+![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-raid.png)
 
-[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-inventory.png).
+[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-inventory.png).
 
-[View the persistent warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-warehouse.png) · [View the nine-boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-bosses.png).
+[View the persistent warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-warehouse.png) · [View the nine-boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-bosses.png).
 
-[View run modifiers](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-rules.png) · [View paused extraction intelligence](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/portable-exits.png).
+[View run modifiers](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-rules.png) · [View paused extraction intelligence](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-exits.png).
+
+[View the local playtest journal](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-playtest.png). This CI capture uses an isolated fixed test fixture, not human playtest feedback.
 
 ## Design idea
 
@@ -220,7 +222,7 @@ npm run check
 npm test
 ```
 
-No `npm install` is required for these checks. **319 tests pass**, including 29 new local-journal, application and desktop-export cases. v0.11.2 native Windows verification is pending; the prior release passed its startup, layout, combat and persistence checks. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 27 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
+No `npm install` is required for these checks. **319 tests pass**, including 29 new local-journal, application and desktop-export cases. v0.11.2 passed native Windows journal navigation, feedback, anonymous file export, restart persistence, seven layouts and prior gameplay checks in the unpacked app and final portable EXE. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 27 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 

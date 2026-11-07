@@ -4,7 +4,7 @@ This is a short tuning pass before Phase 2 (v0.12). The v0.11.2 build adds local
 
 **Human feedback status: uncollected.** The sessions below are planned, not completed playtests. Automated simulations, regression tests and native startup checks are separate evidence; they do not establish player comfort, fairness or win rates. A 2–4 day playtest window has not yet elapsed.
 
-- Current logging build: **[REPLACE: verified v0.11.2 Windows release URL]**.
+- Current logging build: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16).
 - Prior verified tuning candidate: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/NumberExtraction-0.11.1-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.1-desktop.15).
 - Tuning changes: [numeric changes and measured diagnostic results](BALANCE_V0111.md).
 - Existing systems and controls: [run-depth rules](RUN_DEPTH_V011.md).

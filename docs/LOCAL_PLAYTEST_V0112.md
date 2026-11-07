@@ -42,4 +42,13 @@ The journal is separate from the schema-5 `number-extraction-v11` progress save 
 - **319 automated cases pass**, including 16 journal, 6 desktop-export and 7 application/instrumentation cases added to the 290-case baseline.
 - Sixteen fixed-input, finite-health combat fixtures produce identical case results between v0.11.1 and v0.11.2. This is a regression comparison, not human playtesting or proof of universal equivalence.
 - Core heat, damage, modifier, equipment, boss and extraction tuning files are unchanged.
-- Native Windows journal navigation, feedback persistence and anonymous export remain pending until the release build completes. The CI screenshot uses a fixed isolated test fixture, never shipped player data.
+- [Windows build 42339485298](https://github.com/GHZlove/number-extraction-/actions/runs/42339485298) passed native startup, seven layouts, journal navigation, feedback persistence, actual anonymous file export, restart checks and final portable execution. The CI journal screenshot uses a fixed isolated fixture, never shipped player data.
+
+## Verified download
+
+- [Windows x64 portable EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe) — 110,430,250 bytes.
+- SHA256: `bc803769f41ac764862ccb506c5736341e6f60af8f46a81187101775d1d49c4d`; downloaded bytes match the release checksum and Windows PE signatures.
+- Source commit: `9abeac751e0e43e3f695bb0fe2e80ce6242af639`; [release and screenshots](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16).
+- [Journal screenshot](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-playtest.png) (isolated CI fixture; not human data).
+
+Finish your current raid and exit the old app before opening the new EXE. Progress keeps the same application-data profile and schema-5 save key. No human 10–20-run sample has been collected by these checks.

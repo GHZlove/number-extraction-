@@ -6,13 +6,13 @@
 
 项目使用原生 **JavaScript ES modules、HTML5 Canvas、CSS、Web Audio 与 localStorage** 实现，无第三方运行依赖。技术展示重点包括玩法系统设计、状态管理、程序地图、碰撞几何、空间查询、存档迁移和自动化验证。
 
-当前为 **v0.11.2 本地试玩记录版**，在四种地图、十二种附魔、二十类武器、十二类敌人、九种首领和五档难度的基础上，加入行动词条、热度追猎、数字体型和条件撤离。319项测试通过，v0.11.2的Windows原生验证进行中。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
+当前为 **v0.11.2 本地试玩记录版**，在四种地图、十二种附魔、二十类武器、十二类敌人、九种首领和五档难度的基础上，加入行动词条、热度追猎、数字体型和条件撤离。319项测试通过，v0.11.2的Windows记录页、匿名导出、重启和最终EXE均已验证。英文 README 面向项目评审与作品集展示；游戏界面目前为简体中文。
 
 [English](README.md) · [本地试玩记录](docs/LOCAL_PLAYTEST_V0112.md) · [8项联动设计](docs/SYNERGIES_V012_DESIGN.md) · [v0.11.1数值与诊断](docs/BALANCE_V0111.md) · [匿名试玩清单](docs/PLAYTEST_V0111.md) · [v0.11行动深度规则](docs/RUN_DEPTH_V011.md) · [分阶段路线](docs/ROADMAP.md) · [v0.10仓库与九类首领](docs/WAREHOUSE_BOSSES_V010.md) · [v0.9.2残骸与资源袋](docs/REMNANTS_V092.md) · [v0.9亮色军械库](docs/BRIGHT_V09.md) · [v0.8桌面历史](docs/DESKTOP_V08.md) · [v0.7 据点与打造规则](docs/STRONGHOLDS_V07.md) · [打击反馈](docs/TANGRAM_V06.md) · [涂鸦配色](docs/VISUAL_V041.md) · [战斗基础](docs/COMBAT_V02.md) · [测试记录](docs/TESTING.md)
 
 ## 桌面启动
 
-**v0.11.2构建进行中，以下为上一版已验证下载：** **[直接下载 v0.11.1 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/NumberExtraction-0.11.1-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.1-desktop.15)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
+**[直接下载 v0.11.2 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [发布页与实际截图](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16)。双击进入独立游戏窗口，无需Python、Node.js或另开浏览器。F11或Alt+Enter全屏，进度保存在本机应用数据目录。此预览未配置代码签名。
 
 浏览器进度可在v0.9网页版的“存档”面板导出JSON，再导入EXE；导入前会显示资源预览并备份原进度。具体步骤见 [桌面与存档迁移](docs/DESKTOP_V08.md)。
 
@@ -108,7 +108,7 @@ v0.11.1沿用v0.11.0的存档和仓库。v0.11 使用结构5与独立 `number-ex
 
 本版开始，拾取装备成功撤离后入仓，不再同时兑换成资源；工坊基础装备每局重新发放且不入仓/出售。死亡、超时或放弃丢失本局携带装备和收益，未带入的仓库及已有庇护所资产保留。旧版已兑成资源的装备无法还原，已有资源保留。
 
-v0.11.2的319项自动测试通过，Windows原生检查与最终便携EXE验证进行中，结果见 [测试记录](docs/TESTING.md)。逻辑测试中的 DOM/Canvas/Web Audio 使用替身；Windows工作流另行检查真实启动、白底主页、12格数字预览、出击按钮、移动合成、暂停和重启存档，并附截图。长时间游玩、音质、硬件性能与经济平衡仍需试玩反馈。
+v0.11.2的319项自动测试通过，Windows原生检查与最终便携EXE均通过，结果见 [测试记录](docs/TESTING.md)。逻辑测试中的 DOM/Canvas/Web Audio 使用替身；Windows工作流另行检查真实启动、白底主页、12格数字预览、出击按钮、移动合成、暂停和重启存档，并附截图。长时间游玩、音质、硬件性能与经济平衡仍需试玩反馈。
 
 ## 开发与文档
 

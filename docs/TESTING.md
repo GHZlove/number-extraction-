@@ -98,7 +98,9 @@ EXE实际下载110,420,260字节，MZ/PE结构与发布SHA256校验一致：`0c6
 
 16组固定输入的有限生命战斗前后逐项一致，见 [对照证据](evidence/v0112-observation-equivalence.json)。未改动v0.11.1数值文件；这不是模拟真人反馈，也不证明任意输入都等价。新[本地记录说明](LOCAL_PLAYTEST_V0112.md)和[四问题试玩指南](PLAYTEST_V0111.md)用于下一批10—20局真实数据。
 
-Windows原生记录页、反馈持久化与匿名文件导出验证进行中。其临时profile中的固定fixture仅用于CI，不随EXE分发，也不计为真实玩家数据。[八项联动方案](SYNERGIES_V012_DESIGN.md)未在运行时启用。
+[Windows构建42339485298](https://github.com/GHZlove/number-extraction-/actions/runs/42339485298)通过，发布为[v0.11.2-desktop.16](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16)。Windows上319项测试，以及未打包首启/重启和最终portable三次实际执行均通过。记录页、反馈评分保存、独立日志跨重启、中断不算死亡、真实匿名文件导出和原有七组布局/移动合成/仓库/图鉴/暂停均已检查。37测试币和1件测试装备保持，日志与游戏存档隔离；导出文件经过严格schema验证且不含原始ID。
+
+EXE实际下载110,430,250字节，MZ/PE与发布SHA256一致：`bc803769f41ac764862ccb506c5736341e6f60af8f46a81187101775d1d49c4d`。源码 `9abeac751e0e43e3f695bb0fe2e80ce6242af639`。截图已下载查看；其临时profile中的固定fixture仅用于CI，不随EXE分发，也不计为真实玩家数据。[八项联动方案](SYNERGIES_V012_DESIGN.md)未在运行时启用。
 
 ## 当前待人工试玩
 
