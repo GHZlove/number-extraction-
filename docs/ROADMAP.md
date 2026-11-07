@@ -4,7 +4,7 @@ The project is moving from adding content toward making each expedition more int
 
 ## Phase 1 · Run depth, tuning and observation · v0.11–v0.11.3
 
-**Delivered: v0.11.1 numeric tuning and v0.11.2 local records, with their recorded regression/native checks. Current work: v0.11.3 temporary multi-report review, retaining v0.11.1 tuning. No exported human JSON batch has been supplied for analysis, and no outside volunteers have been contacted or confirmed by this workflow. The collection plan and 2–4 day window are not represented as completed.**
+**Delivered: v0.11.1 numeric tuning, v0.11.2 local records and v0.11.3 temporary multi-report review, with their recorded regression/native checks. The review retains v0.11.1 tuning. No exported human JSON batch has been supplied for analysis, and no outside volunteers have been contacted or confirmed by this workflow. The collection plan and 2–4 day window are not represented as completed.**
 
 - Ten optional run mutators, with at most three selected and clear risks/rewards.
 - Rising heat and warned hunter squads, with finite arrival and population budgets.

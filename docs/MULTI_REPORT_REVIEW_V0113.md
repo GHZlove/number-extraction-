@@ -43,4 +43,10 @@ Generated reports omit input filenames, paths and personal identifiers. Input va
 - 355 automated cases pass: the 319-case baseline plus 23 analysis/CLI, seven desktop-import and six application-review cases.
 - Sixteen fixed-input combat fixtures have identical case results between v0.11.2 and v0.11.3. No heat, damage, weapon, boss or extraction tuning values changed.
 - Tests cover 800 observations, repeated local session numbers across independent reports, complete duplicates, partial overlaps, missing data, mixed cohorts, threshold boundaries, source-file protection, cancellation and storage isolation.
-- Native Windows import, temporary review, duplicate handling, storage preservation and portable EXE checks are pending until the build completes. Native captures use fixed isolated CI fixtures, not human data.
+- Native Windows startup, restart and final portable execution pass. Importing the same isolated export twice retains one report and one finished fixture; the ten-run gate stays closed. Progress and journal bytes remain unchanged across review, clearing and reload. Native captures use fixed isolated CI fixtures, not human data.
+
+## Verified Windows release
+
+[Download v0.11.3 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) · [release](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) · [Windows build](https://github.com/GHZlove/number-extraction-/actions/runs/42350585330) · [review capture](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-review.png).
+
+Source: `694e3bd7b1e082284ab70e05e10793f3437fc777`. Actual download: 110,437,272 bytes; MZ/PE signatures and published SHA256 match: `59c1a282a6e7e1c58f6d53d6f752bdea31edbe5e9cab65620e930b51ad8de672`. See [verification evidence](evidence/v0113-release-verification.json). This release is a prerelease on the playtest branch; main and the hosted game were not updated.

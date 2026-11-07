@@ -4,7 +4,7 @@
 
 The next useful evidence is an initial **10–20 real-run batch** containing both no-modifier runs and risky combinations. This is a practical triage target, not statistical proof. Failed, timed-out and voluntarily abandoned runs are useful evidence; do not discard them to make a neat count or a better outcome.
 
-- Review build: **[REPLACE: verified v0.11.3 Windows release URL]**.
+- Review build: **[v0.11.3 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) · [release and checks](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18)**.
 - Prior verified recorder: [v0.11.2 Windows EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe) · [release and checks](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16).
 - Detailed observations and controls: [playtest guide](PLAYTEST_V0111.md).
 - Current tuning: [v0.11.1 changes](BALANCE_V0111.md). The v0.11.3 review does not change these values.
@@ -50,7 +50,7 @@ These are drafts, not messages sent by the assistant.
 
 > 想邀请你试玩一个单机数字搜打撤原型，大约五局即可：一局不选词条、两局尝试高风险组合，另外两局自行选择路线或重复比较。没有通关要求，随时可以停止。比较时尽量保持相同版本、难度和开局装备。每局结束后，可以自愿记录撤离原因、1—5分压力感，以及不公平或看不清的情况。记录只保存在你的设备上；如果愿意分享，请在庇护所“试玩记录”中，于这一组结束后导出一份最新匿名JSON，先查看内容再发送。不需要姓名、邮箱、IP、完整存档或其他个人信息。
 
-Add the verified build link yourself after release. Let the volunteer choose whether and where to share a report. Keep any separately volunteered experience notes under A/B/C labels, without adding a personal identifier to the exported gameplay data.
+Attach the verified build link above when sharing the invitation. Let the volunteer choose whether and where to share a report. Keep any separately volunteered experience notes under A/B/C labels, without adding a personal identifier to the exported gameplay data.
 
 ## One latest report per block
 

@@ -110,7 +110,9 @@ EXE实际下载110,430,250字节，MZ/PE与发布SHA256一致：`bc803769f41ac76
 
 16组固定输入战斗前后逐项一致，见 [对照](evidence/v0113-review-equivalence.json)。现有战斗数值保持，实际真人样本尚未交付用于分析。模板、CI fixture和合成对照均不当作真实反馈。
 
-Windows原生导入、重复报告/不足10提示、存储隔离、清空重载与最终EXE下载验证进行中。流程与阈值边界见 [多报告审查](MULTI_REPORT_REVIEW_V0113.md)。
+[Windows构建42350585330](https://github.com/GHZlove/number-extraction-/actions/runs/42350585330)通过，发布为[v0.11.3-desktop.18](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18)。Windows上355项测试通过，未打包首启、重启与最终portable三次实际执行均通过。重复选择两份CI导出只计入一份、一条结束记录，仍显示样本不足10；导入前后游戏与日志存储字节一致，清空及重载不保留临时分析。既有布局、战斗、仓库和日志导出验证保留。CLI新建及替换独立报告均通过，Windows文件使用非截断读写句柄并先验证身份，原报告的路径、junction和硬链接防覆盖检查通过。
+
+EXE实际下载110,437,272字节，MZ/PE与发布SHA256一致：`59c1a282a6e7e1c58f6d53d6f752bdea31edbe5e9cab65620e930b51ad8de672`。源码 `694e3bd7b1e082284ab70e05e10793f3437fc777`。已查看实际发布截图；固定CI记录不是真人反馈。流程与阈值边界见 [多报告审查](MULTI_REPORT_REVIEW_V0113.md)及[发布核验](evidence/v0113-release-verification.json)。
 
 ## 当前待人工试玩
 

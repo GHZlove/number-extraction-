@@ -10,16 +10,16 @@ Number Extraction is a game development portfolio project built with **vanilla J
 
 | At a glance | |
 | --- | --- |
-| Current version | v0.11.3 · multi-report review; Windows verification pending |
+| Current version | v0.11.3 · multi-report playtest review |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
 | Core systems | Number merging, mutators, heat and hunters, conditional extraction, combat and persistent shelter |
 | Content | 20 weapons, 12 enchantments, 12 enemy types, 9 bosses, 4 map families, 5 difficulties |
-| Verification | 355 automated tests; v0.11.3 native Windows verification pending |
+| Verification | 355 automated tests; native Windows startup, restart and portable checks |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
 
 The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
-**v0.11.3 build pending; previous verified release:** **[Download v0.11.2 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16). Run in a standalone window without Python or a separate browser. See [v0.11.1 tuning and compatibility](docs/BALANCE_V0111.md). Close an older running copy before opening the new EXE.
+**[Download v0.11.3 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe)** · [Release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18). Run in a standalone window without Python or a separate browser. See [v0.11.1 tuning and compatibility](docs/BALANCE_V0111.md). Close an older running copy before opening the new EXE.
 
 The web/source version is available on the `feature/bright-arsenal-v09` playtest branch: [download the current playtest web/source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip). The default branch and hosted demo follow separate release schedules.
 
@@ -41,19 +41,21 @@ v0.9.2 added automatic recycling of lower-number enemy remnants and an unlimited
 
 The v0.9.1 fix for homepage numeral overflow is retained: it sizes text against each tile and reduces type for longer numbers. Native layout checks cover wide and narrow windows and 125%/150% zoom.
 
-Previous verified v0.11.2 captures (v0.11.3 captures pending):
+Verified v0.11.3 native Windows captures:
 
-![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-shelter-wide.png)
+![White shelter and raised number tiles](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-shelter-wide.png)
 
-![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-raid.png)
+![Colourful combat map and number actors](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-raid.png)
 
-[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-inventory.png).
+[View the unlimited resource pouch and equipment inventory](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-inventory.png).
 
-[View the persistent warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-warehouse.png) · [View the nine-boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-bosses.png).
+[View the persistent warehouse](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-warehouse.png) · [View the nine-boss codex](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-bosses.png).
 
-[View run modifiers](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-rules.png) · [View paused extraction intelligence](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-exits.png).
+[View run modifiers](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-rules.png) · [View paused extraction intelligence](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-exits.png).
 
-[View the local playtest journal](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/portable-playtest.png). This CI capture uses an isolated fixed test fixture, not human playtest feedback.
+[View the local playtest journal](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-playtest.png). This CI capture uses an isolated fixed test fixture, not human playtest feedback.
+
+[View temporary multi-report review](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/portable-review.png). The repeated isolated CI export counts once and remains below the ten-run review gate; it is not a human batch.
 
 ## Design idea
 
@@ -207,7 +209,7 @@ Safehouse circles block incoming damage, provide one treatment per location and 
 
 The project demonstrates gameplay system design, state management, collision geometry, procedural generation, performance-aware world queries, save migration and regression testing.
 
-The 27 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field, horde/heat directors and run rules, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
+The 29 game ES modules and four desktop CommonJS files separate deterministic simulation, polygon geometry, equipment, shelter progression, seeded world generation and landmark layouts, spatial obstacle/terrain queries, a local navigation field, horde/heat directors and run rules, browser input, rendering, UI, inline SVG art, persistence, audio and application flow.
 
 - `Raid` has no DOM or local-storage dependencies and can be tested directly in Node.js.
 - Simulation advances at a fixed 1/60 second step. Catch-up time is capped at 0.1 seconds; sustained low frame rates can still slow simulation time.
@@ -224,7 +226,7 @@ npm run check
 npm test
 ```
 
-No `npm install` is required for these checks. **355 tests pass**, including 36 new analysis/CLI, desktop import and application-review cases. v0.11.3 native Windows verification is pending; prior journal, gameplay and persistence checks are retained. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 27 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
+No `npm install` is required for these checks. **355 tests pass**, including 36 new analysis/CLI, desktop import and application-review cases. Native Windows startup, restart and final portable execution pass, including temporary report import, duplicate handling and unchanged journal/progress storage. The new run-depth suite exercises production run rules; historical balance regressions use a test-only classic-rule fixture. Syntax/reference checks now cover 29 game modules and four desktop files. Current results and native desktop evidence belong in [testing notes](docs/TESTING.md).
 
 Coverage includes damage, equipment, map bounds, exit reachability, spatial queries, shelter progression, save migration, enemy behaviour, spawn budgets and crowd steering. New checks cover all map families, resource guard distribution, forging and migration, bounded enchantments, directional parry/reflection, safehouse protections, boss phases/rewards, merchant debits and real application control flow. DOM/Canvas and Web Audio checks use Node.js doubles; they do not establish actual layout, native browser behaviour, sound quality or device performance. See [testing notes](docs/TESTING.md).
 

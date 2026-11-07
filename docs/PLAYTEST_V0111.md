@@ -4,7 +4,7 @@ This is a short tuning pass before Phase 2 (v0.12). The v0.11.2 local journal an
 
 **Evidence status:** no exported human JSON batch has been supplied for this review, so counts and outcomes have not been analysed. No outside volunteer has been contacted or confirmed by this workflow. The sessions and 2–4 day window below remain a plan, not a completed study. Automated simulations, regression tests and native startup checks are separate evidence; they do not establish player comfort, fairness or win rates.
 
-- Current batch-review build: **[REPLACE: verified v0.11.3 Windows release URL]**.
+- Current batch-review build: **[v0.11.3 Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) · [release and checks](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18)**.
 - Prior verified logging build: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.2-desktop.16/NumberExtraction-0.11.2-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.2-desktop.16).
 - Prior verified tuning candidate: **[Windows x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.1-desktop.15/NumberExtraction-0.11.1-Windows-x64.exe)** · [release, screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.1-desktop.15).
 - Next collection batch: [anonymous A/B/C assignments, invitation copy and patch protocol](PLAYTEST_BATCH_01.md).

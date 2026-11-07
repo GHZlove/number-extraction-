@@ -1,0 +1,114 @@
+{
+  "tag": "v0.11.3-desktop.18",
+  "bytes": 110437272,
+  "sha256": "59c1a282a6e7e1c58f6d53d6f752bdea31edbe5e9cab65620e930b51ad8de672",
+  "exeUrl": "https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe",
+  "runId": 42350585330,
+  "runUrl": "https://github.com/GHZlove/number-extraction-/actions/runs/42350585330",
+  "sha": "694e3bd7b1e082284ab70e05e10793f3437fc777",
+  "downloads": [
+    {
+      "name": "NumberExtraction-0.11.3-Windows-x64.exe",
+      "bytes": 110437272
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 107
+    },
+    {
+      "name": "portable-review.png",
+      "bytes": 69700
+    },
+    {
+      "name": "portable-playtest.png",
+      "bytes": 55703
+    },
+    {
+      "name": "portable-shelter-wide.png",
+      "bytes": 295702
+    },
+    {
+      "name": "portable-raid.png",
+      "bytes": 183809
+    },
+    {
+      "name": "portable-exits.png",
+      "bytes": 111042
+    }
+  ],
+  "nativeRuns": [
+    {
+      "mode": "write",
+      "ok": true,
+      "layoutChecks": 7,
+      "review": {
+        "visible": true,
+        "finished": 1,
+        "reports": 2,
+        "duplicates": 1,
+        "ready": false,
+        "storageIsolated": true,
+        "cleared": true,
+        "restartEmpty": true,
+        "fixture": "isolated CI report, not human data"
+      },
+      "anonymousExport": {
+        "ok": true,
+        "records": 1,
+        "privateIds": false
+      }
+    },
+    {
+      "mode": "verify",
+      "ok": true,
+      "layoutChecks": 7,
+      "review": {
+        "visible": true,
+        "finished": 1,
+        "reports": 2,
+        "duplicates": 1,
+        "ready": false,
+        "storageIsolated": true,
+        "cleared": true,
+        "restartEmpty": true,
+        "fixture": "isolated CI report, not human data"
+      },
+      "anonymousExport": {
+        "ok": true,
+        "records": 2,
+        "privateIds": false
+      }
+    },
+    {
+      "mode": "verify",
+      "ok": true,
+      "layoutChecks": 7,
+      "review": {
+        "visible": true,
+        "finished": 1,
+        "reports": 2,
+        "duplicates": 1,
+        "ready": false,
+        "storageIsolated": true,
+        "cleared": true,
+        "restartEmpty": true,
+        "fixture": "isolated CI report, not human data"
+      },
+      "anonymousExport": {
+        "ok": true,
+        "records": 3,
+        "privateIds": false
+      }
+    }
+  ],
+  "automatedTests": {
+    "total": 355,
+    "passed": 355,
+    "failed": 0
+  },
+  "downloadChecks": {
+    "matchesPublishedSHA256": true,
+    "MZ": true,
+    "PE": true
+  }
+}
