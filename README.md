@@ -8,7 +8,16 @@ Start as the number **1** in a procedurally generated combat zone. Merge equal n
 
 Number Extraction is a game development portfolio project built with **vanilla JavaScript and HTML5 Canvas**. It explores how a simple numerical rule can support combat, exploration and persistent progression, with a modular simulation and automated verification.
 
-| At a glance | |
+## Choose a version
+
+| Version | Where to start |
+| --- | --- |
+| Browser prototype v0.3.0 (`main`) | [Run locally](#run-locally) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md) |
+| Windows x64 preview v0.11.3 | [Release notes, download and screenshots](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) |
+
+The gameplay details and test counts below describe the browser prototype on `main`. The hosted browser demo has restricted access.
+
+| Browser prototype at a glance | |
 | --- | --- |
 | Current version | v0.3.0 · playable single-player prototype |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage |
@@ -16,8 +25,6 @@ Number Extraction is a game development portfolio project built with **vanilla J
 | Content | Eight weapon types, six quality tiers, six enemy attack patterns, five difficulties |
 | Verification | 74 automated tests and syntax/reference checks for 14 modules |
 | Game interface | Simplified Chinese; English and Chinese project documentation |
-
-The hosted demo currently has restricted access. The complete game runs locally using the instructions below.
 
 [简体中文](README.zh-CN.md) · [v0.3 shelter and expeditions](docs/SHELTER_V03.md) · [Combat rules](docs/COMBAT_V02.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
