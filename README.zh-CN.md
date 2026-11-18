@@ -1,6 +1,6 @@
 # 数字进化 · Number Extraction
 
-> **v0.12.0 网页试玩版**加入原创地形与流动河水、果冻数字、20 类武器图标、等级碰撞和四项数字技能。[下载源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [新技能与启动方法](docs/NUMBER_SKILLS_V012.md)。下方 v0.11.3 EXE 为上一版。
+> **v0.12.1 网页试玩版**采用平涂科幻卡通的新美术：描边数字方块、动态河水、岩地、草地、冰面、异星掩体与 20 种武器图标。 [下载源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [新技能与启动方法](docs/NUMBER_SKILLS_V012.md)。下方 v0.11.3 EXE 为上一版。
 
 **合成成长，搭配装备，决定何时带着收获撤离。**
 

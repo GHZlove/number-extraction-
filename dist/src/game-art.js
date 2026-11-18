@@ -1,4 +1,5 @@
 const TILE_SHEET = new URL('../art/number-tiles.png', import.meta.url).href;
+const SCENERY_SHEET = new URL('../art/scenery.png', import.meta.url).href;
 const TERRAIN_SHEET = new URL('../art/terrain.png', import.meta.url).href;
 const WEAPON_SHEETS = [
   new URL('../art/weapons.png', import.meta.url).href,
@@ -94,6 +95,44 @@ function terrainPattern(ctx, index) {
   return pattern;
 }
 
+const scenery = { container: 0, warehouse: 0, barricade: 1, rock: 2, ridge: 2, ruin: 3, tree: 4, fern: 5, hatch: 6, gravel: 7 };
+
+export function drawScenery(ctx, kind, x, y, width, height) {
+  if (!Object.hasOwn(scenery, kind)) return false;
+  const image = load(SCENERY_SHEET);
+  if (!image) return false;
+  const cell = scenery[kind], side = 104;
+  const vertical = height > width * 1.35;
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2);
+  if (vertical) ctx.rotate(Math.PI / 2);
+  const w = vertical ? height : width, h = vertical ? width : height;
+  ctx.drawImage(image, (cell % 4) * side, Math.floor(cell / 4) * side, side, side, -w / 2, -h / 2, w, h);
+  ctx.restore();
+  return true;
+}
+
+export function terrainPath(ctx, patch) {
+  const { x, y, w, h, kind } = patch;
+  ctx.beginPath();
+  if (kind === 'bridge' || kind === 'road') {
+    ctx.roundRect(x, y, w, h, 3);
+    return;
+  }
+  const cut = Math.min(13, w * .16, h * .16);
+  const points = [
+    [cut, 0], [w * .27, cut * .18], [w * .52, 0], [w * .73, cut * .22], [w - cut, cut * .1],
+    [w, cut], [w - cut * .18, h * .59], [w, h - cut], [w - cut * .93, h],
+    [w * .72, h - cut * .15], [w * .46, h], [w * .24, h - cut * .24], [cut, h],
+    [0, h - cut * .9], [cut * .16, h * .46], [0, cut]
+  ];
+  for (const [i, [dx, dy]] of points.entries()) {
+    if (i === 0) ctx.moveTo(x + dx, y + dy);
+    else ctx.lineTo(x + dx, y + dy);
+  }
+  ctx.lineTo(x + points[0][0], y + points[0][1]);
+}
+
 export function drawTerrainTexture(ctx, patch, time, reducedMotion) {
   const index = terrainIndex[patch.kind];
   if (index === undefined || typeof document === 'undefined' || typeof document.createElement !== 'function') return;
@@ -102,12 +141,11 @@ export function drawTerrainTexture(ctx, patch, time, reducedMotion) {
 
   const { x, y, w, h } = patch;
   const water = patch.kind === 'water', vertical = h > w && water;
-  const shift = water && !reducedMotion ? time * 32 % 288 : 0;
+  const shift = water && !reducedMotion ? time * 23 % 288 : 0;
   ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, Math.min(25, w / 2, h / 2));
+  terrainPath(ctx, patch);
   ctx.clip();
-  ctx.globalAlpha = water ? .62 : .42;
+  ctx.globalAlpha = water ? .9 : .63;
   ctx.translate(x, y);
   if (vertical) ctx.rotate(Math.PI / 2);
   ctx.translate(shift, 0);
@@ -115,4 +153,5 @@ export function drawTerrainTexture(ctx, patch, time, reducedMotion) {
   if (vertical) ctx.fillRect(-shift, -w, h, w);
   else ctx.fillRect(-shift, 0, w, h);
   ctx.restore();
+  return true;
 }

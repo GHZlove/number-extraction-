@@ -87,7 +87,7 @@ export function createSectors(bounds,random,protectedPoints=[],layout='tangram')
   const high=remaining.length>=4?2:1,medium=remaining.length>=4?2:Math.max(0,remaining.length-high);
   const risks=[...Array(high).fill(2),...Array(medium).fill(1),...Array(Math.max(0,remaining.length-high-medium)).fill(0)];
   for(let i=risks.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[risks[i],risks[j]]=[risks[j],risks[i]];}
-  const tones=[['#c2edda','#cceac4','#bde8ee','#cbd8f2'],['#f6e0ad','#f6d0a4','#ebdcbd','#dbe5bb'],['#e6c4ef','#f4c4dc','#d1c8ee','#f0c9c0']];let index=0;
+  const tones=[['#b6c5b4','#bcc8a8','#acc4be','#b4bfd0'],['#d6c59f','#d7b79b','#cdbf9f','#c0c4a1'],['#c9afc8','#d1aebb','#b7b0cb','#cfb5aa']];let index=0;
   for(const sector of sectors){
     const risk=safe.has(sector.id)?0:risks[index++],definition=ZONES[risk];
     Object.assign(sector,{risk,riskLabel:definition.riskLabel,color:definition.color,reward:definition.reward,values:definition.values,

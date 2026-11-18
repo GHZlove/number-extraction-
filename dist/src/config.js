@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.12.0';
+export const VERSION = '0.12.1';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
   {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
@@ -67,21 +67,20 @@ export const V10_SAVE_KEY = 'number-extraction-v10';
 export const SAVE_KEY = 'number-extraction-v11';
 
 export const TERRAIN = Object.freeze({
-  water: { name: '浅水', speed: 0.58, color: '#50bed5', line: '#d3fbff', priority: 1 },
-  mud: { name: '泥地', speed: 0.72, color: '#9d74ad', line: '#e8b9ef', priority: 1 },
-  rubble: { name: '碎石', speed: 0.82, color: '#899db3', line: '#dfe5ff', priority: 1 },
-  brush: { name: '灌木掩护', speed: 0.9, color: '#4ebd80', line: '#c0ff77', priority: 1, concealment: 0.6 },
-  ice: { name: '冰原', speed: 1.18, color: '#9addec', line: '#effdff', priority: 1 },
-  road: { name: '公路', speed: 1.12, color: '#596384', line: '#fff181', priority: 0 },
-  bridge: { name: '桥面', speed: 1.12, color: '#e8a05c', line: '#ffedb8', priority: 10 },
+  water: { name: '浅水', speed: 0.58, color: '#477e88', line: '#b6d7ce', priority: 1 },
+  mud: { name: '泥地', speed: 0.72, color: '#9a806d', line: '#d7b791', priority: 1 },
+  rubble: { name: '碎石', speed: 0.82, color: '#958a7b', line: '#ded3b1', priority: 1 },
+  brush: { name: '灌木掩护', speed: 0.9, color: '#788866', line: '#bdc88d', priority: 1, concealment: 0.6 },
+  ice: { name: '冰原', speed: 1.18, color: '#9296b2', line: '#d7d6e5', priority: 1 },
+  road: { name: '公路', speed: 1.12, color: '#6d697a', line: '#d5c387', priority: 0 },
+  bridge: { name: '桥面', speed: 1.12, color: '#a87857', line: '#e3c892', priority: 10 },
 });
 
 // Presentation-only palette. Paint never changes collision, damage or progression.
 export const PAINT = Object.freeze({
-  ink:'#221a3a', paper:'#fffbee', cyan:'#12ded4', pink:'#ff42a2', lime:'#bdff36',
-  yellow:'#ffe64d', purple:'#ac7aff', orange:'#ff944b',
-  ground:['#d5e4dc','#e5dfcd','#e1d9ec'],
-  stains:['#fc52ad','#11d9d0','#b4ee2d','#8d6bf6','#ffac4b'],
+  ink:'#24212d', paper:'#fff6de', cyan:'#6be2cd', pink:'#ef5a89', lime:'#c9eb72',
+  yellow:'#f3d582', purple:'#a799d6', orange:'#f6a46e',
+  ground:['#bccaba','#d7c5a7','#c6b2ca'],
 });
 
 export const PRESSURE = Object.freeze({

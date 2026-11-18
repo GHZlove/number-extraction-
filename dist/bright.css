@@ -17,9 +17,9 @@ body { background:#f7f9fc; }
 .shelter-screen .hero-footer { background:#eef5fa;border-color:#d6e2ec; }.shelter-screen .hero-footer b { color:#27374f; }.shelter-screen .hero-footer span { color:#6f8194; }
 .shelter-screen .hero-stage i { background:#d3dfeb; }.shelter-screen .hero-stage i.on { background:#49bbac; }
 .number-preview { display:grid;grid-template-columns:repeat(4,1fr);gap:13px;max-width:420px;padding:7px;margin:25px auto 28px; }
-.preview-number { container-type:inline-size;aspect-ratio:1;display:grid;place-items:center;min-width:0;border-radius:17px;border:1px solid #1e2e4740;background:linear-gradient(150deg,color-mix(in srgb,var(--number-face) 82%,white),var(--number-face) 35%);box-shadow:inset 0 3px 4px #ffffff50,inset 0 -7px 0 color-mix(in srgb,var(--number-face) 68%,black),0 8px 11px #20345230; }
+.preview-number { container-type:inline-size;aspect-ratio:1;display:grid;place-items:center;min-width:0;border-radius:11px;background-color:transparent;box-shadow:0 3px 0 #28263124; }
 /* Scale against this tile, not the viewport; longer numbers need smaller type. */
-.preview-number strong { color:#fff;font-family:Arial,sans-serif;font-size:56cqi;font-weight:900;line-height:1;letter-spacing:0;white-space:nowrap;text-shadow:0 3px 3px #17263b95; }
+.preview-number strong { color:#fff6de;font-family:"Trebuchet MS",Arial,sans-serif;font-size:56cqi;font-weight:900;line-height:1;letter-spacing:0;white-space:nowrap;paint-order:stroke fill;-webkit-text-stroke:1.1px #24212d;text-shadow:1px 1px #24212d; }
 .preview-number[data-digits="3"] strong { font-size:40cqi; }
 .preview-number[data-digits="4"] strong { font-size:31cqi; }
 .shelter-screen .facility-card,.shelter-screen .expedition-panel,.shelter-screen .forge-panel { background:#fff;border:1px solid #d7e0e9;box-shadow:0 5px 18px #2447680a;color:#26354b; }
@@ -127,3 +127,25 @@ body { background:#f7f9fc; }
 @media(max-width:1140px){.number-skillbar{bottom:112px;right:12px}.number-skill{min-width:58px;padding:5px}}
 @media(pointer:coarse){.number-skillbar{bottom:177px;right:12px}.number-skill span{display:none}.number-skill{min-height:40px;min-width:42px}}
 @media(max-width:650px){.number-skillbar{right:8px}.number-skill{min-width:40px}.number-skill span{display:none}}
+
+/* Flat ink panels match the raid art and keep status text legible. */
+.raid-screen .mission-chip,
+.raid-screen .raid-timer,
+.raid-screen .player-readout,
+.raid-screen .energy-readout,
+.raid-screen .quick-loadout,
+.raid-screen .supply-strip,
+.raid-screen .mini-wrap,
+.raid-screen .number-skillbar {
+  background:#2e2a3e;
+  border:2px solid #1e1a29;
+  box-shadow:3px 3px 0 #24212d50;
+  border-radius:7px;
+  backdrop-filter:none;
+}
+.raid-screen .quick-weapon,
+.raid-screen .number-skill {
+  background:#40394f;
+  border-radius:5px;
+}
+.raid-screen .quick-weapon.active { background:#49524d; }

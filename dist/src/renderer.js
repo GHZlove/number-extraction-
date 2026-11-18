@@ -1,4 +1,4 @@
-import { drawTerrainTexture, drawWeaponSprite } from './game-art.js';
+import { drawScenery, terrainPath, drawTerrainTexture, drawWeaponSprite } from './game-art.js';
 import { impactScale } from './impact-motion.js';
 import { exitKindName } from './run-rules.js';
 import { RULES, WORLD, ZONES, ENEMY_TYPES, TERRAIN, PAINT } from './config.js';
@@ -63,24 +63,16 @@ export class Renderer {
     c.save();c.translate(this.width/2+(this.reduced?0:Math.sin(time*90)*this.shake),this.height/2+(this.reduced?0:Math.cos(time*113)*this.shake*.55));c.scale(this.scale,this.scale);c.translate(-this.camera.x,-this.camera.y);
     const left=this.camera.x-halfW,top=this.camera.y-halfH,right=left+2*halfW,bottom=top+2*halfH;
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
+    this.drawGroundDetails(w,{left,top,right,bottom});
     this.drawTerrain(w,time);
     this.simulationTime=raid.elapsed;
-    this.drawPaint(w,{left,top,right,bottom});
     for(const cloud of w.hazards||[])if(this.visible(cloud.x,cloud.y,cloud.radius+30)){
       if(cloud.bossZone||cloud.runHazard){this.drawBossZone(cloud);continue;}
       c.fillStyle=cloud.owner==='player'?'#a8f43255':'#a849cf66';c.strokeStyle=cloud.owner==='player'?'#4c8c20':'#9d2eaa';c.lineWidth=2;
       c.beginPath();c.arc(cloud.x,cloud.y,cloud.radius,0,TAU);c.fill();c.stroke();
       this.text(cloud.owner==='player'?'附魔毒雾':'危险毒雾',cloud.x,cloud.y+5,11,PAINT.ink,'800');
     }
-    // A surveying grid and hand-placed route make the map readable at a glance.
-    c.lineWidth=1;
-    for(let x=Math.floor(left/48)*48;x<right;x+=48){c.strokeStyle=x%240===0?'#30244d18':'#30244d08';c.beginPath();c.moveTo(x,Math.max(0,top));c.lineTo(x,Math.min(this.bounds.height,bottom));c.stroke();}
-    for(let y=Math.floor(top/48)*48;y<bottom;y+=48){c.strokeStyle=y%240===0?'#30244d18':'#30244d08';c.beginPath();c.moveTo(Math.max(0,left),y);c.lineTo(Math.min(this.bounds.width,right),y);c.stroke();}
-    for(let i=0;i<170;i++) {
-      const x=(i*397+87)%this.bounds.width,y=(i*263+133)%this.bounds.height;if(!this.visible(x,y,20))continue;
-      c.fillStyle=['#12b99c44','#b98d1744','#a365c444'][zoneAt({x,y},this.zones).risk];c.fillRect(x,y,3+(i%5)*3,2);c.fillRect(x+4,y+9,2,6);
-      if(i%3===0){c.strokeStyle='#624f9c28';c.beginPath();c.arc(x,y,9,0,TAU);c.stroke();}
-    }
+    // Sector borders remain visible without a screen-wide grid.
     c.setLineDash([14,9]);c.lineWidth=2;
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.strokeStyle=zone.color+'99';c.stroke();}
     c.setLineDash([]);c.strokeStyle=PAINT.ink+'77';c.lineWidth=2;c.strokeRect(12,12,this.bounds.width-24,this.bounds.height-24);
@@ -160,30 +152,54 @@ export class Renderer {
       fog.addColorStop(0,'#09131a00');fog.addColorStop(1,'#09131aff');c.fillStyle=fog;c.fillRect(left,top,right-left,bottom-top);
     }
     c.restore();
-    // Slight edge shading preserves HUD readability without dimming the play space.
-    const edge=c.createLinearGradient(0,0,0,this.height);edge.addColorStop(0,'#21153833');edge.addColorStop(.25,'#00000000');edge.addColorStop(.75,'#00000000');edge.addColorStop(1,'#21153822');c.fillStyle=edge;c.fillRect(0,0,this.width,this.height);
     if(raid.carriedValue()>0)this.drawExitArrow(raid);
     if(time-this.lastMapDraw>0.15){this.drawMap(raid);this.lastMapDraw=time;}
   }
   inkSplat(x,y,r,color,angle=0,alpha=1){
-    const c=this.ctx;c.save();c.translate(x,y);c.rotate(angle);c.fillStyle=color;c.globalAlpha=alpha;
-    c.beginPath();c.arc(0,0,r*.65,0,TAU);c.fill();
-    for(let i=0;i<6;i++){
-      const a=i*TAU/6,d=r*(i%2?.7:.48);c.beginPath();c.arc(Math.cos(a)*d,Math.sin(a)*d,r*(i%2?.2:.36),0,TAU);c.fill();
+    const c=this.ctx;
+    c.save();
+    c.translate(x,y);
+    c.rotate(angle);
+    c.globalAlpha=alpha;
+    c.fillStyle=color;
+    c.strokeStyle=PAINT.ink;
+    c.lineWidth=1.5;
+    c.beginPath();
+    for(let i=0;i<=14;i++){
+      const a=i*TAU/14;
+      const radius=r*(i%2 ? .42 : .76+(i%3)*.12);
+      const px=Math.cos(a)*radius,py=Math.sin(a)*radius;
+      if(i===0)c.moveTo(px,py);else c.lineTo(px,py);
     }
-    for(const[dx,dy,size]of[[1.05,-.4,.12],[-.8,.9,.16],[.45,1.1,.09]]){c.beginPath();c.arc(dx*r,dy*r,size*r,0,TAU);c.fill();}
+    c.fill();
+    c.stroke();
     c.restore();
   }
-  drawPaint(world,view){
-    // Stateless hashes decorate visible cells without consuming the game's RNG.
-    const cell=350;
-    for(let gx=Math.floor(view.left/cell)-1;gx<=Math.floor(view.right/cell)+1;gx++){
-      for(let gy=Math.floor(view.top/cell)-1;gy<=Math.floor(view.bottom/cell)+1;gy++){
-        if(gx<0||gy<0||gx*cell>this.bounds.width||gy*cell>this.bounds.height)continue;
+  drawGroundDetails(world,view){
+    const c=this.ctx,cell=300;
+    // Deterministic scattered shapes follow the map seed without consuming combat RNG.
+    for(let gx=Math.max(0,Math.floor(view.left/cell)-1);gx<=Math.floor(view.right/cell)+1;gx++){
+      for(let gy=Math.max(0,Math.floor(view.top/cell)-1);gy<=Math.floor(view.bottom/cell)+1;gy++){
         const hash=(Math.imul(gx+17,73856093)^Math.imul(gy+31,19349663)^world.seed)>>>0;
-        if(hash%4===0)continue;
-        const x=gx*cell+70+hash%190,y=gy*cell+70+(hash>>>8)%190;
-        this.inkSplat(x,y,30+(hash>>>16)%60,PAINT.stains[hash%PAINT.stains.length],hash%628/100,.3);
+        const x=gx*cell+40+hash%215,y=gy*cell+40+(hash>>>8)%215;
+        if(x>this.bounds.width||y>this.bounds.height||!this.visible(x,y,64))continue;
+        const risk=zoneAt({x,y},this.zones).risk;
+        c.fillStyle=['#82958643','#a1937443','#9b7b9743'][risk];
+        c.beginPath();
+        c.moveTo(x-65,y+6);
+        c.lineTo(x-41,y-19);
+        c.lineTo(x-9,y-22);
+        c.lineTo(x+19,y-12);
+        c.lineTo(x+56,y-17);
+        c.lineTo(x+33,y+14);
+        c.lineTo(x-22,y+28);
+        c.lineTo(x-65,y+6);
+        c.fill();
+        c.save();
+        c.globalAlpha=.5;
+        const kind=['gravel','fern','tree'][hash%3];
+        drawScenery(c,kind,x+17,y-8,kind==='tree'?36:43,31);
+        c.restore();
       }
     }
   }
@@ -193,19 +209,38 @@ export class Renderer {
     const patches=terrainFor(world,a,b).filter(p=>this.rectVisible(p)).sort((a,b)=>(TERRAIN[a.kind]?.priority||0)-(TERRAIN[b.kind]?.priority||0));
     for(const patch of patches){
       const info=TERRAIN[patch.kind]||TERRAIN.mud,water=patch.kind==='water',bridge=patch.kind==='bridge',road=patch.kind==='road';
-      this.rect(patch.x,patch.y,patch.w,patch.h,bridge||road?4:25,info.color+(bridge?'ee':road?'66':'88'),PAINT.ink+'44');
-      drawTerrainTexture(c,patch,time,this.reduced);
-      c.strokeStyle=info.line+'66';c.lineWidth=1;
+      terrainPath(c,patch);
+      c.fillStyle=info.color+(bridge||road?'':'d6');
+      c.fill();
+      const illustrated=drawTerrainTexture(c,patch,time,this.reduced);
+      terrainPath(c,patch);
+      c.strokeStyle=water?'#244955':PAINT.ink+'73';
+      c.lineWidth=water?2.4:1.2;
+      c.lineJoin='round';
+      c.stroke();
+      c.strokeStyle=info.line+'99';
+      c.lineWidth=1;
       if(bridge){
-        for(let x=Math.max(patch.x,Math.floor(a.x/22)*22);x<Math.min(patch.x+patch.w,b.x);x+=22){c.beginPath();c.moveTo(x,patch.y+4);c.lineTo(x,patch.y+patch.h-4);c.stroke();}
-        c.lineWidth=4;c.strokeRect(patch.x,patch.y,patch.w,patch.h);
+        const horizontal=patch.w>=patch.h;
+        const from=horizontal?Math.max(patch.x,Math.floor(a.x/22)*22):Math.max(patch.y,Math.floor(a.y/22)*22);
+        const to=horizontal?Math.min(patch.x+patch.w,b.x):Math.min(patch.y+patch.h,b.y);
+        for(let n=from;n<to;n+=22){
+          c.beginPath();
+          if(horizontal){c.moveTo(n,patch.y+4);c.lineTo(n,patch.y+patch.h-4);}
+          else{c.moveTo(patch.x+4,n);c.lineTo(patch.x+patch.w-4,n);}
+          c.stroke();
+        }
       }else if(road){
-        c.setLineDash([16,28]);c.beginPath();
-        if(patch.w>patch.h){c.moveTo(patch.x,patch.y+patch.h/2);c.lineTo(patch.x+patch.w,patch.y+patch.h/2);}else{c.moveTo(patch.x+patch.w/2,patch.y);c.lineTo(patch.x+patch.w/2,patch.y+patch.h);}c.stroke();c.setLineDash([]);
-      }else if(patch.kind==='brush'){
-        for(let i=0;i<12;i++){const x=patch.x+18+(i*47)%(patch.w-30),y=patch.y+20+(i*31)%(patch.h-35);c.beginPath();c.arc(x,y,12+i%3*4,0,TAU);c.stroke();}
-      }else{
-        for(let i=1;i<5;i++){const offset=water&&!this.reduced?Math.sin(time*.7+i)*3:0;c.beginPath();c.moveTo(patch.x+15,patch.y+patch.h*i/5+offset);c.lineTo(patch.x+patch.w-20,patch.y+patch.h*i/5+offset+(patch.kind==='ice'?30:0));c.stroke();}
+        c.setLineDash([18,25]);c.beginPath();
+        if(patch.w>patch.h){c.moveTo(patch.x,patch.y+patch.h/2);c.lineTo(patch.x+patch.w,patch.y+patch.h/2);}
+        else{c.moveTo(patch.x+patch.w/2,patch.y);c.lineTo(patch.x+patch.w/2,patch.y+patch.h);}
+        c.stroke();c.setLineDash([]);
+      }else if(water&&!illustrated){
+        // Keep a simple current visible before the atlas has loaded.
+        for(let i=1;i<4;i++){
+          const y=patch.y+patch.h*i/4+(this.reduced?0:Math.sin(time+i)*3);
+          c.beginPath();c.moveTo(patch.x+8,y);c.lineTo(patch.x+patch.w*.43,y-2);c.lineTo(patch.x+patch.w-8,y+1);c.stroke();
+        }
       }
       if(this.visible(patch.x+patch.w/2,patch.y+patch.h/2,30)&&!road)this.text(info.name+(info.speed<1?' · 减速':info.speed>1?' · 加速':''),patch.x+patch.w/2,patch.y+patch.h/2,10,PAINT.ink+'dd','400','center','sans-serif');
     }
@@ -230,21 +265,50 @@ export class Renderer {
     c.restore();
   }
   drawObstacle(o) {
-    const c=this.ctx,zone=zoneAt({x:o.x+o.w/2,y:o.y+o.h/2},this.zones).risk;
-    if(o.material==='tree'){
-      this.rect(o.x+10,o.y+7,13,30,3,'#884f6b');c.fillStyle='#73d78c';c.strokeStyle=PAINT.ink;c.beginPath();c.arc(o.x+17,o.y+8,29,0,TAU);c.fill();c.stroke();return;
+    const c=this.ctx;
+    const rock=o.material==='rock'||o.material==='ridge';
+    const tree=o.material==='tree';
+    const fill=rock?'#9f8493':tree?'#8c9e63':o.material==='barricade'?'#aea194':'#957a87';
+    const cut=Math.min(9,o.w*.20,o.h*.20);
+    const outline=()=>{
+      c.beginPath();
+      c.moveTo(o.x+cut,o.y);
+      c.lineTo(o.x+o.w-cut,o.y+1);
+      c.lineTo(o.x+o.w,o.y+cut);
+      c.lineTo(o.x+o.w-1,o.y+o.h-cut);
+      c.lineTo(o.x+o.w-cut,o.y+o.h);
+      c.lineTo(o.x+cut,o.y+o.h-1);
+      c.lineTo(o.x,o.y+o.h-cut);
+      c.lineTo(o.x+1,o.y+cut);
+      c.lineTo(o.x+cut,o.y);
+    };
+    c.save();
+    c.translate(3,4);
+    outline();
+    c.fillStyle='#24212d42';
+    c.fill();
+    c.restore();
+    outline();
+    c.fillStyle=fill;
+    c.fill();
+    c.save();
+    c.clip();
+    const illustrated=Math.max(o.w/o.h,o.h/o.w)<6&&drawScenery(c,o.material,o.x,o.y,o.w,o.h);
+    c.restore();
+    outline();
+    c.strokeStyle=PAINT.ink;
+    c.lineWidth=2.3;
+    c.lineJoin='round';
+    c.stroke();
+    if(!illustrated){
+      c.strokeStyle='#f5e4c499';
+      c.lineWidth=1.5;
+      c.beginPath();
+      c.moveTo(o.x+cut,o.y+cut/2);
+      c.lineTo(o.x+o.w*.45,o.y+cut*.65);
+      c.lineTo(o.x+o.w-cut,o.y+cut*.42);
+      c.stroke();
     }
-    if(o.material==='ridge'||o.material==='rock'){
-      this.rect(o.x+4,o.y+7,o.w,o.h,18,'#060d1855');this.rect(o.x,o.y,o.w,o.h,15,o.material==='ridge'?'#9d93c4':'#8aafc1',PAINT.ink);
-      c.strokeStyle='#ffffff99';c.beginPath();c.moveTo(o.x+13,o.y+o.h*.3);c.lineTo(o.x+o.w*.6,o.y+13);c.lineTo(o.x+o.w-12,o.y+o.h*.6);c.stroke();return;
-    }
-    this.rect(o.x+5,o.y+8,o.w,o.h,7,'#05130d45');
-    this.rect(o.x,o.y,o.w,o.h,5,['#6ac9c6','#efb955','#bc89dc'][zone],PAINT.ink);
-    c.fillStyle=['#b8f7e8','#fff18a','#ffbfe7'][zone];c.fillRect(o.x+7,o.y+7,o.w-14,4);
-    c.strokeStyle='#0c20164d';c.beginPath();c.moveTo(o.x+o.w/2,o.y+15);c.lineTo(o.x+o.w/2,o.y+o.h-8);c.stroke();
-    for(const [x,y] of [[o.x+8,o.y+15],[o.x+o.w-9,o.y+15],[o.x+8,o.y+o.h-9],[o.x+o.w-9,o.y+o.h-9]]){c.fillStyle='#fffbea99';c.fillRect(x,y,2,2);}
-    if(o.material==='container'){for(let x=o.x+12;x<o.x+o.w-6;x+=14){c.strokeStyle='#34274688';c.beginPath();c.moveTo(x,o.y+10);c.lineTo(x,o.y+o.h-8);c.stroke();}}
-    if(o.w>90)this.text(o.material==='barricade'?'掩体':'B—'+Math.floor(o.x/50),o.x+10,o.y+o.h-12,8,'#31223dcc','400','left');
   }
   drawExit(e,raid,time) {
     const c=this.ctx,active=distance(e,raid.player)<e.radius,phase=this.reduced?0:time,ready=raid.extractionReady(e),bossLocked=!!e.bossId&&raid.world.enemies.some(b=>b.id===e.bossId&&!b.dead);
