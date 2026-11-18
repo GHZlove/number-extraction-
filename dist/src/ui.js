@@ -6,7 +6,8 @@ import { RUN_BALANCE, NUMBER_FORMS, exitRewardMultiplier, MUTATORS, normalizeMut
 import { warehouseCapacity, plannedWarehouseGear, applyWarehouseGear, hydrateEquipment, warehouseRepairCost } from './warehouse.js';
 import { BOSSES, BOSS_MOVES, bossPool } from './bosses.js';
 import { RULES, FACILITIES, DIFFICULTIES, LEGACY_WORLD, difficultyOf, VERSION, ENEMY_TYPES, MAP_LAYOUTS } from './config.js';
-import { tier, zoneAt } from './math.js';
+import { createSectors } from './regions.js';
+import { tier, zoneAt, seededRandom } from './math.js';
 import { activeWeapon, weaponOf, rarityOf, WEAPONS, ENCHANTS, RARITIES, isEquipment } from './equipment.js';
 import { facilityLevel, facilityCost, facilityBenefit, canUpgradeFacility, workshopGrade, starterLoadout, rewardMultiplier, shelterLevel, forgeCost, canForge } from './shelter.js';
 import { SHOP, tradeValue } from './commerce.js';
@@ -22,15 +23,47 @@ const costHTML = cost => `<span>${icon('data')}${number(cost.credits)}</span><sp
 
 const weaponArt = item => `<i class="inventory-weapon-art sprite-art" aria-hidden="true" style="${weaponBackground(item.weapon)}"></i>`;
 
+const routeDescription = Object.freeze({
+  random: '由终端抽取一个战区',
+  tangram: '拼片遗迹 · 斜线分区',
+  fracture: '扇形裂谷 · 放射布局',
+  blocks: '补给街区 · 方形街坊',
+  wilds: '多心荒原 · 不规则地形'
+});
+const routeColours = ['#456c65','#4f8171','#88a877','#b7c486','#957f9f','#657d9a'];
+const projectedRoutes = Object.fromEntries(MAP_LAYOUTS.map(({ id }, index) => {
+  if (id === 'random') return [id, '<span class="holo-random-art">?</span>'];
+  const pieces = createSectors({ width: 100, height: 100 }, seededRandom(18793 + index * 471), [], id);
+  const drawn = pieces.map(({ vertices }, piece) => {
+    const corners = vertices.map(({ x, y }) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(', ');
+    return `<i class="holo-sector" style="--sector-fill:${routeColours[piece % routeColours.length]};clip-path:polygon(${corners})"></i>`;
+  }).join('');
+  return [id, drawn];
+}));
+
 export class UI {
   constructor(actions) {
     this.actions = actions; this.toastUntil = 0;this.shelterTab='deploy';
     const dispatch = event => {
       const button = event.target.closest('[data-action]');
-      if (button && !button.disabled) actions[button.dataset.action]?.(button.dataset.key);
+      if (!button || button.disabled) return;
+      const { action, key } = button.dataset;
+      actions[action]?.(key);
+      if (action === 'selectMap' || action === 'selectDifficulty') {
+        $(button.id)?.focus({ preventScroll: true });
+      }
     };
     $('dialog').addEventListener('click',dispatch);
-    $('shelter-screen').addEventListener('click',dispatch);
+    const shelter = $('shelter-screen');
+    shelter.addEventListener('click',dispatch);
+    const previewTarget = event => {
+      const choice = event.target.closest('[data-action]');
+      if (choice?.dataset.action === 'selectMap') this.previewRoute(choice.dataset.key);
+    };
+    shelter.addEventListener('pointerover', event => {
+      if (event.pointerType !== 'touch') previewTarget(event);
+    });
+    shelter.addEventListener('focusin', previewTarget);
     $('shelter-screen').addEventListener('change',event=>{
       if(['selectWeapon','selectMap','selectEnchant','selectBoss'].includes(event.target.dataset.action)) actions[event.target.dataset.action]?.(event.target.value);
       if(event.target.dataset.action==='selectReviewCohort')actions.selectReviewCohort?.(event.target.value);
@@ -59,6 +92,51 @@ export class UI {
   tick() { if(performance.now()>this.toastUntil)$('message').classList.remove('visible'); }
   warning(available) { return available?'':'<p class="save-warning">当前浏览器无法持久保存。进度仅在本次会话中有效。</p>'; }
   numberPreview(){return `<div class="number-preview" aria-label="彩色数字方块预览">${[2,4,8,16,32,64,128,256,512,1024,2048,4096].map(value=>`<div class="preview-number" data-digits="${String(value).length}" style="--number-face:${NUMBER_COLORS[value]};${numberBackground(value)}"><strong>${value}</strong></div>`).join('')}</div>`;}
+  previewRoute(id) {
+    const route = MAP_LAYOUTS.find(layout => layout.id === id);
+    if (!route || this.shelterTab !== 'deploy') return;
+    const display = $('holo-route-projection');
+    const terminal = $('holo-terminal');
+    if (!display || !terminal || terminal.dataset.preview === id) return;
+    terminal.dataset.preview = id;
+    $('holo-route-name').textContent = route.name;
+    $('holo-route-description').textContent = routeDescription[id];
+    $('holo-route-mode').textContent = id === terminal.dataset.selected ? '已锁定' : '预览中';
+    display.innerHTML = projectedRoutes[id];
+  }
+  expeditionTerminal(active) {
+    return `<section class="holo-terminal" id="holo-terminal" aria-label="战区选择" data-selected="${active.id}" data-preview="${active.id}">
+      <div class="holo-header"><h3>战区投影</h3><span id="holo-route-mode">已锁定</span></div>
+      <div class="holo-screen">
+        <div class="holo-route-projection" id="holo-route-projection" aria-hidden="true">${projectedRoutes[active.id]}</div>
+        <div class="holo-screen-caption"><b id="holo-route-name">${active.name}</b><small id="holo-route-description">${routeDescription[active.id]}</small></div>
+      </div>
+      <div class="holo-route-list" role="group" aria-label="选择战区">${MAP_LAYOUTS.map(layout =>
+        `<button type="button" class="holo-choice" id="holo-map-${layout.id}" data-action="selectMap" data-key="${layout.id}" aria-pressed="${layout.id === active.id}">
+          <i class="holo-choice-mark" aria-hidden="true"></i><span>${layout.name}</span>
+        </button>`
+      ).join('')}</div>
+    </section>`;
+  }
+  bindExpeditionTerminal() {
+    const terminal = $('holo-terminal');
+    if (!terminal || this.shelterTab !== 'deploy') return;
+    terminal.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+      const rect = terminal.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      terminal.style.setProperty('--holo-x', `${Math.round((event.clientX - rect.left) / rect.width * 100)}%`);
+      terminal.style.setProperty('--holo-y', `${Math.round((event.clientY - rect.top) / rect.height * 100)}%`);
+      terminal.classList.add('pointer-engaged');
+    });
+    terminal.addEventListener('pointerleave', () => {
+      terminal.classList.remove('pointer-engaged');
+      this.previewRoute(terminal.dataset.selected);
+    });
+    terminal.addEventListener('focusout', event => {
+      if (!event.relatedTarget?.nodeType || !terminal.contains(event.relatedTarget)) this.previewRoute(terminal.dataset.selected);
+    });
+  }
   saveTransfer(save,pending){
     this.show(`<span class="eyebrow">SAVE / TRANSFER</span><h2 id="dialog-title">存档与迁移</h2><p>当前：${number(save.credits)} 数据币 · ${save.materials.alloy} 合金 · ${save.materials.core} 核心 · ${Object.keys(save.forged||{}).length} 件打造记录 · 仓库${save.warehouse.items.length}件 / 待收${save.warehouse.pending.length}件。</p><p>浏览器与桌面版各自保存进度。先在原版导出JSON，再在桌面版导入。未结束的战局不包含在存档中。</p><div class="dialog-actions"><button class="primary-button" data-action="exportSave">导出存档</button><button class="secondary-button" data-action="importSave">选择JSON导入</button></div>${pending?`<section class="save-preview"><b>待导入：${number(pending.credits)} 数据币 · ${pending.materials.alloy} 合金 · ${pending.materials.core} 核心</b><p>${Object.keys(pending.forged||{}).length} 件打造记录 · 仓库${pending.warehouse.items.length}件 / 待收${pending.warehouse.pending.length}件。确认后替换当前进度，原进度会先备份。</p><button class="primary-button" data-action="confirmImport">确认导入</button></section>`:''}<div class="dialog-actions"><button class="secondary-button" data-action="restoreBackup">查看导入前备份</button><button class="secondary-button" data-action="close">返回庇护所</button></div>`,true);
   }
@@ -73,6 +151,7 @@ export class UI {
   }
   shelter(save,{lastResult=null,saveAvailable=true,journal=emptyJournal(),journalAvailable=true,playtestReview=null,selectedReviewCohort=null}={}) {
     const selected=difficultyOf(save.selectedDifficulty),loadout=applyWarehouseGear(starterLoadout(save),plannedWarehouseGear(save)),level=shelterLevel(save);
+    const activeRoute = MAP_LAYOUTS.find(layout => layout.id === save.selectedMap) || MAP_LAYOUTS[0];
     const report=lastResult||save.lastRuns[0];
     const rewards=report?.success?`+${number(report.value)} ◇ · +${report.materials?.alloy||0} 合金 · +${report.materials?.core||0} 核心 · 装备${(report.warehouse?.stored||0)+(report.warehouse?.pending||0)}件`:'本次未带出资源';
     const reportHTML=report?`<section class="run-report ${report.success?'':'failed'}">${icon(report.success?'exit':'shield')}<div><b>${report.success?'安全归来，资源已入库。':'行动结束，已返回庇护所。'}</b><p>${report.success?'准备下一次远征，或者先升级设施。'+(report.extractedVia?` ${exitKindName({kind:report.extractedVia})} · ${(report.exitBonus||0)>0?'路线奖励 +'+Math.round(report.exitBonus*100)+'%（币与材料）':'标准收益'}。`:''):escapeHTML(report.reason||'未能完成撤离')+'。已保存的庇护所资源仍然保留。'}</p>${report.seed!==undefined?`<small class="run-recap">复盘种子 ${Number(report.seed)>>>0} · 结束热度 ${Math.floor(report.heat||0)} · ${report.mutators?.length?report.mutators.map(id=>MUTATORS[id]?.name||'').join(' / '):'无行动词条'}</small>`:''}</div><span class="run-rewards">${rewards}</span></section>`:'';
@@ -81,16 +160,21 @@ export class UI {
       const current=facilityLevel(save,key),cost=facilityCost(key,current),next=Math.min(current+1,definition.max);
       return `<article class="facility-card"><div class="facility-title"><span class="facility-icon">${icon(definition.icon)}</span><div><h3>${definition.name}</h3><small>${definition.en}</small></div><span class="facility-level">Lv.${String(current).padStart(2,'0')}</span></div><p>${facilityBenefit(key,current)}</p><div class="facility-next">${cost?'下一级：'+facilityBenefit(key,next):'设施已达到当前上限'}</div><button class="upgrade-button" data-action="upgradeFacility" data-key="${key}" ${canUpgradeFacility(save,key)?'':'disabled'}><span>${cost?'升级设施':'已满级'}</span>${cost?`<span class="cost-list">${costHTML(cost)}</span>`:''}</button></article>`;
     }).join('');
+    const keepScroll = $('shelter-screen').dataset.tab === this.shelterTab ? $('expedition-panel')?.scrollTop || 0 : 0;
     $('shelter-screen').dataset.tab=this.shelterTab;
     $('shelter-screen').innerHTML=`
-      <header class="shelter-top"><div class="brand"><span class="brand-logo">n</span><div><strong>数字进化</strong><small>NUMBER EXTRACTION / SHELTER</small></div></div><div class="shelter-resources">${resources.map(([symbol,label,value,cls])=>`<div class="resource-chip ${cls}">${icon(symbol)}<div><small>${label}</small><b>${number(value)}</b></div></div>`).join('')}</div></header>
+      <header class="shelter-top"><div class="brand"><span class="brand-logo">n</span><div><strong>数字进化</strong><small>NUMBER EXTRACTION / SHELTER</small></div><span class="shelter-build">v${VERSION}</span></div><div class="shelter-resources">${resources.map(([symbol,label,value,cls])=>`<div class="resource-chip ${cls}">${icon(symbol)}<div><small>${label}</small><b>${number(value)}</b></div></div>`).join('')}</div></header>
       ${reportHTML}${this.warning(saveAvailable)}
       <nav class="shelter-tabs" aria-label="庇护所功能">${[['deploy','出击终端','OPERATIONS'],['base','基地设施','SHELTER'],['forge','武器工坊','WORKSHOP'],['vault','战备仓库','WAREHOUSE'],['bosses','首领图鉴','BOSSES'],['rules','行动设置','RUN RULES'],['journal','试玩记录','PLAYTEST']].map(([key,label,en])=>`<button data-action="shelterTab" data-key="${key}" aria-pressed="${this.shelterTab===key}"><span>${label}</span><small>${en}</small></button>`).join('')}</nav>
       <div class="shelter-layout"><div class="shelter-main">
-        <section class="shelter-hero"><div class="hero-heading"><div><span class="eyebrow">HOME / SECTOR ZERO</span><h1>第零庇护所</h1><p>带资源回来。让下一次出发更有准备。</p></div><span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span></div>
+        <section class="shelter-hero"><div class="hero-heading"><div><span class="eyebrow">HOME / SECTOR ZERO</span><h1>第零庇护所</h1><p>在终端选关，点传送门出击。</p><a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a></div><span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span></div>
           <div class="shelter-display">
-            <figure class="shelter-illustration" aria-hidden="true">
-              <img src="./art/shelter-workshop.png" alt="" decoding="async">
+            <figure class="shelter-illustration">
+              <img src="./art/shelter-workshop.png" alt="" width="1448" height="1086" decoding="async">
+              <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入${activeRoute.name}，${selected.name}">
+                <span class="portal-launch-label">进入关卡 ${icon('arrow')}</span>
+              </button>
+              <figcaption class="portal-destination"><span>前往</span> ${activeRoute.name} · ${selected.name}</figcaption>
             </figure>
             <div class="shelter-number-board">
               <span class="shelter-board-label">数字陈列</span>
@@ -100,12 +184,19 @@ export class UI {
         <div class="section-heading"><h2>庇护所设施</h2><span>资源投入，长期成长</span></div><section class="facilities-grid">${facilities}</section>
         ${this.forgePanel(save)}${this.warehousePanel(save)}${this.bossCodex(save)}${this.rulesPanel(save)}${this.playtestPanel(journal,journalAvailable,playtestReview,selectedReviewCohort)}
         <div class="shelter-stats"><div class="stat-card"><small>成功撤离</small><b>${save.extractions}</b></div><div class="stat-card"><small>最高数字</small><b>${save.best}</b></div><div class="stat-card"><small>累计行动</small><b>${save.extractions+save.deaths}</b></div></div>
-      </div><aside class="expedition-panel" aria-label="出击准备"><span class="eyebrow">NEXT EXPEDITION</span><h2>远征准备</h2><p class="muted">资源点有重兵驻守，野外只有少量巡游。选择不同地图，寻找商人、安全屋和首领。</p>
-        <button class="deploy-button" data-action="start"><span>确认出击</span>${icon('arrow')}</button><div class="difficulty-list">${DIFFICULTIES.map(mission=>`<button class="difficulty-card ${mission.id===selected.id?'selected':''}" style="--difficulty:${mission.color}" data-action="selectDifficulty" data-key="${mission.id}" aria-pressed="${mission.id===selected.id}"><div class="difficulty-top"><b>${mission.name}</b><span>${'◆'.repeat(mission.rank)}${'◇'.repeat(5-mission.rank)}</span></div><div class="difficulty-meta"><span>地图 ×${mission.width*mission.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}</span><span>敌人 ${2**(mission.enemyShift+1)}–${128*2**mission.enemyShift}</span><span>收益 ×${mission.reward}</span></div></button>`).join('')}</div>
-        <div class="weapon-choice"><label for="map-choice">地图布局</label><select id="map-choice" data-action="selectMap">${MAP_LAYOUTS.map(map=>`<option value="${map.id}" ${map.id===save.selectedMap?'selected':''}>${map.name}</option>`).join('')}</select></div><p class="deploy-note">${Object.keys(ENEMY_TYPES).length} 类敌人 + ${Object.keys(BOSSES).length}种首领 · ${Object.keys(WEAPONS).length} 类武器 · 4 个撤离点</p><div class="weapon-choice"><label for="starter-choice">工坊出击武器 · ${workshopGrade(save).name}品</label><select id="starter-choice" data-action="selectWeapon">${Object.entries(WEAPONS).map(([key,weapon])=>`<option value="${key}" ${key===save.selectedWeapon?'selected':''} ${weapon.unlock>facilityLevel(save,'workshop')?'disabled':''}>${weapon.name}${weapon.unlock>facilityLevel(save,'workshop')?' · 工坊Lv.'+weapon.unlock+'解锁':''}</option>`).join('')}</select><p>工坊 2 级配备基础护甲，4 级配备镭射。撤离装备存入战备仓库，可选择带入下一局；未选仓库装备的槽位领取工坊基础装备。</p></div>
+      </div><aside class="expedition-panel" id="expedition-panel" aria-label="远征终端">
+        <h2>远征终端</h2>
+        ${this.expeditionTerminal(activeRoute)}
+        <h3 class="expedition-difficulty-title" id="expedition-difficulty">难度</h3>
+        <div class="difficulty-list" role="group" aria-labelledby="expedition-difficulty">${DIFFICULTIES.map(mission=>`<button type="button" id="mission-${mission.id}" class="difficulty-card ${mission.id===selected.id?'selected':''}" style="--difficulty:${mission.color}" data-action="selectDifficulty" data-key="${mission.id}" aria-pressed="${mission.id===selected.id}"><div class="difficulty-top"><b>${mission.name}</b><span>${'◆'.repeat(mission.rank)}${'◇'.repeat(5-mission.rank)}</span></div><div class="difficulty-meta"><span>地图 ×${mission.width*mission.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}</span><span>敌人 ${2**(mission.enemyShift+1)}–${128*2**mission.enemyShift}</span><span>收益 ×${mission.reward}</span></div></button>`).join('')}</div>
+        <a class="terminal-jump" href="#portal-launch">返回传送门 ↑</a>
+        <div class="weapon-choice"><label for="starter-choice">工坊出击武器 · ${workshopGrade(save).name}品</label><select id="starter-choice" data-action="selectWeapon">${Object.entries(WEAPONS).map(([key,weapon])=>`<option value="${key}" ${key===save.selectedWeapon?'selected':''} ${weapon.unlock>facilityLevel(save,'workshop')?'disabled':''}>${weapon.name}${weapon.unlock>facilityLevel(save,'workshop')?' · 工坊Lv.'+weapon.unlock+'解锁':''}</option>`).join('')}</select><p>工坊 2 级配备基础护甲，4 级配备镭射。撤离装备存入战备仓库，可选择带入下一局；未选仓库装备的槽位领取工坊基础装备。</p></div>
         <div class="expedition-summary"><div><small>战区尺寸</small><b>${selected.width} × ${selected.height}</b></div><div><small>行动时限</small><b>${formatTime(selected.seconds*runRules(save.selectedMutators).duration)}</b></div><div><small>撤离开放</small><b>${formatTime(selected.extractAt)} 后</b></div><div><small>怪潮节奏</small><b>据点驻守 / 稀疏巡游</b></div><div><small>装备容量</small><b>${RULES.bagCapacity+facilityLevel(save,'storage')*2} 格</b></div><div><small>基础收益倍率</small><b>×${(rewardMultiplier(save,selected.id)*runRules(save.selectedMutators).reward).toFixed(2)}</b></div></div>
         <div class="weapon-choice"><label for="boss-choice">优先追踪首领 · 高危据点</label><select id="boss-choice" data-action="selectBoss"><option value="random">随机首领</option>${bossPool(selected.rank).map(key=>`<option value="${key}" ${save.selectedBoss===key?'selected':''}>${BOSSES[key].name}</option>`).join('')}</select><p>首个首领据点优先出现追踪目标，位置见小地图。仓库选装请前往“战备仓库”。</p></div><div class="run-summary"><b>本局词条：${save.selectedMutators.length?save.selectedMutators.map(id=>MUTATORS[id].name).join(' · '):'无'}</b><p>热度随停留和行动上升；64 / 256 / 1024改变体型。特殊出口每局变化，路线奖励另加8–15%币与材料；西侧按原时限开放，之后持续可用。</p><button data-action="shelterTab" data-key="rules">配置行动词条</button></div><p class="deploy-note">成功撤离保存装备 · 带入的仓库装备失败会丢失</p>
       </aside></div><footer class="shelter-footer"><span>${window.numberExtractionDesktop?'WINDOWS DESKTOP':'LOCAL SOLO'} / v${VERSION} · 进度保存在本机</span><div><button data-action="saves">存档 · 导入 / 导出</button><button data-action="help">操作与战斗规则 ↗</button></div></footer>`;
+    const panel = $('expedition-panel');
+    if (panel) panel.scrollTop = keepScroll;
+    this.bindExpeditionTerminal();
   }
   update(raid,save,started,paused) {
     const p=raid.player,zone=zoneAt(p,raid.world.zones),item=activeWeapon(p);

@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.2 browser playtest.** The shelter, equipment screens, field dialogs and combat controls use the same hand-inked 2D science-fiction art as the maps. [Download source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [New controls and setup](docs/NUMBER_SKILLS_V012.md). The v0.11.3 desktop download below is the previous release.
+> **v0.12.3 browser playtest.** Preview and select a map at the holographic terminal, choose the difficulty, then click the illustrated green portal to deploy. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,7 +12,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Current build | v0.11.3 · playable prototype with local playtest review |
+| Builds | v0.12.3 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
 | Run variety | 4 map families · 5 difficulties · 10 optional mutators |
@@ -121,7 +121,7 @@ On **macOS / Linux**:
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-Open [http://localhost:8000](http://localhost:8000), select a difficulty and workshop weapon, then click **确认出击** (Deploy). Keep the terminal open; **Ctrl+C** stops the server. If port 8000 is occupied, change the port in both the command and browser address.
+The Windows launcher opens the versioned page automatically. If an older server is using port 8000, it opens port 8012, which has separate browser save data. For the manual command, open [http://127.0.0.1:8000](http://127.0.0.1:8000). Select a map and difficulty, then click the illustrated green portal. Keep the terminal open while you play.
 
 ES modules require an HTTP server; opening `dist/index.html` as a local file is unsupported. The Python server only serves files; simulation runs in the browser.
 

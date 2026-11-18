@@ -1,0 +1,260 @@
+/* Physical doorway and the shelter's route projection share the field-console palette. */
+#shelter-screen .shelter-illustration {
+  width: 100%;
+  align-self: center;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+}
+
+#shelter-screen .shelter-illustration img {
+  inset: 0;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+#shelter-screen button.portal-launch {
+  position: absolute;
+  z-index: 1;
+  top: 49.7%;
+  left: 65.7%;
+  width: 24%;
+  height: 34%;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 2px dashed #eef5bcb0;
+  border-radius: 50% 48% 44% 46%;
+  background: #d6ee7c19;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+  isolation: isolate;
+}
+
+#shelter-screen button.portal-launch:not(:disabled):is(:hover, :focus-visible, :active) {
+  transform: translate(-50%, -50%);
+  background: #dbff9060;
+  border-style: solid;
+  border-color: #f6ffd4;
+  box-shadow: inset 0 0 18px #dbff9099, 0 0 14px #a1e96d;
+  outline: 3px solid #2f4431;
+  outline-offset: 3px;
+}
+
+.portal-launch-label {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 4px 9px;
+  border: 2px solid #282431;
+  border-radius: 6px 4px 7px 6px;
+  box-shadow: 2px 2px 0 #282431;
+  background: #e3f2ac;
+  color: #282431;
+  font-size: clamp(11px, 1.15vw, 14px);
+  font-weight: 900;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+.portal-launch-label .icon { width: 12px; height: 12px; }
+
+.portal-destination {
+  position: absolute;
+  z-index: 1;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  width: fit-content;
+  max-width: calc(100% - 16px);
+  padding: 4px 7px;
+  border: 1px solid #282431;
+  border-radius: 4px 7px 5px 6px;
+  background: #2b2935eb;
+  color: #fff5dc;
+  font-size: clamp(10px, 1.05vw, 13px);
+  line-height: 1.4;
+  pointer-events: none;
+}
+.portal-destination span { color: #d1e98e; }
+
+#shelter-screen .expedition-panel > h2 { margin-bottom: 12px; }
+
+.holo-terminal {
+  --holo-ink: #152d31;
+  --holo-plate: #234045;
+  --holo-text: #e8f7d7;
+  --holo-accent: #bcea9a;
+  --holo-x: 50%;
+  --holo-y: 50%;
+  position: relative;
+  isolation: isolate;
+  padding: 11px;
+  color: var(--holo-text);
+  border: 2px solid #26333a;
+  border-radius: 8px 14px 9px 6px;
+  background: var(--holo-ink);
+  box-shadow: 3px 4px 0 #26333a;
+}
+
+.holo-terminal::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: var(--holo-y);
+  left: var(--holo-x);
+  width: 26px;
+  height: 26px;
+  border: 1px solid #caffbf;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px #bcefab24;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity .12s;
+  pointer-events: none;
+}
+.holo-terminal.pointer-engaged::after { opacity: .9; }
+
+.holo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.holo-header h3 { margin: 0; color: var(--holo-text); font-size: 13px; }
+#holo-route-mode {
+  min-width: 3em;
+  color: var(--holo-accent);
+  font-size: 11px;
+  text-align: end;
+}
+
+.holo-screen {
+  position: relative;
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr);
+  min-height: 79px;
+  gap: 10px;
+  align-items: center;
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid #729884;
+  border-radius: 4px 8px 4px 6px;
+  background: var(--holo-plate);
+}
+
+.holo-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-bottom: 1px solid #bcea9a4d;
+  background: linear-gradient(180deg, transparent 82%, #d7fbbb2c);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-100%);
+}
+.holo-terminal:is(.pointer-engaged, :focus-within) .holo-screen::after {
+  opacity: 1;
+  animation: route-scan 1.8s ease-in-out infinite;
+}
+@keyframes route-scan {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100%); }
+}
+
+.holo-route-projection {
+  display: grid;
+  position: relative;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  overflow: hidden;
+  border: 1px solid #bcea9a9c;
+  border-radius: 4px;
+  background: #284e4c;
+}
+.holo-sector { position: absolute; inset: 0; background: var(--sector-fill); }
+.holo-random-art {
+  color: #d9f5af;
+  font: 900 27px ui-monospace, monospace;
+}
+.holo-screen-caption { min-width: 0; }
+.holo-screen-caption b { display: block; color: #f1fbdc; font-size: 14px; }
+.holo-screen-caption small { color: #c3dcc4; font-size: 11px; line-height: 1.5; }
+
+.holo-route-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 9px;
+}
+
+#shelter-screen .holo-terminal button.holo-choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 5px 6px;
+  color: var(--holo-text);
+  background: var(--holo-plate);
+  border: 1px solid #7aa58a;
+  border-radius: 5px 9px 5px 8px;
+  box-shadow: none;
+  text-align: left;
+  font-size: 12px;
+}
+#shelter-screen .holo-terminal button.holo-choice:is(:hover, :focus-visible, [aria-pressed="true"]) {
+  color: #173535;
+  background: var(--holo-accent);
+  border-color: var(--holo-accent);
+}
+
+.holo-choice-mark {
+  flex: 0 0 8px;
+  height: 8px;
+  margin: 0 2px;
+  border: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+.holo-choice[aria-pressed="true"] .holo-choice-mark { background: #376153; }
+.expedition-difficulty-title { margin: 18px 0 8px; color: var(--cel-ink); font-size: 14px; }
+
+@media (max-width: 590px) {
+  .portal-launch-label { bottom: -11px; }
+  .portal-destination { bottom: 6px; left: 6px; font-size: 10px; }
+  #shelter-screen .holo-terminal button.holo-choice { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-terminal::after { transition: none; }
+  .holo-terminal:is(.pointer-engaged, :focus-within) .holo-screen::after { animation: none; opacity: 0; }
+}
+
+.shelter-build {
+  padding: 3px 6px;
+  border: 1px solid #453f4b;
+  border-radius: 4px 7px 5px 6px;
+  background: #e3f2ac;
+  color: #292431;
+  font: 700 11px ui-monospace, monospace;
+  white-space: nowrap;
+}
+.terminal-jump { display: none; }
+
+@media (max-width: 1030px) {
+  .terminal-jump {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    color: #365b4e;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  #holo-terminal { scroll-margin-top: 16px; }
+  #portal-launch { scroll-margin-top: 30dvh; }
+}

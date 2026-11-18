@@ -89,7 +89,7 @@ test('main module starts, routes Start and B inventory controls, and advances a 
   const env = browserStubs(t);
   await import('../dist/src/main.js?contract-test-v03');
   const dialog=env.ids.get('dialog'),shelter=env.ids.get('shelter-screen');
-  assert.match(shelter.innerHTML,/确认出击/);
+  assert.match(shelter.innerHTML,/class="portal-launch" id="portal-launch" data-action="start"/);
   const help=shelter.children.find(button=>button.dataset.action==='help');
   shelter.dispatch('click',{target:help});
   assert.equal(env.ids.get('overlay').hidden,false);
@@ -117,9 +117,11 @@ test('shelter difficulty and workshop selections persist and apply to the next e
   const action=(name,key)=>shelter.dispatch('click',{target:shelter.children.find(button=>button.dataset.action===name&&(key===undefined||button.dataset.key===key))});
   action('upgradeFacility','workshop');
   shelter.dispatch('change',{target:{dataset:{action:'selectWeapon'},value:'smg'}});
+  action('selectMap','fracture');
   action('selectDifficulty','nightmare');
   const stored=JSON.parse(env.window.localStorage.getItem('number-extraction-v11'));
-  assert.equal(stored.shelter.workshop,1);assert.equal(stored.selectedWeapon,'smg');assert.equal(stored.selectedDifficulty,'nightmare');
+  assert.equal(stored.shelter.workshop,1);assert.equal(stored.selectedWeapon,'smg');assert.equal(stored.selectedDifficulty,'nightmare');assert.equal(stored.selectedMap,'fracture');
+  assert.match(shelter.innerHTML,/aria-label="进入裂谷放射，零点噩梦"/);
   assert.equal(stored.credits,880);assert.match(shelter.innerHTML,/12800 × 8000/);
   action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.match(env.ids.get('mission-name').textContent,/零点噩梦/);
   assert.match(env.ids.get('quick-slot-0').innerHTML,/冲锋枪/);

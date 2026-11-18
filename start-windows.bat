@@ -1,6 +1,10 @@
 @echo off
+setlocal
 cd /d "%~dp0"
-echo Number Extraction: http://localhost:8000
-echo Keep this window open. Press Ctrl+C to stop.
-py -3 -m http.server 8000 --bind 127.0.0.1 --directory dist
+where py >nul 2>&1
+if errorlevel 1 (
+  python tools\start-playtest.py
+) else (
+  py -3 tools\start-playtest.py
+)
 if errorlevel 1 pause

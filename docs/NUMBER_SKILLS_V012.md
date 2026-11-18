@@ -1,8 +1,12 @@
-# Number Extraction v0.12.2 · Illustrated shelter and number skills
+# Number Extraction v0.12.3 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
-On Windows, double-click `start-windows.bat` and keep its terminal open. On another system with Python 3, run `python3 -m http.server 8000 --bind 127.0.0.1 --directory dist` from the project root. Open **http://127.0.0.1:8000**.
+On Windows, double-click `start-windows.bat` and keep its terminal open. The launcher opens a versioned page and uses port 8012 if an older server occupies port 8000. To keep using the old browser save, close the old server, restart the playtest, and use the original browser origin. On another system with Python 3, run `python3 -m http.server 8000 --bind 127.0.0.1 --directory dist` from the project root. Open **http://127.0.0.1:8000** for that manual command.
+
+## Selecting a raid
+
+Hover over a map or use Tab to preview its zone layout. Click or tap to lock a map, then choose the difficulty. The destination below the illustrated green door reflects the locked map and difficulty. Click the door to start the raid.
 
 ## Skills
 
@@ -23,6 +27,6 @@ The shelter has an illustrated field workshop beside its numbered display. The s
 
 The original generated rasters are cropped into five in-game PNG atlases in `dist/art/`. The game draws warm ivory numerals with dark outlines over matte, irregular slabs so four-digit values stay readable. River texture motion repeats inside the existing river boundaries, under bridges. Stone, grass and ice use flat-colour textures. Cover uses illustrated containers, barricades, rocks and broken pipe walls. The rendering keeps solid cover inside the same world bounds. Each of the twenty weapons has its own sprite for the held weapon, pickups and loadout.
 
-The shelter/warehouse save schema and browser origin are unchanged. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
+The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.2 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.3 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.

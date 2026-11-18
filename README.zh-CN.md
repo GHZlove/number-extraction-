@@ -1,6 +1,6 @@
 # 数字进化 · Number Extraction
 
-> **v0.12.2 网页试玩版**把庇护所、按钮、工坊、仓库、行动界面和弹窗统一成手绘平涂科幻卡通，加入原创庇护所场景插画。 [下载源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [新技能与启动方法](docs/NUMBER_SKILLS_V012.md)。下方 v0.11.3 EXE 为上一版。
+> **v0.12.3 传送门网页试玩版**。在全息终端预览并选定地图，选好难度后，点击插画里的绿色传送门出击。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
 
 **合成成长，搭配装备，决定何时带着收获撤离。**
 
@@ -12,7 +12,7 @@
 
 | 项目概览 | |
 | --- | --- |
-| 当前版本 | v0.11.3 · 可玩原型与本地试玩分析 |
+| 版本 | v0.12.3 网页试玩 · v0.11.3 Windows 桌面发布版 |
 | 内容 | 20类武器、12种附魔、12类敌人、9种首领 |
 | 对局变化 | 4种地图、5档难度、10个可选行动词条 |
 | 局外成长 | 庇护所升级、永久打造、可扩容战备仓库 |
@@ -67,7 +67,7 @@
 
 [下载当前试玩网页版 / 源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip)。此版本位于独立试玩分支，主分支和线上游戏按各自发布进度更新。
 
-需要 Python 3 和现代浏览器，无第三方依赖、无构建步骤。解压完整 ZIP 后，Windows 双击 `start-windows.bat`，保留命令窗口，打开 **http://localhost:8000**。
+需要 Python 3 和现代浏览器，无第三方依赖、无构建步骤。解压完整 ZIP 后，Windows 双击 `start-windows.bat`。保留命令窗口，脚本会打开带版本号的新页面。若旧服占用 8000 端口，新版会使用 8012 端口；浏览器对两个端口分别保存进度。
 
 Windows 也可在项目根目录运行：
 
@@ -81,7 +81,7 @@ py -3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-在庇护所选择难度和出击武器，点击 **确认出击**。不能直接双击 `dist/index.html`；模块需要 HTTP 服务。退出服务按 Ctrl+C。
+在庇护所用全息终端选定地图和难度，再点击绿色传送门的 **进入关卡**。手动启动命令运行后打开 **http://127.0.0.1:8000**。退出服务按 Ctrl+C。
 
 ## 操作
 
