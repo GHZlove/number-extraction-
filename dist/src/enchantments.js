@@ -29,7 +29,7 @@ export function applyEnchantment(raid,enemy,damage,impact){
       const next=raid.world.enemies.filter(e=>!e.dead&&!seen.has(e.id)&&distance(from,e)<190&&raid.visible(from,e)).sort((a,b)=>distance(from,a)-distance(from,b))[0];
       if(!next)break;
       raid.effect(from.x,from.y,'','#8eefff','lightning',.2,{endX:next.x,endY:next.y});
-      raid.damageEnemy(next,damage*.35,{secondary:true,weapon:'contact'});seen.add(next.id);from=next;
+      raid.damageEnemy(next,damage*.35,{secondary:true,weapon:'contact',element:'lightning'});seen.add(next.id);from=next;
     }
   }else if(key==='stun'&&!enemy.dead){
     p.enchantCooldowns[key]=1.1;enemy.stun=Math.max(enemy.stun,(.32+level*.06)*(enemy.boss?.4:1));
@@ -87,7 +87,7 @@ export function updateAfflictions(raid,dt){
       status.life-=dt;status.tick-=dt;
       if(status.tick<=0){
         status.tick+=.5;
-        raid.damageEnemy(enemy,attackDamage(status.value,enemy.value,enemy.maxHp,status.rarity)*status.power,{secondary:true,ignoreArmor:kind==='bleed'});
+        raid.damageEnemy(enemy,attackDamage(status.value,enemy.value,enemy.maxHp,status.rarity)*status.power,{secondary:true,ignoreArmor:kind==='bleed',element:kind==='burn'?'fire':undefined});
       }
       if(status.life<=0)delete enemy.afflictions[kind];
     }
@@ -99,7 +99,7 @@ export function updateHazards(raid,dt){
     cloud.life-=dt;cloud.tick-=dt;if(cloud.tick>0)continue;cloud.tick=.5;
     if(cloud.owner==='player'){
       for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(enemy,cloud)<cloud.radius+enemy.radius&&raid.visible(cloud,enemy)){
-        raid.damageEnemy(enemy,attackDamage(cloud.value,enemy.value,enemy.maxHp,cloud.rarity)*cloud.power,{secondary:true,weapon:'contact'});enemy.poisoned=.6;
+        raid.damageEnemy(enemy,attackDamage(cloud.value,enemy.value,enemy.maxHp,cloud.rarity)*cloud.power,{secondary:true,weapon:'contact',element:'poison'});enemy.poisoned=.6;
       }
     }else if(distance(raid.player,cloud)<cloud.radius+raid.player.radius&&raid.visible(cloud,raid.player))raid.hurt(6,'被首领毒雾侵蚀');
   }

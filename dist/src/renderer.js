@@ -1,3 +1,5 @@
+import { drawTerrainTexture, drawWeaponSprite } from './game-art.js';
+import { impactScale } from './impact-motion.js';
 import { exitKindName } from './run-rules.js';
 import { RULES, WORLD, ZONES, ENEMY_TYPES, TERRAIN, PAINT } from './config.js';
 import { clamp, distance, tier, zoneAt, firstWallFraction, canRecycleRemnant } from './math.js';
@@ -62,6 +64,7 @@ export class Renderer {
     const left=this.camera.x-halfW,top=this.camera.y-halfH,right=left+2*halfW,bottom=top+2*halfH;
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
     this.drawTerrain(w,time);
+    this.simulationTime=raid.elapsed;
     this.drawPaint(w,{left,top,right,bottom});
     for(const cloud of w.hazards||[])if(this.visible(cloud.x,cloud.y,cloud.radius+30)){
       if(cloud.bossZone||cloud.runHazard){this.drawBossZone(cloud);continue;}
@@ -106,7 +109,7 @@ export class Renderer {
     for(const enemy of w.enemies)if(!enemy.dead&&enemy.state==='windup'&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y,800))this.drawTelegraph(enemy,time,raid.enemyMoveScale());
     const selected=raid.nearestEnemy(RULES.divideRange,e=>e.value>p.value)||raid.nearestEnemy(RULES.divideRange,e=>e.value>1);
     for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y))this.drawEnemy(enemy,p,time,enemy===selected);
-    for(const bullet of w.projectiles){const color=bullet.weapon==='flamethrower'?PAINT.orange:bullet.weapon==='plasma'?'#44baff':bullet.blast?PAINT.orange:bullet.owner==='player'?PAINT.cyan:PAINT.pink;c.fillStyle=color;c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius,0,TAU);c.fill();c.strokeStyle=color+'66';c.lineWidth=bullet.owner==='player'?2:4;c.beginPath();c.moveTo(bullet.x,bullet.y);c.lineTo(bullet.x-bullet.vx*.025,bullet.y-bullet.vy*.025);c.stroke();}
+    for(const bullet of w.projectiles){const color=bullet.element==='fire'?'#ff793d':bullet.weapon==='flamethrower'?PAINT.orange:bullet.weapon==='plasma'?'#44baff':bullet.blast?PAINT.orange:bullet.owner==='player'?PAINT.cyan:PAINT.pink;c.fillStyle=color;c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius,0,TAU);c.fill();if(bullet.element==='fire'){c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius*.48,0,TAU);c.fillStyle='#fff1a8';c.fill();}c.strokeStyle=color+'66';c.lineWidth=bullet.owner==='player'?2:4;c.beginPath();c.moveTo(bullet.x,bullet.y);c.lineTo(bullet.x-bullet.vx*.025,bullet.y-bullet.vy*.025);c.stroke();}
     this.drawAim(p,w);
     this.drawPlayer(p,time);
     for(const e of w.effects) {
@@ -119,7 +122,19 @@ export class Renderer {
         this.text(e.text,e.x,e.y-progress*25,e.heavy?18:14,e.color,'900');
       }
       else if(e.kind==='gravity'){c.strokeStyle=e.color;c.lineWidth=3;c.beginPath();c.arc(e.x,e.y,e.radius*(1-progress*.7),0,TAU);c.stroke();}
-      else if(e.kind==='lightning'){
+      else if(e.kind==='gust'){
+        c.strokeStyle=e.color;c.lineWidth=5*(1-progress)+1;
+        for(let i=0;i<4;i++){
+          const angle=i*TAU/4+progress*1.6;
+          c.beginPath();c.arc(e.x,e.y,e.radius*(.18+progress*.82),angle,angle+1.15);c.stroke();
+        }
+      }else if(e.kind==='blink'){
+        for(let i=0;i<4;i++){
+          const t=i/4,x=e.x+(e.endX-e.x)*t,y=e.y+(e.endY-e.y)*t;
+          c.globalAlpha=(.16+t*.18)*(1-progress);
+          drawNumberTile(c,{x,y,size:e.radius*2+6,value:e.value,stroke:e.color});
+        }
+      }else if(e.kind==='lightning'){
         c.strokeStyle='#dbfbff';c.lineWidth=4;c.beginPath();c.moveTo(e.x,e.y);
         for(let i=1;i<5;i++){const t=i/5;c.lineTo(e.x+(e.endX-e.x)*t+(i%2?10:-10),e.y+(e.endY-e.y)*t+(i%2?-10:10));}
         c.lineTo(e.endX,e.endY);c.stroke();
@@ -179,6 +194,7 @@ export class Renderer {
     for(const patch of patches){
       const info=TERRAIN[patch.kind]||TERRAIN.mud,water=patch.kind==='water',bridge=patch.kind==='bridge',road=patch.kind==='road';
       this.rect(patch.x,patch.y,patch.w,patch.h,bridge||road?4:25,info.color+(bridge?'ee':road?'66':'88'),PAINT.ink+'44');
+      drawTerrainTexture(c,patch,time,this.reduced);
       c.strokeStyle=info.line+'66';c.lineWidth=1;
       if(bridge){
         for(let x=Math.max(patch.x,Math.floor(a.x/22)*22);x<Math.min(patch.x+patch.w,b.x);x+=22){c.beginPath();c.moveTo(x,patch.y+4);c.lineTo(x,patch.y+patch.h-4);c.stroke();}
@@ -269,7 +285,9 @@ export class Renderer {
     c.save();c.translate(item.x,y);
     if(gear){
       this.rect(-16,-13,32,26,5,PAINT.ink,color);
-      this.text(item.kind==='weapon'?weaponOf(item).short:item.kind==='armor'?'▱':'⊕',0,4,item.kind==='weapon'?9:18,color,'600');
+      if(item.kind!=='weapon'||!drawWeaponSprite(c,item.weapon,-13,0,26,23)){
+        this.text(item.kind==='weapon'?weaponOf(item).short:item.kind==='armor'?'▱':'⊕',0,4,item.kind==='weapon'?9:18,color,'600');
+      }
     }else{c.rotate(Math.PI/4);this.rect(-8,-8,16,16,2,color,PAINT.ink);}
     c.restore();
     this.text(gear?(distance(p,item)<80?'F · '+item.name:rarityOf(item.rarity).name+'品装备'):`${item.value}◇`,item.x,y+30,gear?10:9,PAINT.ink,'400','center','sans-serif');
@@ -342,7 +360,7 @@ export class Renderer {
     const c=this.ctx,strong=e.value>p.value,s=(e.radius||21)*2-1;
     const stroke=strong?'#ed3e72':'#d94a65',named=selected||e.elite||e.boss||e.hunter;
     const flash=!this.reduced&&(e.hitFlash||0)>.035;
-    drawNumberTile(c,{x:e.x,y:e.y,size:s,value:e.value,stroke,flash});
+    drawNumberTile(c,{x:e.x,y:e.y,size:s,value:e.value,stroke,flash,deformation:this.reduced?null:impactScale(e.impactMotion,this.simulationTime)});
     c.fillStyle='#e82d59';c.beginPath();c.arc(e.x+s/2-2,e.y-s/2+1,5,0,TAU);c.fill();
     this.text('!',e.x+s/2-2,e.y-s/2+4,8,'#ffffff','900');
     const definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
@@ -375,13 +393,15 @@ export class Renderer {
     if(p.buffs.magnet>0){c.strokeStyle='#c1a5f025';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,135,0,TAU);c.stroke();}const tint=t>=6?PAINT.yellow:t>=3?PAINT.lime:PAINT.cyan;
     if(p.invulnerable>0&&Math.floor(time*16)%2===0&&!this.reduced)c.globalAlpha=.55;
     if(p.dashTime>0){this.rect(p.x-20-p.dashX*22,p.y-20-p.dashY*22,40,40,7,tint+'44');}
-    drawNumberTile(c,{x:p.x,y:p.y,size,value:p.value,stroke:'#ffffff'});
+    drawNumberTile(c,{x:p.x,y:p.y,size,value:p.value,stroke:'#ffffff',deformation:this.reduced?null:impactScale(p.impactMotion,this.simulationTime)});
     c.strokeStyle='#18a49b';c.lineWidth=2;c.strokeRect(p.x-size/2-4,p.y-size/2-4,size+8,size+8);
     this.rect(p.x-16,p.y-size/2-26,32,14,4,PAINT.ink);this.text('YOU',p.x,p.y-size/2-16,9,'#ffffff','900');
     const equipped=activeWeapon(p),weapon=weaponOf(equipped);c.save();c.translate(p.x,p.y);
     const kick=clamp((p.recoil||0)/(p.recoilMax||.1),0,1);c.rotate(p.aimAngle+(weapon.mode==='melee'?Math.sin(kick*Math.PI)*.5:0));
     c.translate(p.radius-19,0);c.translate(-kick*(weapon.mode==='ranged'?8:2),0);
-    if(weapon.mode==='ranged'){
+    const spriteWidth=weapon.mode==='melee'?(equipped.weapon==='spear'?88:58):(weapon.range>850?58:43);
+    const drewSprite=drawWeaponSprite(c,equipped.weapon,14,0,spriteWidth,weapon.mode==='melee'?38:31);
+    if(!drewSprite&&weapon.mode==='ranged'){
       const length={pistol:20,smg:25,rifle:33,sniper:44,shotgun:31,railgun:48,carbine:32,lmg:40,crossbow:34,grenade:26,revolver:29,doublebarrel:35,plasma:26,flamethrower:39,rocket:52}[equipped.weapon]||25;
       this.rect(14,-5,length,10,2,'#302541',rarityOf(equipped.rarity).color);
       c.fillStyle=equipped.enchant&&equipped.enchant!=='none'?ENCHANTS[equipped.enchant].color:equipped.weapon==='railgun'?PAINT.cyan:'#ff7bc0';c.fillRect(17,-3,length-8,3);
@@ -394,7 +414,7 @@ export class Renderer {
       if(equipped.weapon==='flamethrower'){this.rect(14,6,22,20,5,'#d88c44','#443440');this.rect(42,-8,12,16,3,'#8a6257','#e5b775');}
       if(equipped.weapon==='rocket')this.rect(18,-10,49,20,6,'#56794e','#bcdda3');
       if(equipped.weapon==='sniper'||equipped.weapon==='railgun')this.rect(24,-10,13,5,2,'#253e4b','#8aa9b5');
-    }else{
+    }else if(!drewSprite){
       c.strokeStyle=rarityOf(equipped.rarity).color;c.lineWidth=equipped.weapon==='greatsword'?7:3;
       c.beginPath();c.moveTo(16,0);c.lineTo(equipped.weapon==='spear'?105:equipped.weapon==='greatsword'?62:equipped.weapon==='warhammer'||equipped.weapon==='battleaxe'?62:41,0);if(equipped.weapon==='dualblades'){c.moveTo(15,12);c.lineTo(40,16);}c.stroke();
       if(equipped.weapon==='spear'){c.beginPath();c.moveTo(105,-6);c.lineTo(120,0);c.lineTo(105,6);c.stroke();}

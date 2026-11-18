@@ -1,5 +1,7 @@
 # 数字进化 · Number Extraction
 
+> **v0.12.0 网页试玩版**加入原创地形与流动河水、果冻数字、20 类武器图标、等级碰撞和四项数字技能。[下载源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [新技能与启动方法](docs/NUMBER_SKILLS_V012.md)。下方 v0.11.3 EXE 为上一版。
+
 **合成成长，搭配装备，决定何时带着收获撤离。**
 
 《数字进化》是一款融合 **2048 同数合成、鼠标瞄准战斗与庇护所成长**的单机搜打撤原型。每次远征从数字 **1** 开始，在色彩丰富的程序地图中合成、探索和换装；随着热度升高、追猎逼近，你需要在继续搜刮与安全带出之间作出选择。
@@ -63,7 +65,7 @@
 
 ## 快速启动
 
-[下载当前试玩网页版 / 源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip)。此版本位于独立试玩分支，主分支和线上游戏按各自发布进度更新。
+[下载当前试玩网页版 / 源码 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip)。此版本位于独立试玩分支，主分支和线上游戏按各自发布进度更新。
 
 需要 Python 3 和现代浏览器，无第三方依赖、无构建步骤。解压完整 ZIP 后，Windows 双击 `start-windows.bat`，保留命令窗口，打开 **http://localhost:8000**。
 

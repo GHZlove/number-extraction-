@@ -1,0 +1,26 @@
+# Number Extraction v0.12.0 · Number skills and fresh artwork
+
+This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
+
+On Windows, double-click `start-windows.bat` and keep its terminal open. On another system with Python 3, run `python3 -m http.server 8000 --bind 127.0.0.1 --directory dist` from the project root. Open **http://127.0.0.1:8000**.
+
+## Skills
+
+| Key | Skill | Effect |
+| --- | --- | --- |
+| 3 | Remnant Lightning | Links 2–6 equal-number enemy remnants. Living enemies near the segments can take damage once per cast. Remnants stay available to merge or recycle. Blocked links and mixed numbers do not use the cooldown. |
+| 4 | Number Gust | Pushes nearby visible foes away. The number difference and boss resistance affect the distance. |
+| 5 | Blink | Moves towards the aim point. It stops before solid walls, checks the landing space and cancels ongoing interactions. No Dodge disables it. |
+| 6 | Ember Orb | Launches a fireball that explodes and applies the shared Burn status. Its damage uses the number at cast time. |
+
+Contact damage still uses the established number ratios. Both sides can receive recoil, weighted by tier. Sustained contact respects the existing damage cooldown. Nearby enemies also move apart when their bodies overlap. Light hits, heavy hits and collisions have distinct squash and rebound curves. Reduced motion disables tile deformation and water scrolling.
+
+The game keeps the existing Burn, Lightning, Poison and Frost rules and shares their impact colours with the new skills. Merely adding a visual element tag does not change an enchantment's damage or cadence.
+
+## Artwork and compatibility
+
+The original generated rasters are cropped into four in-game PNG atlases in `dist/art/`. The game draws its own glyphs over the jelly faces so four-digit values stay readable. River texture motion repeats inside the existing river boundaries, under bridges. Stone, grass and ice art is applied to their existing terrain types. Each of the twenty weapons has its own sprite for the held weapon, pickups and loadout.
+
+The shelter/warehouse save schema and browser origin are unchanged. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
+
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.0 source branch is the new playtest. The game UI is in Simplified Chinese.

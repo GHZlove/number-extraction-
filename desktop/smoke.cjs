@@ -54,7 +54,7 @@ async function run(window,app) {
     const empty=state.journal.runs.length===0;
     if(${process.env.NUMBER_EXTRACTION_SMOKE_MODE === 'verify'})return{initiallyEmpty:empty,seeded:false};
     if(!empty)throw Error('Fresh smoke profile unexpectedly contains playtest records');
-    const snapshot={id:'native-playtest-fixture',buildVersion:VERSION,balanceVersion:'0.11.1',seed:1001,difficulty:'scout',map:'blocks',mutators:['fog'],loadout:{weapons:[{weapon:'pistol',rarity:'white',level:1,enchant:'none'}],armorRarity:'none',laser:false},duration:240,seconds:0,number:1,heat:0,hpPercent:100,rawValue:0,gearCount:0,bagCapacity:8,chests:0,huntersSpawned:0,firstHunterAt:null,hunterWaves:0};
+    const snapshot={id:'native-playtest-fixture',buildVersion:VERSION,balanceVersion:log.BALANCE_VERSION,seed:1001,difficulty:'scout',map:'blocks',mutators:['fog'],loadout:{weapons:[{weapon:'pistol',rarity:'white',level:1,enchant:'none'}],armorRarity:'none',laser:false},duration:240,seconds:0,number:1,heat:0,hpPercent:100,rawValue:0,gearCount:0,bagCapacity:8,chests:0,huntersSpawned:0,firstHunterAt:null,hunterWaves:0};
     if(!log.recordStart(state.journal,snapshot))throw Error('Native journal fixture could not start');
     const final={...snapshot,seconds:62,number:16,heat:30,hpPercent:80,rawValue:80,gearCount:2,chests:2,huntersSpawned:2,firstHunterAt:49,hunterWaves:1};
     if(!log.recordFinish(state.journal,{id:snapshot.id,success:true,reason:'成功撤离',extractedVia:'key',seconds:62,heat:30,number:16,seed:1001,mutators:['fog'],rawValue:80,value:88,kills:4,playtest:final})||!log.writeJournal(localStorage,state.journal))throw Error('Native journal fixture could not persist');

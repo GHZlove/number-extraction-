@@ -104,3 +104,26 @@ body { background:#f7f9fc; }
 .review-cohort-label { display:block;font-size:12px;color:#4b6c7a;margin:18px 0 12px; }.review-cohort-label select { display:block;width:100%;padding:11px;border-radius:7px;margin-top:8px; }.review-status,.review-warning { border:1px solid #dfd2ae;background:#fff8e7;padding:12px;border-radius:8px;color:#775c2e!important; }.review-status[data-ready="true"] { border-color:#add2c1;background:#e9f7ef;color:#2d6c59!important; }
 .review-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0; }.review-grid article { background:#fff;border:1px solid #d2e0e5;border-radius:10px;padding:17px; }.playtest-review h4 { font-size:14px;margin:10px 0; }.playtest-review li { font-size:12px;line-height:1.9;color:#516b7c;margin:4px 0;overflow-wrap:anywhere; }.review-grid small { color:#6e8192;font-size:11px;line-height:1.7; }.review-context { background:#fff;border-radius:9px;padding:14px;margin:16px 0; }.review-context summary { color:#327669;font-size:13px;cursor:pointer; }.review-findings b { color:#3d626d; }
 @media(max-width:700px) { .playtest-review { padding:15px; }.review-grid { grid-template-columns:1fr; }.review-heading { align-items:start;flex-direction:column; } }
+
+
+.number-skillbar{position:absolute;right:20px;bottom:20px;z-index:8;display:flex;gap:7px;pointer-events:auto;padding:8px;border:1px solid #466474;border-radius:10px;background:#182535f2}
+.number-skill{color:#d6e7f5;background:#23374c;display:grid;grid-template-columns:auto auto;gap:2px 6px;align-items:center;text-align:left;border:1px solid #536d80;padding:5px 8px;border-radius:6px;min-width:70px;touch-action:none}
+.number-skill b{font-size:18px;color:var(--element,#a7e7ff)}
+.number-skill span{grid-column:span 2;font-size:11px;font-weight:700;white-space:nowrap}
+.number-skill small{grid-column:span 2;font-size:10px;color:#bdd5df}
+.number-skill kbd{font-size:10px}
+.number-skill.ready{border-color:var(--element,#a7e7ff)}
+.number-skill:disabled{opacity:.65}
+.number-skill.storm{--element:#65e9ff}.number-skill.gust{--element:#a3ffbb}.number-skill.blink{--element:#c3a0ff}.number-skill.fireball{--element:#ffab60}
+.sprite-art,.preview-number {
+  background-image: var(--art);
+  background-size: 400% var(--art-height);
+  background-position: var(--art-x) var(--art-y);
+  background-repeat: no-repeat;
+}
+.sprite-art { display:inline-block;vertical-align:middle;margin-right:5px; }
+.quick-weapon-art { width:30px;height:24px; }
+.inventory-weapon-art { width:44px;height:34px; }
+@media(max-width:1140px){.number-skillbar{bottom:112px;right:12px}.number-skill{min-width:58px;padding:5px}}
+@media(pointer:coarse){.number-skillbar{bottom:177px;right:12px}.number-skill span{display:none}.number-skill{min-height:40px;min-width:42px}}
+@media(max-width:650px){.number-skillbar{right:8px}.number-skill{min-width:40px}.number-skill span{display:none}}

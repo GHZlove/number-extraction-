@@ -27,7 +27,7 @@ function invalid(){throw Error('报告不是受支持的匿名试玩JSON，或�
 export function parseAnonymousReport(text){
  if(typeof text!=='string'||new TextEncoder().encode(text).length>MAX_REPORT_BYTES)throw Error('每份匿名试玩报告不能超过256KB。');
  let data;try{data=JSON.parse(text);}catch{invalid();}
- if(!exact(data,['game','schema','balanceVersion','runs'])||data.game!=='number-extraction-playtest'||data.schema!==1||data.balanceVersion!==BALANCE_VERSION||!Array.isArray(data.runs)||data.runs.length>100)invalid();
+ if(!exact(data,['game','schema','balanceVersion','runs'])||data.game!=='number-extraction-playtest'||data.schema!==1||![BALANCE_VERSION,'0.11.1'].includes(data.balanceVersion)||!Array.isArray(data.runs)||data.runs.length>100)invalid();
  const sessions=new Set(),modifierOrder=Object.keys(MUTATORS);
  const runs=data.runs.map(value=>{
   if(!exact(value,RUN_KEYS)||!finite(value.session,1e9,true,1)||sessions.has(value.session)||!version(value.buildVersion)||!version(value.balanceVersion)||!optionalNumber(value.seed,4294967295,true))invalid();

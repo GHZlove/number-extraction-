@@ -146,7 +146,7 @@ test('feedback is optional, structured, clearable and measured with response-spe
 test('anonymous exports are bounded fixed-schema JSON with no internal identifier or absolute timestamp',()=>{
  const journal=emptyJournal(),privateId='1794000000000-77';recordStart(journal,entry(privateId));end(journal,privateId);
  const text=serializeJournal(journal),data=JSON.parse(text);
- assert.deepEqual(Object.keys(data),['game','schema','balanceVersion','runs']);assert.equal(data.game,'number-extraction-playtest');assert.equal(data.schema,1);assert.equal(data.balanceVersion,'0.11.1');assert.equal(data.runs[0].session,1);assert.equal(data.runs[0].seed,77);
+ assert.deepEqual(Object.keys(data),['game','schema','balanceVersion','runs']);assert.equal(data.game,'number-extraction-playtest');assert.equal(data.schema,1);assert.equal(data.balanceVersion,BALANCE_VERSION);assert.equal(data.runs[0].session,1);assert.equal(data.runs[0].seed,77);
  assert.equal(data.runs[0].id,undefined);assert.doesNotMatch(text,/1794000000000|timestamp|email|device|https?:|\/workspace/);
  assert.equal(data.runs[0].buildVersion,'0.11.2');assert.equal(new TextEncoder().encode(text).length<262144,true);
 });

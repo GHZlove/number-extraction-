@@ -1,5 +1,7 @@
 # Number Extraction
 
+> **v0.12.0 browser playtest.** Try the new artwork, level-based knockback, jelly impact animation, and four number skills. [Download source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [New controls and setup](docs/NUMBER_SKILLS_V012.md). The v0.11.3 desktop download below is the previous release.
+
 **Grow your number. Shape your loadout. Bring something home.**
 
 Number Extraction is a single-player action-extraction prototype that combines **2048-style number merging**, aimed combat and a persistent shelter. Begin each expedition as the number **1**, merge your way into stronger tiers, and search colourful procedural maps for equipment and resources. Rising heat and conditional exits turn every detour into a decision: push for a better haul, or extract with what you can keep.
@@ -30,7 +32,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 **Windows:** [download the portable x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) and open it directly. No Python, Node.js or separate browser is needed. Finish the current raid and close an older running copy first. **F11 / Alt+Enter** toggles fullscreen. [Screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) are attached to the verified prerelease.
 
-**Web/source:** [download the current playtest ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/bright-arsenal-v09.zip), or follow [Run locally](#run-locally). The current implementation is on `feature/bright-arsenal-v09`; the default branch and hosted demo follow separate release schedules. Hosted access is currently restricted.
+**Web/source:** [download the current playtest ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), or follow [Run locally](#run-locally). The v0.12.0 playtest is on `feature/number-skills-art-v012`; the default branch and hosted demo follow separate release schedules. Hosted access is currently restricted.
 
 ## Latest update
 
@@ -101,7 +103,7 @@ Requirements: **Python 3**, a modern browser with JavaScript enabled, and option
 Clone the repository, or extract the complete source ZIP:
 
 ```bash
-git clone --branch feature/bright-arsenal-v09 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
+git clone --branch feature/number-skills-art-v012 --single-branch https://github.com/GHZlove/number-extraction-.git number-extraction
 cd number-extraction
 ```
 

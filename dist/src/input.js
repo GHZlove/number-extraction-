@@ -1,3 +1,7 @@
+import { NUMBER_SKILLS } from './number-skills.js';
+
+const skillKeys = Object.entries(NUMBER_SKILLS).map(([id, skill]) => [id, 'Digit' + skill.key]);
+
 export class Input {
   constructor(canvas, onPause, onInventory = () => {}) {
     this.keys = new Set(); this.pressed = new Set(); this.touchKeys = new Map();
@@ -5,7 +9,7 @@ export class Input {
     this.pointer = null; this.mouseAttack = false;this.parryPressed=false;this.rightHeld=false;
     const typing = target => /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName) || target?.isContentEditable;
     const controlled = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'KeyC', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2']);
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'KeyC', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2', ...skillKeys.map(([, key]) => key)]);
     window.addEventListener('keydown', event => {
       if (typing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.code === 'Escape' && !event.repeat) { onPause(); return; }
@@ -40,6 +44,11 @@ export class Input {
     canvas.addEventListener('contextmenu', event => event.preventDefault());
     for (const button of document.querySelectorAll('[data-control]')) {
       const code = button.dataset.control;
+      if (skillKeys.some(([, key]) => key === code)) {
+        button.addEventListener('click', event => {
+          if (event.detail === 0 && this.active) this.pressed.add(code);
+        });
+      }
       button.addEventListener('pointerdown', event => {
         event.preventDefault();
         if (!this.active) return;
@@ -85,6 +94,7 @@ export class Input {
       interact: held('KeyE'), divide: this.pressed.has('KeyQ'), heal: this.pressed.has('KeyR'),
       parry:this.parryPressed||this.pressed.has('KeyC'),
       dash: this.pressed.has('ShiftLeft') || this.pressed.has('ShiftRight'), pickup: this.pressed.has('KeyF'), overload: this.pressed.has('KeyG'),
+      skill: skillKeys.find(([, key]) => this.pressed.has(key))?.[0],
       slot: this.pressed.has('Digit1') ? 0 : this.pressed.has('Digit2') ? 1 : undefined,
       pointer: this.pointer ? { ...this.pointer } : null,
     };

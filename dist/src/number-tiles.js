@@ -1,3 +1,5 @@
+import { drawNumberSprite } from './game-art.js';
+
 // Palette and raised faces inspired by the user's numbered-tile reference.
 export const NUMBER_COLORS=Object.freeze({
   1:'#497db1',2:'#2d70c6',4:'#299fbe',8:'#20a363',16:'#e87d29',32:'#e93f58',64:'#c92937',
@@ -9,15 +11,26 @@ function shade(hex,amount){
     const channel=(n>>shift)&255;return Math.round(amount>=0?channel+(255-channel)*amount:channel*(1+amount)).toString(16).padStart(2,'0');
   }).join('');
 }
-export function drawNumberTile(c,{x,y,size,value,stroke='#26334a',flash=false}){
+export function drawNumberTile(c,{x,y,size,value,stroke='#26334a',flash=false, deformation=null}){
   const color=flash?'#e8f4ff':numberColor(value),half=size/2,depth=Math.max(3,size*.105),radius=size*.2;
   c.save();c.translate(x,y);c.lineWidth=2;
+  if (deformation && (deformation.x !== 1 || deformation.y !== 1)) {
+    c.rotate(deformation.angle);
+    c.scale(deformation.x, deformation.y);
+    c.rotate(-deformation.angle);
+  }
+  const sprite = drawNumberSprite(c,value,-half,-half,size);
+  if (sprite) {
+    c.strokeStyle=stroke;c.beginPath();c.roundRect(-half+1,-half+1,size-2,size-2,radius);c.stroke();
+    if(flash){c.fillStyle='#e8f4ff55';c.fill();}
+  } else {
   c.fillStyle='#17263a44';c.beginPath();c.roundRect(-half+2,-half+depth+3,size,size,radius);c.fill();
   c.fillStyle=shade(color,-.3);c.beginPath();c.roundRect(-half,-half+depth,size,size,radius);c.fill();
   const face=c.createLinearGradient(0,-half,0,half);face.addColorStop(0,shade(color,.24));face.addColorStop(.2,color);face.addColorStop(1,shade(color,-.04));
   c.fillStyle=face;c.strokeStyle=stroke;c.beginPath();c.roundRect(-half,-half,size,size,radius);c.fill();c.stroke();
   c.strokeStyle='#ffffff35';c.lineWidth=1;c.beginPath();c.roundRect(-half+3,-half+3,size-6,size-7,Math.max(2,radius-2));c.stroke();
+  }
   const digits=String(value).length,fontSize=size*(digits>=5?.26:digits===4?.31:digits===3?.4:.56);
-  c.font=`900 ${fontSize}px Arial,sans-serif`;c.textAlign='center';c.fillStyle=flash?'#23364c':'#ffffff';
+  c.font=`900 ${fontSize}px Arial,sans-serif`;c.textAlign='center';c.fillStyle=flash&&!sprite?'#23364c':'#ffffff';
   c.shadowColor='#132035b0';c.shadowBlur=3;c.shadowOffsetY=2;c.fillText(String(value),0,fontSize*.34);c.restore();
 }
