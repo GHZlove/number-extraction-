@@ -33,9 +33,11 @@ function planZones(raid,e){
   if(e.bossMove==='well')add({kind:'gravity',radius:rage?210:170,duration:3.5,power:.16});
   if(e.bossMove==='collapse')add({kind:'ring',x:e.x,y:e.y,startRadius:390,endRadius:65,radius:420,width:45,duration:2.2,power:.7});
 }
+const radialMove = move => ['ring','spiral','orbit'].includes(move);
+
 export function bossShotPattern(e){
   if(!['ring','spiral','orbit','fan','shards','snipe','spears','crescent','spores'].includes(e.bossMove))return [];
-  const angle=Math.atan2(e.aimY-e.y,e.aimX-e.x),enraged=e.bossPhase===2,ring=['ring','spiral','orbit'].includes(e.bossMove),gap=e.bossMove==='spiral'||e.bossMove==='orbit';
+  const angle=Math.atan2(e.aimY-e.y,e.aimX-e.x),enraged=e.bossPhase===2,ring=radialMove(e.bossMove),gap=e.bossMove==='spiral'||e.bossMove==='orbit';
   const count=ring?(enraged?18:12):e.bossMove==='fan'||e.bossMove==='shards'?(enraged?9:5):e.bossMove==='spores'?7:e.bossMove==='spears'?5:3;
   const layers=['crescent','spores'].includes(e.bossMove)?2:1,shots=[];
   for(let layer=0;layer<layers;layer++)for(let i=0;i<count;i++){
@@ -49,10 +51,13 @@ function resolve(raid,e){
   const p=raid.player,angle=Math.atan2(e.aimY-e.y,e.aimX-e.x),enraged=e.bossPhase===2;e.resolvedCast=e.bossCast;
   if(e.bossMove==='slam'||e.bossMove==='cleave'){
     const cleave=e.bossMove==='cleave',radius=cleave?210:enraged?220:175;
-    raid.effect(e.aimX,e.aimY,'',BOSSES[e.boss].color,'impact',.5,{radius});
+    raid.effect(cleave?e.x:e.aimX, cleave?e.y:e.aimY, '', BOSSES[e.boss].color, 'enemy-impact', .45, {
+      radius, angle, arc: cleave ? Math.PI * 1.15 : Math.PI * 2, heavy: true,
+    });
     const hit=cleave?inAttackArc(e,p,angle,Math.PI*1.15,radius):distance(p,{x:e.aimX,y:e.aimY})<radius+p.radius;
     if(hit&&raid.visible(e,p))raid.hurt(attackDamage(e.value,p.value,p.maxHp)*.7,'被首领重击击破',{source:e,parryable:true});
   }else if(e.bossMove==='dash'||e.bossMove==='shadowdash'){
+    raid.enemyLaunch(e, angle, 'rush');
     e.state='boss-charge';e.chargeTime=enraged?.7:.5;e.chargeSpeed=e.bossMove==='shadowdash'?740:590;e.chargeX=Math.cos(angle);e.chargeY=Math.sin(angle);return;
   }else if(e.bossMove==='poison'){
     const count=enraged?5:3;for(let i=0;i<count;i++){
@@ -69,6 +74,7 @@ function resolve(raid,e){
   }else if(['cross','icefield','icewave','bombard','furnace','well','collapse'].includes(e.bossMove)){
     // Their persistent warning zones own the matching damage geometry.
   }else{
+    raid.enemyLaunch(e, angle, radialMove(e.bossMove) ? 'ring' : e.bossMove);
     for(const shot of bossShotPattern(e))raid.shoot(e,shot.angle,shot.speed,1400,'enemy',e.value,'white',{power:.65});
   }
   e.state='idle';e.cooldown=enraged?1.1:1.8;

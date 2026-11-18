@@ -1,4 +1,4 @@
-# Number Extraction v0.12.5 · Illustrated shelter and number skills
+# Number Extraction v0.12.6 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
@@ -23,6 +23,12 @@ Contact damage still uses the established number ratios. Both sides can receive 
 
 The game keeps the existing Burn, Lightning, Poison and Frost rules and shares their impact colours with the new skills. Merely adding a visual element tag does not change an enchantment's damage or cadence.
 
+## Weapon and enemy effects
+
+Enemy shots keep the number colour they had at launch and use a red-edged diamond. Player bullets use cream, mint, cyan, violet and amber for weapon levels 1–5. Ember Orb stays orange. Reflected rounds use the equipped weapon's level for their visual colour.
+
+Heavy weapons kick further back, each burst shot has a recoil pulse, and melee attacks use a directional follow-through. Enemy ground attacks keep their original warning radius, with clearer countdown rings and a matching impact. Reduced motion keeps the warning outlines and projectile colours while suppressing weapon motion and tracer tails.
+
 ## Artwork and compatibility
 
 The shelter has an illustrated field workshop beside its numbered display. The shared ink-and-paper interface covers the shelter tabs, expedition controls, forge, warehouse, equipment and field dialogs. At narrow widths the illustration, number board and deployment settings stack vertically. Combat HUD panels keep a dark silhouette over bright terrain.
@@ -31,4 +37,4 @@ The original generated rasters are cropped into five in-game PNG atlases in `dis
 
 The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.5 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.6 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.

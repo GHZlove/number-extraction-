@@ -1,3 +1,4 @@
+import { drawProjectile, drawMeleeTrail, drawAttackWarning, drawEnemyImpact, drawMuzzleFlash, weaponPose } from './combat-art.js';
 import { drawScenery, terrainPath, drawTerrainTexture, drawWeaponSprite } from './game-art.js';
 import { impactScale } from './impact-motion.js';
 import { drawTileFusion } from './fusion-motion.js';
@@ -102,7 +103,9 @@ export class Renderer {
     for(const enemy of w.enemies)if(!enemy.dead&&enemy.state==='windup'&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y,800))this.drawTelegraph(enemy,time,raid.enemyMoveScale());
     const selected=raid.nearestEnemy(RULES.divideRange,e=>e.value>p.value)||raid.nearestEnemy(RULES.divideRange,e=>e.value>1);
     for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y))this.drawEnemy(enemy,p,time,enemy===selected);
-    for(const bullet of w.projectiles){const color=bullet.element==='fire'?'#ff793d':bullet.weapon==='flamethrower'?PAINT.orange:bullet.weapon==='plasma'?'#44baff':bullet.blast?PAINT.orange:bullet.owner==='player'?PAINT.cyan:PAINT.pink;c.fillStyle=color;c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius,0,TAU);c.fill();if(bullet.element==='fire'){c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius*.48,0,TAU);c.fillStyle='#fff1a8';c.fill();}c.strokeStyle=color+'66';c.lineWidth=bullet.owner==='player'?2:4;c.beginPath();c.moveTo(bullet.x,bullet.y);c.lineTo(bullet.x-bullet.vx*.025,bullet.y-bullet.vy*.025);c.stroke();}
+    for (const bullet of w.projectiles) {
+      if (!bullet.dead && this.visible(bullet.x,bullet.y,60)) drawProjectile(c, bullet, this.reduced);
+    }
     let fusionDeformation = null;
     for (const effect of w.effects) {
       if (effect.kind !== 'tile-fusion' || !this.visible(effect.originX,effect.originY,245)) continue;
@@ -146,11 +149,9 @@ export class Renderer {
       }else if(e.kind==='shatter'){
         for(let i=0;i<8;i++){const a=i*TAU/8+(e.seed||0)*.01,r=e.radius*progress;this.rect(e.x+Math.cos(a)*r-3,e.y+Math.sin(a)*r-3,6*(1-progress)+1,6*(1-progress)+1,1,i%2?PAINT.yellow:PAINT.pink,PAINT.ink);}
       }
-      else if(e.kind==='slash'){c.strokeStyle=e.color;c.lineWidth=5*(1-progress)+1;c.beginPath();c.arc(e.x,e.y,e.radius*(.8+progress*.2),e.angle-e.arc/2,e.angle+e.arc/2);c.stroke();}
-      else if(e.kind==='muzzle'){
-        c.save();c.translate(e.x+Math.cos(e.angle)*37,e.y+Math.sin(e.angle)*37);c.rotate(e.angle);c.fillStyle=PAINT.yellow;c.strokeStyle=PAINT.ink;c.lineWidth=1;
-        c.beginPath();c.moveTo(-3,-5);c.lineTo(8,-3);c.lineTo(18,0);c.lineTo(8,3);c.lineTo(-3,5);c.lineTo(2,0);c.fill();c.stroke();c.restore();
-      }
+      else if(e.kind==='slash') drawMeleeTrail(c, e, progress, this.reduced);
+      else if(e.kind==='muzzle') drawMuzzleFlash(c, e, progress, this.reduced);
+      else if(e.kind==='enemy-impact') drawEnemyImpact(c, e, progress, this.reduced);
       else {if(e.kind==='impact')this.inkSplat(e.x,e.y,(e.radius||64)*(.45+progress*.5),PAINT.orange,progress,Math.min(.6,e.life/e.maxLife));c.strokeStyle=e.color;c.lineWidth=e.kind==='impact'?3:2;c.beginPath();c.arc(e.x,e.y,e.kind==='pulse'?22+progress*90:(e.radius||64)*(.8+progress*.2),0,TAU);c.stroke();}
     }
     c.globalAlpha=1;
@@ -378,16 +379,19 @@ export class Renderer {
     const c=this.ctx,definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
     if(e.boss){this.drawBossTelegraph(e,speed);return;}
     const progress=clamp(1-e.timer/(e.windup||definition.windup),0,1),angle=Math.atan2(e.aimY-e.y,e.aimX-e.x);
-    c.lineWidth=2;c.strokeStyle=definition.pattern==='snipe'?'#ee005fff':'#e94009ff';c.fillStyle=`rgba(255,72,60,${0.13+progress*.2})`;
+    c.lineWidth=definition.pattern==='snipe'?3:2;c.strokeStyle=definition.pattern==='snipe'?'#b91259':'#b73345';
     if(['strike','blast','slam'].includes(definition.pattern)){
       const radius=definition.pattern==='slam'?175:definition.pattern==='blast'?118:64;
-      c.beginPath();c.arc(e.aimX,e.aimY,radius,0,TAU);c.fill();c.stroke();c.beginPath();c.arc(e.aimX,e.aimY,radius*(1-progress),0,TAU);c.stroke();this.text(definition.pattern==='blast'?'爆':'!',e.aimX,e.aimY+6,20,'#9b1936','600','center','sans-serif');
+      drawAttackWarning(c, e.aimX, e.aimY, radius, progress, definition.pattern==='blast'?'#d66b2b':'#b73345', this.reduced);
+      const marker = definition.pattern==='blast'?'爆破':definition.pattern==='slam'?'重击':'近击';
+      this.text(marker,e.aimX,e.aimY+6,16,'#7b1736','800','center','sans-serif');
     }else if(['heal','summon','ring'].includes(definition.pattern)){
       const support=definition.pattern==='heal',x=support?e.aimX:e.x,y=support?e.aimY:e.y,r=support?60:definition.pattern==='summon'?110:150;
       c.strokeStyle=support?'#008b70':'#8310d2';c.beginPath();c.arc(x,y,r,0,TAU);c.stroke();c.beginPath();c.arc(x,y,r*(1-progress),0,TAU);c.stroke();
       this.text(support?'+':definition.pattern==='summon'?'孵化':'环射',x,y+5,14,support?'#008b70':'#8310d2','600','center','sans-serif');
     }else if(definition.pattern==='charge'){
-      c.save();c.translate(e.x,e.y);c.rotate(angle);c.fillStyle='#ff5a4b44';c.fillRect(0,-24,560*.65*speed+e.radius,48);c.setLineDash([8,6]);c.strokeRect(0,-24,560*.65*speed+e.radius,48);c.restore();
+      c.save();c.translate(e.x,e.y);c.rotate(angle);c.fillStyle='#ff5a4b44';const length=560*.65*speed+e.radius;c.fillRect(0,-24,length,48);c.setLineDash([8,6]);c.strokeRect(0,-24,length,48);
+      c.setLineDash([]);c.beginPath();c.moveTo(length-19,-9);c.lineTo(length-5,0);c.lineTo(length-19,9);c.stroke();c.restore();
     }else{
       const offsets=definition.pattern==='fan'?[-.24,0,.24]:[0];c.setLineDash([6,6]);
       for(const offset of offsets){c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(angle+offset)*definition.range,e.y+Math.sin(angle+offset)*definition.range);c.stroke();}c.setLineDash([]);
@@ -416,7 +420,7 @@ export class Renderer {
       c.beginPath();c.moveTo(e.x,e.y);c.arc(e.x,e.y,210,a-Math.PI*.575,a+Math.PI*.575);c.lineTo(e.x,e.y);c.fill();c.stroke();
     }else if(['slam','poison'].includes(e.bossMove)){
       const r=e.bossMove==='poison'?205:e.bossPhase===2?220:175;
-      c.beginPath();c.arc(e.aimX,e.aimY,r,0,TAU);c.fill();c.stroke();c.beginPath();c.arc(e.aimX,e.aimY,r*(1-progress),0,TAU);c.stroke();
+      drawAttackWarning(c, e.aimX, e.aimY, r, progress, e.bossMove==='poison'?'#825487':'#b72947', this.reduced);
       this.text(e.bossMove==='poison'?'毒雾 · 离开红圈':'震地 · 闪避 / 弹反',e.aimX,e.aimY,12,PAINT.ink,'900');
     }else if(['dash','shadowdash'].includes(e.bossMove)){
       const length=(e.bossMove==='shadowdash'?740:590)*(e.bossPhase===2?.7:.5)*speed+42;
@@ -429,6 +433,19 @@ export class Renderer {
   }
   drawEnemy(e,p,time,selected) {
     const c=this.ctx,strong=e.value>p.value,s=(e.radius||21)*2-1;
+    if (!this.reduced && (e.state === 'charge' || e.state === 'boss-charge')) {
+      c.save();
+      c.translate(e.x,e.y);
+      c.rotate(Math.atan2(e.chargeY,e.chargeX));
+      c.strokeStyle='#de6247';
+      c.lineWidth=2.5;
+      for (const edge of [-1, 1]) {
+        const y = edge * s * .32;
+        c.globalAlpha=.58;
+        c.beginPath();c.moveTo(-s*.3,y);c.lineTo(-s*1.05,y);c.stroke();
+      }
+      c.restore();
+    }
     const stroke=strong?'#ed3e72':'#d94a65',named=selected||e.elite||e.boss||e.hunter;
     const flash=!this.reduced&&(e.hitFlash||0)>.035;
     drawNumberTile(c,{x:e.x,y:e.y,size:s,value:e.value,stroke,flash,deformation:this.reduced?null:impactScale(e.impactMotion,this.simulationTime)});
@@ -470,8 +487,9 @@ export class Renderer {
     c.strokeStyle='#18a49b';c.lineWidth=2;c.strokeRect(p.x-size/2-4,p.y-size/2-4,size+8,size+8);
     this.rect(p.x-16,p.y-size/2-26,32,14,4,PAINT.ink);this.text('YOU',p.x,p.y-size/2-16,9,'#ffffff','900');
     const equipped=activeWeapon(p),weapon=weaponOf(equipped);c.save();c.translate(p.x,p.y);
-    const kick=clamp((p.recoil||0)/(p.recoilMax||.1),0,1);c.rotate(p.aimAngle+(weapon.mode==='melee'?Math.sin(kick*Math.PI)*.5:0));
-    c.translate(p.radius-19,0);c.translate(-kick*(weapon.mode==='ranged'?8:2),0);
+    const pose=weaponPose(p.weaponMotion,equipped.weapon,p.aimAngle,this.simulationTime,this.reduced);
+    c.rotate(pose.angle);
+    c.translate(p.radius-19+pose.x,pose.y);
     const spriteWidth=weapon.mode==='melee'?(equipped.weapon==='spear'?88:58):(weapon.range>850?58:43);
     const drewSprite=drawWeaponSprite(c,equipped.weapon,14,0,spriteWidth,weapon.mode==='melee'?38:31);
     if(!drewSprite&&weapon.mode==='ranged'){
