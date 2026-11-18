@@ -1,6 +1,6 @@
 # 数字进化 · Number Extraction
 
-> **v0.12.4 传送门网页试玩版**。全息终端可选七张地图。选好难度后，点击醒目的「进入关卡」按钮或插画里的绿色传送门。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
+> **v0.12.5 传送门网页试玩版**。全息终端可选七张地图。选好难度后，点击醒目的「进入关卡」按钮或插画里的绿色传送门。合成和残骸回收加入水滴融合与向外扩散的波纹。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
 
 **合成成长，搭配装备，决定何时带着收获撤离。**
 
@@ -12,7 +12,7 @@
 
 | 项目概览 | |
 | --- | --- |
-| 版本 | v0.12.4 网页试玩 · v0.11.3 Windows 桌面发布版 |
+| 版本 | v0.12.5 网页试玩 · v0.11.3 Windows 桌面发布版 |
 | 内容 | 20类武器、12种附魔、12类敌人、9种首领 |
 | 对局变化 | 7种地图、5档难度、10个可选行动词条 |
 | 局外成长 | 庇护所升级、永久打造、可扩容战备仓库 |

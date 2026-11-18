@@ -1,4 +1,4 @@
-# Number Extraction v0.12.4 · Illustrated shelter and number skills
+# Number Extraction v0.12.5 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
@@ -19,7 +19,7 @@ Three maps expand the pool to seven. Twinriver Wetlands adds wider waterways and
 | 5 | Blink | Moves towards the aim point. It stops before solid walls, checks the landing space and cancels ongoing interactions. No Dodge disables it. |
 | 6 | Ember Orb | Launches a fireball that explodes and applies the shared Burn status. Its damage uses the number at cast time. |
 
-Contact damage still uses the established number ratios. Both sides can receive recoil, weighted by tier. Sustained contact respects the existing damage cooldown. Nearby enemies also move apart when their bodies overlap. Light hits, heavy hits and collisions have distinct squash and rebound curves. Reduced motion disables tile deformation and water scrolling.
+Contact damage still uses the established number ratios. Both sides can receive recoil, weighted by tier. Sustained contact respects the existing damage cooldown. Nearby enemies also move apart when their bodies overlap. Light hits, heavy hits and collisions have distinct squash and rebound curves. On a merge or remnant recycle, the source tile stretches into a droplet, flows into the player, and leaves a short outward ripple. Reduced motion uses a softly fading fixed ring and disables tile deformation and water scrolling.
 
 The game keeps the existing Burn, Lightning, Poison and Frost rules and shares their impact colours with the new skills. Merely adding a visual element tag does not change an enchantment's damage or cadence.
 
@@ -31,4 +31,4 @@ The original generated rasters are cropped into five in-game PNG atlases in `dis
 
 The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.4 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.5 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.

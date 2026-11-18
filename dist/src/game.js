@@ -112,6 +112,12 @@ export class Raid {
   effect(x, y, text, color = '#9fe5cc', kind = 'text', duration = 0.85, extra = {}) {
     this.world.effects.push({ x, y, text, color, kind, life: duration, maxLife: duration, ...extra });
   }
+  tileFusion(tile, recycled = false) {
+    const { x, y, radius } = this.player;
+    this.effect(tile.x, tile.y, '', recycled ? '#ffda7f' : '#c8ffe9', 'tile-fusion', .46, {
+      originX: x, originY: y, radius, value: tile.value, recycled,
+    });
+  }
   nearestEnemy(range = RULES.divideRange, predicate = () => true) {
     return this.world.enemies.filter(enemy => !enemy.dead && predicate(enemy) &&
       distance(this.player, enemy) <= Math.min(range,this.run.vision) && this.visible(this.player, enemy))
@@ -595,14 +601,14 @@ export class Raid {
     for (const tile of this.world.tiles) {
       if (!tile.dead && distance(p, tile) < (p.buffs.magnet>0?135:p.radius+17) && canMerge(p.value, tile.value) && this.visible(p, tile)) {
         tile.dead = true; const old = p.value; p.value *= 2; p.hp = Math.min(p.maxHp, p.hp+8);
-        updateNumberForm(this);markImpact(this,p,'light',p.aimAngle,.8);this.merges++; this.tutorial.merge = true;
+        updateNumberForm(this);this.tileFusion(tile);this.merges++; this.tutorial.merge = true;
         this.combo=this.elapsed-this.lastMerge<4?Math.min(5,this.combo+1):1;this.lastMerge=this.elapsed;
         p.energy=Math.min(100,p.energy+RULES.energyPerMerge+(this.combo-1)*2);
-        this.effect(p.x, p.y-35, `${old} + ${old} = ${p.value}`, '#a9edd1', 'text', 1.1); this.event('merge');
+        this.effect(p.x, p.y-p.radius-17, `${old} + ${old} = ${p.value}`, '#a9edd1', 'text', 1.1); this.event('merge');
       } else if (canRecycleRemnant(p.value,tile) && distance(p,tile)<(p.buffs.magnet>0?220:56) && this.visible(p,tile)) {
         const value=tile.coins??remnantCoins(tile.value);
         if(this.addLoot({id:`coins-${tile.id}`,kind:'loot',currencyOnly:true,name:'残骸金币',value,x:tile.x,y:tile.y})){
-          tile.dead=true;this.recycled++;this.recycledValue+=value;
+          tile.dead=true;this.tileFusion(tile, true);this.recycled++;this.recycledValue+=value;
         }
       }
     }

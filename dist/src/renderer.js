@@ -1,5 +1,6 @@
 import { drawScenery, terrainPath, drawTerrainTexture, drawWeaponSprite } from './game-art.js';
 import { impactScale } from './impact-motion.js';
+import { drawTileFusion } from './fusion-motion.js';
 import { exitKindName } from './run-rules.js';
 import { RULES, WORLD, ZONES, ENEMY_TYPES, TERRAIN, PAINT } from './config.js';
 import { clamp, distance, tier, zoneAt, firstWallFraction, canRecycleRemnant } from './math.js';
@@ -102,9 +103,15 @@ export class Renderer {
     const selected=raid.nearestEnemy(RULES.divideRange,e=>e.value>p.value)||raid.nearestEnemy(RULES.divideRange,e=>e.value>1);
     for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y))this.drawEnemy(enemy,p,time,enemy===selected);
     for(const bullet of w.projectiles){const color=bullet.element==='fire'?'#ff793d':bullet.weapon==='flamethrower'?PAINT.orange:bullet.weapon==='plasma'?'#44baff':bullet.blast?PAINT.orange:bullet.owner==='player'?PAINT.cyan:PAINT.pink;c.fillStyle=color;c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius,0,TAU);c.fill();if(bullet.element==='fire'){c.beginPath();c.arc(bullet.x,bullet.y,bullet.radius*.48,0,TAU);c.fillStyle='#fff1a8';c.fill();}c.strokeStyle=color+'66';c.lineWidth=bullet.owner==='player'?2:4;c.beginPath();c.moveTo(bullet.x,bullet.y);c.lineTo(bullet.x-bullet.vx*.025,bullet.y-bullet.vy*.025);c.stroke();}
+    let fusionDeformation = null;
+    for (const effect of w.effects) {
+      if (effect.kind !== 'tile-fusion' || !this.visible(effect.originX,effect.originY,245)) continue;
+      fusionDeformation = drawTileFusion(c, effect, p, this.reduced) || fusionDeformation;
+    }
     this.drawAim(p,w);
-    this.drawPlayer(p,time);
+    this.drawPlayer(p,time,fusionDeformation);
     for(const e of w.effects) {
+      if (e.kind === 'tile-fusion') continue;
       const progress=1-e.life/e.maxLife;c.globalAlpha=Math.min(1,e.life/e.maxLife*2);
       if(e.kind==='text'){
         if(e.text==='击破')this.inkSplat(e.x,e.y,38+progress*20,PAINT.pink,.3,Math.min(.75,e.life/e.maxLife));
@@ -449,7 +456,7 @@ export class Renderer {
     if(e.stun>0)this.text('眩晕',e.x,e.y-42,12,'#d2a7ff');
     if(selected){c.strokeStyle='#7021cbbb';c.lineWidth=1;for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){c.beginPath();c.moveTo(e.x+sx*30,e.y+sy*20);c.lineTo(e.x+sx*30,e.y+sy*30);c.lineTo(e.x+sx*20,e.y+sy*30);c.stroke();}}
   }
-  drawPlayer(p,time) {
+  drawPlayer(p,time,fusionDeformation=null) {
     const c=this.ctx,t=tier(p.value),size=p.radius*2+6;
     if(p.parryWindow>0){c.strokeStyle='#e9fdff';c.lineWidth=7;c.beginPath();c.arc(p.x,p.y,48,p.aimAngle-1.42,p.aimAngle+1.42);c.stroke();}
     if(p.overload>0||p.energy>=100){c.strokeStyle=p.overload>0?'#edcf8bbb':'#edcf8b55';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,34+(this.reduced?0:Math.sin(time*6)*2),0,TAU);c.stroke();}
@@ -457,7 +464,9 @@ export class Renderer {
     if(p.buffs.magnet>0){c.strokeStyle='#c1a5f025';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,135,0,TAU);c.stroke();}const tint=t>=6?PAINT.yellow:t>=3?PAINT.lime:PAINT.cyan;
     if(p.invulnerable>0&&Math.floor(time*16)%2===0&&!this.reduced)c.globalAlpha=.55;
     if(p.dashTime>0){this.rect(p.x-20-p.dashX*22,p.y-20-p.dashY*22,40,40,7,tint+'44');}
-    drawNumberTile(c,{x:p.x,y:p.y,size,value:p.value,stroke:'#ffffff',deformation:this.reduced?null:impactScale(p.impactMotion,this.simulationTime)});
+    const hitDeformation = impactScale(p.impactMotion,this.simulationTime);
+    const deformation = hitDeformation.x !== 1 ? hitDeformation : fusionDeformation;
+    drawNumberTile(c,{x:p.x,y:p.y,size,value:p.value,stroke:'#ffffff',deformation:this.reduced?null:deformation});
     c.strokeStyle='#18a49b';c.lineWidth=2;c.strokeRect(p.x-size/2-4,p.y-size/2-4,size+8,size+8);
     this.rect(p.x-16,p.y-size/2-26,32,14,4,PAINT.ink);this.text('YOU',p.x,p.y-size/2-16,9,'#ffffff','900');
     const equipped=activeWeapon(p),weapon=weaponOf(equipped);c.save();c.translate(p.x,p.y);
