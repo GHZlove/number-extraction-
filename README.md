@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.1 browser playtest.** Hand-inked 2D terrain, moving water, animated number slabs, and illustrated equipment run on the existing combat rules. [Download source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [New controls and setup](docs/NUMBER_SKILLS_V012.md). The v0.11.3 desktop download below is the previous release.
+> **v0.12.2 browser playtest.** The shelter, equipment screens, field dialogs and combat controls use the same hand-inked 2D science-fiction art as the maps. [Download source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [New controls and setup](docs/NUMBER_SKILLS_V012.md). The v0.11.3 desktop download below is the previous release.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -32,7 +32,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 **Windows:** [download the portable x64 EXE](https://github.com/GHZlove/number-extraction-/releases/download/v0.11.3-desktop.18/NumberExtraction-0.11.3-Windows-x64.exe) and open it directly. No Python, Node.js or separate browser is needed. Finish the current raid and close an older running copy first. **F11 / Alt+Enter** toggles fullscreen. [Screenshots and SHA256](https://github.com/GHZlove/number-extraction-/releases/tag/v0.11.3-desktop.18) are attached to the verified prerelease.
 
-**Web/source:** [download the current playtest ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), or follow [Run locally](#run-locally). The v0.12.1 playtest is on `feature/number-skills-art-v012`; the default branch and hosted demo follow separate release schedules. Hosted access is currently restricted.
+**Web/source:** [download the current playtest ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), or follow [Run locally](#run-locally). The v0.12.2 playtest is on `feature/number-skills-art-v012`; the default branch and hosted demo follow separate release schedules. Hosted access is currently restricted.
 
 ## Latest update
 

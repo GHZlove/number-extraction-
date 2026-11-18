@@ -1,0 +1,430 @@
+/* Presentation shared by the shelter, raid controls and field dialogs. */
+:root {
+  --cel-ink: #282431;
+  --cel-paper: #f8f1df;
+  --cel-card: #fff9eb;
+  --cel-muted: #625665;
+  --cel-mint: #abd1b1;
+  --cel-lime: #d1e98e;
+  --cel-ochre: #ecd197;
+  --cel-lilac: #ded0ec;
+  --cel-coral: #efc1ae;
+  --cel-dusk: #3d354b;
+  --cel-line: #827586;
+  --cel-shadow: 4px 4px 0 var(--cel-ink);
+  --cel-corner: 10px 7px 12px 8px;
+}
+
+body[data-screen="shelter"] {
+  color-scheme: light;
+  background: var(--cel-paper);
+  color: var(--cel-ink);
+}
+
+#shelter-screen {
+  --bg: var(--cel-paper);
+  --panel: var(--cel-card);
+  --panel-2: #eee7d6;
+  --line: var(--cel-line);
+  --text: var(--cel-ink);
+  --muted: var(--cel-muted);
+  --mint: var(--cel-lime);
+  --ink: var(--cel-ink);
+  max-width: 1400px;
+  padding: 25px clamp(16px, 3vw, 36px) 30px;
+}
+
+#shelter-screen .shelter-top {
+  border-bottom: 2px solid var(--cel-ink);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+#shelter-screen .brand-logo {
+  color: var(--cel-ink);
+  background: var(--cel-lime);
+  border: 2px solid var(--cel-ink);
+  border-radius: 8px 11px 7px 10px;
+  box-shadow: 3px 3px 0 var(--cel-ink);
+}
+
+#shelter-screen .brand strong {
+  color: var(--cel-ink);
+  font-size: clamp(19px, 2vw, 25px);
+  letter-spacing: .07em;
+}
+
+#shelter-screen .brand small,
+#shelter-screen .eyebrow,
+#dialog .eyebrow {
+  color: #595063;
+  font-size: 10px;
+  letter-spacing: .13em;
+}
+
+#shelter-screen .resource-chip {
+  background: #dae9c5;
+  border: 2px solid var(--cel-ink);
+  border-radius: var(--cel-corner);
+  box-shadow: 2px 3px 0 var(--cel-ink);
+}
+#shelter-screen .resource-chip.alloy { background: #ccdfe6; }
+#shelter-screen .resource-chip.core { background: var(--cel-lilac); }
+#shelter-screen .resource-chip :is(b, small, .icon) { color: var(--cel-ink); }
+
+#shelter-screen .shelter-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 7px;
+  padding: 7px;
+  background: #e9dfcd;
+  border: 2px solid var(--cel-ink);
+  border-radius: var(--cel-corner);
+  box-shadow: var(--cel-shadow);
+  margin-bottom: 24px;
+}
+
+:is(#shelter-screen, #dialog) button {
+  color: var(--cel-ink);
+  background: var(--cel-mint);
+  border: 2px solid var(--cel-ink);
+  border-radius: 7px 5px 8px 6px;
+  box-shadow: 2px 2px 0 var(--cel-ink);
+  font-weight: 750;
+  transition: background-color .12s ease, transform .12s ease, box-shadow .12s ease;
+}
+
+:is(#shelter-screen, #dialog) button:not(:disabled):hover {
+  background-color: var(--cel-lime);
+  transform: translateY(-1px);
+  box-shadow: 2px 3px 0 var(--cel-ink);
+}
+
+:is(#shelter-screen, #dialog) button:not(:disabled):active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--cel-ink);
+}
+
+:is(#shelter-screen, #dialog) button[aria-pressed="true"] {
+  background: var(--cel-lime);
+  color: var(--cel-ink);
+}
+
+:is(#shelter-screen, #dialog) button:disabled {
+  color: #655f69;
+  background: #e6dece;
+  border-color: #867e88;
+  box-shadow: none;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+#shelter-screen .shelter-tabs button {
+  background: var(--cel-card);
+  padding: 10px 9px;
+  text-align: center;
+  min-height: 48px;
+  min-width: 0;
+}
+
+#shelter-screen .shelter-tabs button small {
+  color: #625665;
+  font-size: 9px;
+  letter-spacing: .07em;
+  overflow-wrap: anywhere;
+}
+
+#shelter-screen .shelter-tabs button[aria-pressed="true"] {
+  background: var(--cel-lime);
+  box-shadow: inset 0 -4px 0 #a6b868, 2px 2px 0 var(--cel-ink);
+}
+
+#shelter-screen :is(.shelter-hero, .expedition-panel, .forge-panel, .warehouse-panel, .boss-codex, .rules-panel, .playtest-panel) {
+  background: var(--cel-card);
+  color: var(--cel-ink);
+  border: 2px solid var(--cel-ink);
+  border-radius: var(--cel-corner);
+  box-shadow: var(--cel-shadow);
+}
+
+#shelter-screen .shelter-hero::before { content: none; }
+
+#shelter-screen .hero-heading {
+  padding: 24px 22px 0;
+  gap: 13px;
+  align-items: flex-start;
+}
+
+#shelter-screen .hero-heading h1 {
+  color: var(--cel-ink);
+  font-size: clamp(30px, 3.2vw, 47px);
+  line-height: 1.12;
+  margin: 6px 0 8px;
+}
+
+#shelter-screen .hero-heading p {
+  color: var(--cel-muted);
+  font-size: 13px;
+}
+
+#shelter-screen .safe-tag {
+  color: var(--cel-ink);
+  background: #dceab7;
+  border: 1.5px solid var(--cel-ink);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+#shelter-screen .safe-tag .signal-dot { background: #527446; box-shadow: none; }
+
+.shelter-display {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 15px;
+  padding: 22px;
+  align-items: stretch;
+}
+
+.shelter-illustration {
+  position: relative;
+  min-width: 0;
+  min-height: 220px;
+  margin: 0;
+  overflow: hidden;
+  background: #bdc6aa;
+  border: 2px solid var(--cel-ink);
+  border-radius: 9px 6px 11px 8px;
+  box-shadow: 2px 2px 0 var(--cel-ink);
+}
+
+.shelter-illustration img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 51% 56%;
+}
+
+.shelter-number-board {
+  min-width: 0;
+  align-content: center;
+  padding: clamp(9px, 1.3vw, 17px);
+  border: 2px solid var(--cel-ink);
+  border-radius: 8px 10px 8px 11px;
+  background: var(--cel-lilac);
+  box-shadow: 2px 2px 0 var(--cel-ink);
+}
+
+.shelter-board-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--cel-ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.shelter-number-board .number-preview {
+  width: 100%;
+  max-width: 360px;
+  gap: clamp(5px, .75vw, 10px);
+  padding: 0;
+  margin: 0 auto;
+}
+
+#shelter-screen .hero-footer {
+  background: #e8ddc5;
+  border-top: 2px solid var(--cel-ink);
+  color: var(--cel-ink);
+  padding: 16px 22px;
+}
+
+#shelter-screen .hero-footer b,
+#shelter-screen :is(.facility-title h3, .forge-panel h2, .expedition-panel h2, .section-heading h2) {
+  color: var(--cel-ink);
+}
+
+#shelter-screen .hero-footer span { color: var(--cel-muted); }
+#shelter-screen .hero-stage i { background: #bbb1a4; }
+#shelter-screen .hero-stage i.on { background: #668357; }
+
+#shelter-screen .expedition-panel {
+  top: 17px;
+  max-height: calc(100dvh - 50px);
+  align-self: start;
+  padding: 20px;
+  scrollbar-color: #877a8d #e9dfca;
+  scrollbar-width: thin;
+}
+
+#shelter-screen .expedition-panel > .muted { font-size: 13px; }
+#shelter-screen button.deploy-button {
+  background: var(--cel-lime);
+  color: var(--cel-ink);
+  box-shadow: 3px 4px 0 var(--cel-ink);
+  min-height: 50px;
+  font-size: 17px;
+}
+
+#shelter-screen button.difficulty-card {
+  background: #f5ebd5;
+  border-width: 1.5px;
+  border-left: 5px solid color-mix(in srgb, var(--difficulty), var(--cel-ink) 30%);
+  text-align: left;
+  min-height: 39px;
+  padding: 8px 10px;
+}
+#shelter-screen button.difficulty-card.selected {
+  background: var(--cel-lime);
+  border-left-width: 5px;
+  box-shadow: 2px 2px 0 var(--cel-ink);
+}
+#shelter-screen .difficulty-top b { color: var(--cel-ink); font-size: 13px; }
+#shelter-screen .difficulty-top span { color: color-mix(in srgb, var(--difficulty), var(--cel-ink) 65%); }
+#shelter-screen .difficulty-meta,
+#shelter-screen .difficulty-meta span:last-child { color: #4d4755; font-size: 10px; }
+
+:is(#shelter-screen, #dialog) select {
+  color-scheme: light;
+  background: #fff8e9;
+  color: var(--cel-ink);
+  border: 1.5px solid var(--cel-ink);
+  border-radius: 7px 5px 8px 6px;
+  font-size: 13px;
+  min-height: 38px;
+}
+
+:is(#shelter-screen, #dialog) select:disabled { background: #ebe2d1; color: #625665; }
+#shelter-screen :is(.weapon-choice label, .forge-panel label, .expedition-summary small) {
+  color: var(--cel-muted);
+  font-size: 12px;
+}
+#shelter-screen .expedition-summary { border-color: var(--cel-ochre); }
+#shelter-screen .expedition-summary b { color: var(--cel-ink); font-size: 11px; }
+
+#shelter-screen :is(.facility-card, .stat-card, .mutator-card, .vault-item, .boss-card, .journal-card, .playtest-run,
+  .journal-kpis article, .deployment-slots > div, .run-summary, .number-form-info, .review-grid article) {
+  background: #f5edda;
+  color: var(--cel-ink);
+  border: 1.5px solid var(--cel-ink);
+  border-radius: var(--cel-corner);
+}
+
+#shelter-screen .facility-card { border-top: 5px solid var(--accent); }
+#shelter-screen .facility-icon { background: var(--cel-mint); color: var(--cel-ink); border-color: var(--cel-ink); }
+#shelter-screen :is(.facility-level, .facility-next, .warehouse-count, .rule-summary) {
+  background: var(--cel-lilac);
+  color: var(--cel-ink);
+  border-color: var(--cel-line);
+}
+#shelter-screen :is(.facility-card p, .forge-panel p, .forge-panel small, .boss-card small, .journal-card p, .playtest-run p,
+  .deployment-slots small, .vault-item p, .stat-card small, .stat-card b, .shelter-footer, .deploy-note) {
+  color: var(--cel-muted);
+}
+
+#shelter-screen .vault-item { border-top: 5px solid var(--rarity); }
+#shelter-screen .boss-card { border-top: 5px solid var(--boss-color); }
+#shelter-screen .boss-glyph { color: var(--cel-ink); background: var(--cel-lilac); border-color: var(--cel-ink); }
+#shelter-screen .mutator-card.selected { background: var(--cel-lime); }
+#shelter-screen .vault-recycle { background: var(--cel-coral); }
+#shelter-screen .run-report { background: #e3edca; border: 2px solid var(--cel-ink); border-radius: var(--cel-corner); }
+#shelter-screen .run-report.failed { background: #f4d9cc; border-color: var(--cel-ink); }
+#shelter-screen .run-report :is(b, p, .run-rewards, .run-recap) { color: var(--cel-ink); }
+#shelter-screen :is(.journal-privacy, .journal-sample-note, .playtest-review) {
+  color: var(--cel-ink);
+  background: #e8ebcd;
+  border-color: var(--cel-line);
+}
+
+.forge-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.forge-heading .inventory-weapon-art { width: 90px; height: 65px; flex: 0 0 auto; }
+.vault-item h3 .inventory-weapon-art { width: 35px; height: 28px; }
+
+#overlay { background: #262130b3; backdrop-filter: none; }
+#dialog {
+  color-scheme: light;
+  color: var(--cel-ink);
+  background: var(--cel-card);
+  border: 2px solid var(--cel-ink);
+  border-top: 9px solid #887397;
+  border-radius: 13px 9px 14px 10px;
+  box-shadow: 6px 7px 0 #15121e;
+}
+#dialog :is(h2, h3, h4, b, strong, label) { color: var(--cel-ink); }
+#dialog :is(p, small, .equipped-card span, .key-help, .muted) { color: var(--cel-muted); }
+#dialog :is(.rule-card, .exit-brief-item, .shop-item, .inventory-item, .inventory-summary,
+  .resource-pouch, .attachment-row, .equipped-card, .save-preview) {
+  color: var(--cel-ink);
+  background: #f3ead4;
+  border: 1.5px solid var(--cel-ink);
+  border-radius: var(--cel-corner);
+}
+#dialog .exit-brief-item strong { color: #89482d; }
+#dialog .exit-brief-item strong.ready { color: #355c38; }
+#dialog .primary-button { background: var(--cel-lime); }
+#dialog .secondary-button { background: var(--cel-lilac); }
+#dialog :is(.dialog-close, [data-action="abandon"], [data-action="confirmRecycle"]) { background: var(--cel-coral); }
+
+.raid-screen :is(.hud-actions .icon-button, .carried-chip, .boss-hud, .nearby-gear, .interaction, .inventory-trigger, .touch-button) {
+  background: var(--cel-dusk);
+  color: var(--cel-paper);
+  border: 2px solid var(--cel-ink);
+  border-radius: 7px 5px 8px 6px;
+  box-shadow: 2px 2px 0 var(--cel-ink);
+  backdrop-filter: none;
+}
+.raid-screen :is(.icon-button:hover, .touch-button.attack, .touch-button.held, .overload-button.ready) {
+  color: var(--cel-ink);
+  background: var(--cel-lime);
+}
+.raid-screen .touch-button:is(.attack, .held) small { color: var(--cel-ink); }
+.raid-screen .number-skill.ready { border-color: var(--element); }
+
+body :is(#shelter-screen, #raid-screen, #dialog) kbd {
+  color: var(--cel-ink);
+  background: #eee1bd;
+  border: 1px solid var(--cel-ink);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 var(--cel-ink);
+}
+
+:is(#shelter-screen, #raid-screen, #dialog) :is(button, select):focus-visible {
+  outline: 3px solid #825caa;
+  outline-offset: 3px;
+}
+
+#message.toast {
+  background: var(--cel-dusk);
+  color: var(--cel-card);
+  border: 2px solid var(--cel-ink);
+  border-radius: var(--cel-corner);
+  box-shadow: 3px 3px 0 var(--cel-ink);
+}
+
+@media (max-width: 1030px) {
+  #shelter-screen .shelter-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #shelter-screen .shelter-layout { grid-template-columns: minmax(0, 1fr); }
+  #shelter-screen .expedition-panel { position: static; max-height: none; overflow: visible; }
+}
+
+@media (max-width: 590px) {
+  #shelter-screen { padding-inline: 12px; }
+  #shelter-screen .shelter-tabs { gap: 5px; padding: 5px; }
+  #shelter-screen .shelter-tabs button { padding: 7px 3px; }
+  #shelter-screen .shelter-tabs button span { font-size: 12px; }
+  #shelter-screen .shelter-tabs button small { font-size: 8px; }
+  #shelter-screen .hero-heading { padding: 16px 13px 0; flex-wrap: wrap; }
+  #shelter-screen .hero-heading h1 { margin-top: 4px; }
+  .shelter-display { grid-template-columns: minmax(0, 1fr); padding: 14px; gap: 12px; }
+  .shelter-illustration { min-height: 0; aspect-ratio: 16 / 9; }
+  .shelter-number-board { padding: 13px; }
+  #shelter-screen .hero-footer { padding: 13px; }
+  #shelter-screen .expedition-panel { padding: 15px; }
+  .forge-heading .inventory-weapon-art { width: 61px; height: 48px; }
+  :is(#shelter-screen, #dialog) select { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(#shelter-screen, #dialog) button { transition: none; }
+  :is(#shelter-screen, #dialog) button:not(:disabled):is(:hover, :active) { transform: none; }
+}
