@@ -1,8 +1,14 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.12.3';
+export const VERSION = '0.12.4';
 export const MAP_LAYOUTS = Object.freeze([
-  {id:'random',name:'随机战区'}, {id:'tangram',name:'七巧遗迹'},
-  {id:'fracture',name:'裂谷放射'}, {id:'blocks',name:'补给街区'}, {id:'wilds',name:'多心荒原'},
+  {id:'random',name:'随机战区',description:'从七张地图中抽取一张'},
+  {id:'tangram',name:'七巧遗迹',description:'拼片遗迹 · 斜线分区'},
+  {id:'fracture',name:'裂谷放射',description:'扇形裂谷 · 放射布局'},
+  {id:'blocks',name:'补给街区',description:'补给街区 · 方形街坊'},
+  {id:'wilds',name:'多心荒原',description:'多心荒原 · 不规则地形'},
+  {id:'delta',name:'双河湿地',description:'曲流水网 · 栈桥与林地'},
+  {id:'observatory',name:'环形天文台',description:'环状分区 · 中继设施'},
+  {id:'glacier',name:'斜脊冰原',description:'斜切冰带 · 冰隙前哨'},
 ]);
 export const LEGACY_WORLD = Object.freeze({ width: 3200, height: 2000 });
 export const WORLD = Object.freeze({ width: 6400, height: 4000, spawn: { x: 300, y: 1060 } });

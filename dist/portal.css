@@ -12,7 +12,7 @@
   pointer-events: none;
 }
 
-#shelter-screen button.portal-launch {
+#shelter-screen button.portal-hotspot {
   position: absolute;
   z-index: 1;
   top: 49.7%;
@@ -30,7 +30,7 @@
   isolation: isolate;
 }
 
-#shelter-screen button.portal-launch:not(:disabled):is(:hover, :focus-visible, :active) {
+#shelter-screen button.portal-hotspot:not(:disabled):is(:hover, :focus-visible, :active) {
   transform: translate(-50%, -50%);
   background: #dbff9060;
   border-style: solid;
@@ -40,47 +40,49 @@
   outline-offset: 3px;
 }
 
-.portal-launch-label {
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
+.portal-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 17px;
+  padding: 15px 22px 2px;
+}
+
+#shelter-screen button.portal-launch {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 26px;
-  padding: 4px 9px;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 158px;
+  min-height: 52px;
+  padding: 9px 17px;
   border: 2px solid #282431;
-  border-radius: 6px 4px 7px 6px;
-  box-shadow: 2px 2px 0 #282431;
-  background: #e3f2ac;
-  color: #282431;
-  font-size: clamp(11px, 1.15vw, 14px);
+  border-radius: 7px 12px 8px 7px;
+  box-shadow: 4px 4px 0 #282431;
+  background: #d2ed7b;
+  color: #221e2a;
+  font-size: clamp(19px, 2.1vw, 24px);
   font-weight: 900;
+  line-height: 1.2;
   white-space: nowrap;
-  transform: translateX(-50%);
 }
-.portal-launch-label .icon { width: 12px; height: 12px; }
+
+#shelter-screen button.portal-launch:is(:hover, :focus-visible) { background: #e2f69d; }
+#shelter-screen button.portal-launch:focus-visible { outline: 2px solid #282431; outline-offset: 4px; }
+#shelter-screen button.portal-launch .icon { width: 19px; height: 19px; }
 
 .portal-destination {
-  position: absolute;
-  z-index: 1;
-  right: 8px;
-  bottom: 8px;
-  left: 8px;
-  width: fit-content;
-  max-width: calc(100% - 16px);
-  padding: 4px 7px;
-  border: 1px solid #282431;
-  border-radius: 4px 7px 5px 6px;
-  background: #2b2935eb;
-  color: #fff5dc;
-  font-size: clamp(10px, 1.05vw, 13px);
-  line-height: 1.4;
-  pointer-events: none;
+  color: #322b39;
+  font-size: 14px;
+  line-height: 1.45;
 }
-.portal-destination span { color: #d1e98e; }
+.portal-destination small { margin-right: 3px; color: #534a5b; font-size: 12px; }
 
+#shelter-screen .expedition-panel {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
 #shelter-screen .expedition-panel > h2 { margin-bottom: 12px; }
 
 .holo-terminal {
@@ -225,8 +227,8 @@
 .expedition-difficulty-title { margin: 18px 0 8px; color: var(--cel-ink); font-size: 14px; }
 
 @media (max-width: 590px) {
-  .portal-launch-label { bottom: -11px; }
-  .portal-destination { bottom: 6px; left: 6px; font-size: 10px; }
+  .portal-controls { padding: 10px 13px 2px; }
+  #shelter-screen button.portal-launch { width: 100%; }
   #shelter-screen .holo-terminal button.holo-choice { min-height: 44px; }
 }
 

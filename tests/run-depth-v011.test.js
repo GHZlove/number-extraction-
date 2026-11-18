@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { Raid } from '../dist/src/game.js';
 import { MUTATORS, normalizeMutators, runRules, numberForm, updateNumberForm, updateRunHazards } from '../dist/src/run-rules.js';
 import { HeatDirector } from '../dist/src/heat.js';
-import { DIFFICULTIES, ENEMY_TYPES, PRESSURE, RULES, SAVE_KEY, V10_SAVE_KEY } from '../dist/src/config.js';
+import { DIFFICULTIES, MAP_LAYOUTS, ENEMY_TYPES, PRESSURE, RULES, SAVE_KEY, V10_SAVE_KEY } from '../dist/src/config.js';
 import { defaultSave, normalizeSave, readSave, writeSave, settleRun } from '../dist/src/storage.js';
 import { createEnemy } from '../dist/src/world.js';
 import { makeEquipment, decorateWeapon, spreadOf } from '../dist/src/equipment.js';
@@ -179,7 +179,7 @@ test('seeded exits vary conditions and positions but always retain one permanent
 });
 
 test('every difficulty and map family has legal exit collision bodies and a reachable fallback deadline',()=>{
- for(const difficulty of DIFFICULTIES)for(const layout of ['tangram','fracture','blocks','wilds']){
+ for(const difficulty of DIFFICULTIES)for(const {id:layout} of MAP_LAYOUTS.slice(1)){
   const r=new Raid(defaultSave(),103,{pressure:false,difficulty:difficulty.id,layout});
   for(const exit of r.world.exits)assert.ok(isFree(exit.x,exit.y,28,r.world.obstacles,r.world.bounds),`${difficulty.id}/${layout}/${exit.id}`);
   assert.ok(r.world.chests.some(c=>c.keyCard));r.elapsed=r.difficulty.extractAt;assert.equal(r.extractionReady(r.world.exits[0]),true);

@@ -54,7 +54,7 @@ function validPlaytestText(text) {
   if (new Set(data.runs.map(run=>run?.session)).size !== data.runs.length) return false;
   return data.runs.every(run=>{
     if (!exactKeys(run,RUN_KEYS) || !finite(run.session,1,1e9,true) || !version(run.buildVersion) || !version(run.balanceVersion) || !optionalNumber(run.seed,0,4294967295,true)) return false;
-    if (!optionalEnum(run.difficulty,['scout','standard','hard','severe','nightmare']) || !optionalEnum(run.map,['random','tangram','fracture','blocks','wilds'])) return false;
+    if (!optionalEnum(run.difficulty,['scout','standard','hard','severe','nightmare']) || !optionalEnum(run.map,['random','tangram','fracture','blocks','wilds','delta','observatory','glacier'])) return false;
     if (!Array.isArray(run.mutators) || run.mutators.length > 3 || new Set(run.mutators).size !== run.mutators.length || !run.mutators.every(key=>MODIFIER_KEYS.includes(key))) return false;
     const loadout=run.loadout;
     if (!exactKeys(loadout,['weapons','armorRarity','laser']) || !Array.isArray(loadout.weapons) || loadout.weapons.length > 2 || !optionalEnum(loadout.armorRarity,['none',...RARITY_KEYS]) || !(loadout.laser === null || typeof loadout.laser === 'boolean')) return false;

@@ -39,10 +39,67 @@ function clipPolygon(vertices,nx,ny,limit){
   }
   return out;
 }
+
+const MAP_SECTOR_NAMES = {
+  blocks: ['补给街坊', '集装箱区', '仓储广场'],
+  fracture: ['裂谷坡地', '扇形高地', '断层营区'],
+  wilds: ['荒野盆地', '林间前哨', '资源群落'],
+  delta: ['芦苇浅滩', '冲积滩地', '双河岸线'],
+  observatory: ['测绘环廊', '观星外环', '望远阵列'],
+  glacier: ['寒脊冰带', '碎冰坡地', '钻探营区'],
+};
+
+function deltaPieces(random) {
+  const top = [0, .25 + random() * .09, .59 + random() * .10, 1];
+  const bottom = [0, .31 + random() * .09, .66 + random() * .10, 1];
+  const point = (column, y) => [top[column] + (bottom[column] - top[column]) * y, y];
+  return top.slice(0, -1).flatMap((_, column) => {
+    const rows = [0, .23 + random() * .15, .58 + random() * .16, 1];
+    return rows.slice(0, -1).map((y, row) => {
+      const next = rows[row + 1];
+      return [point(column, y), point(column + 1, y), point(column + 1, next), point(column, next)];
+    });
+  });
+}
+
+function observatoryPieces(random) {
+  const rim = [[0, 0], [.5, 0], [1, 0], [1, .5], [1, 1], [.5, 1], [0, 1], [0, .5]];
+  const center = [.42 + random() * .16, .42 + random() * .16];
+  const scale = .31 + random() * .1;
+  const ring = rim.map(([x, y], index) => {
+    const radius = scale * (index % 2 === 0 ? .68 : 1);
+    return [center[0] + (x - .5) * radius, center[1] + (y - .5) * radius];
+  });
+  return [
+    ring,
+    ...rim.map((point, index) => {
+      const next = (index + 1) % rim.length;
+      return [point, rim[next], ring[next], ring[index]];
+    }),
+  ];
+}
+
+function glacierPieces(random) {
+  const square = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  const slope = .60 + random() * .12;
+  const stops = [0, .37, .64, .97, 1.25, 1 + slope];
+  return stops.slice(0, -1).flatMap((low, index) => {
+    const strip = clipPolygon(clipPolygon(square, -1, -slope, -low), 1, slope, stops[index + 1]);
+    const ys = strip.map(point => point[1]);
+    const first = Math.min(...ys), last = Math.max(...ys);
+    const split = first + (last - first) * (.43 + random() * .14);
+    return [clipPolygon(strip, 0, 1, split), clipPolygon(strip, 0, -1, -split)];
+  });
+}
+
+const EXTRA_LAYOUTS = { delta: deltaPieces, observatory: observatoryPieces, glacier: glacierPieces };
+
 function layoutPieces(layout,random){
   if(layout==='tangram')return PIECES;
   let shapes=[];
-  if(layout==='blocks'){
+  if (Object.hasOwn(EXTRA_LAYOUTS, layout)) {
+    shapes = EXTRA_LAYOUTS[layout](random);
+  } else if(layout==='blocks'){
     shapes=[[[0,0],[1,0],[1,1],[0,1]]];
     const count=7+Math.floor(random()*5);
     while(shapes.length<count){
@@ -68,8 +125,11 @@ function layoutPieces(layout,random){
       return poly;
     });
   }
-  const names=layout==='blocks'?['补给街坊','集装箱区','仓储广场']:layout==='fracture'?['裂谷坡地','扇形高地','断层营区']:['荒野盆地','林间前哨','资源群落'];
-  return shapes.map((points,i)=>({points,shape:layout,name:names[i%names.length]+(Math.floor(i/3)+1)}));
+  const names = MAP_SECTOR_NAMES[layout] || MAP_SECTOR_NAMES.wilds;
+  return shapes.map((points, i) => ({
+    points, shape: layout,
+    name: layout === 'observatory' && i === 0 ? '中央观星台' : names[i % names.length] + (Math.floor(i / 3) + 1),
+  }));
 }
 export function createSectors(bounds,random,protectedPoints=[],layout='tangram'){
   const orientation=Math.floor(random()*8),rotate=orientation%4,mirror=orientation>=4;

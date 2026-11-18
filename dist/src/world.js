@@ -15,6 +15,11 @@ export function createEnemy(id, x, y, value, type = 'hunter') {
     aimX: x, aimY: y, dead: false, phase: (id.length*0.73)%6.28,
     rarity: 'white', armor: null, chargeTime: 0, chargeX: 0, chargeY: 0, burstLeft: 0, burstTimer: 0 };
 }
+const GROUND_BY_LAYOUT = {
+  delta: ['brush', 'water'],
+  observatory: ['rubble', 'mud'],
+  glacier: ['rubble', 'ice'],
+};
 const overlap = (a,b,pad=0) => a.x < b.x+b.w+pad && a.x+a.w > b.x-pad && a.y < b.y+b.h+pad && a.y+a.h > b.y-pad;
 
 export function generateWorld(seed, difficulty = 'scout', options={}) {
@@ -25,6 +30,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
   const layout=requested||choices[Math.floor(random()*choices.length)];
   const protectedPoints=[WORLD.spawn,{x:310,y:530},{x:405,y:1060},{x:790,y:1060},{x:485,y:1190},{x:620,y:1260},{x:1500,y:1420},{x:1670,y:1500},{x:1900,y:1450},{x:1180,y:1270}];
   const zones=createSectors(bounds,random,protectedPoints,layout.id);
+  const ground = GROUND_BY_LAYOUT[layout.id] || ['mud', 'water'];
   const east = { x: bounds.width-400, y: Math.round(bounds.height*0.72) };
   const world = {
     seed, difficulty: mission, bounds, zones, sectors:zones, spawn: { ...WORLD.spawn },
@@ -67,7 +73,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
     for(let i=0;i<Math.round((18+rank*6)*share(zone));i++) addObstacle({...sampleSector(zone,random),
       w:rand(55,140),h:rand(45,120),material:pick(['rock','container','barricade'])});
     for(let i=0;i<Math.round((9+rank*3)*share(zone));i++){
-      const patch={...sampleSector(zone,random),w:rand(150,350),h:rand(100,260),kind:i%2?'mud':'water'};
+      const patch={...sampleSector(zone,random),w:rand(150,350),h:rand(100,260),kind:ground[i%2===0?1:0]};
       if(!reserved(patch))world.terrain.push(patch);
     }
   }

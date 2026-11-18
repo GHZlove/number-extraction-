@@ -26,7 +26,7 @@ function enemy(r,dx=120,dy=0,value=4,id='target'){
 }
 function advance(r,seconds,input={}){for(let i=0;i<Math.ceil(seconds/step);i++)r.update(step,input);}
 
-test('all four map families cover rectangular bounds without gaps or overlapping interiors',()=>{
+test('all map families cover rectangular bounds without gaps or overlapping interiors',()=>{
   const bounds={width:6400,height:4000},random=seededRandom(39),counts=new Set();
   for(const map of MAP_LAYOUTS.slice(1))for(let seed=0;seed<12;seed++){
     const pieces=createSectors(bounds,seededRandom(seed),[],map.id);counts.add(pieces.length);

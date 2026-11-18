@@ -1,4 +1,4 @@
-# Number Extraction v0.12.3 · Illustrated shelter and number skills
+# Number Extraction v0.12.4 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
@@ -6,7 +6,9 @@ On Windows, double-click `start-windows.bat` and keep its terminal open. The lau
 
 ## Selecting a raid
 
-Hover over a map or use Tab to preview its zone layout. Click or tap to lock a map, then choose the difficulty. The destination below the illustrated green door reflects the locked map and difficulty. Click the door to start the raid.
+Hover over a map or use Tab to preview its zone layout. Click or tap to lock a map, then choose the difficulty. The destination beside the large Deploy button reflects the locked map and difficulty. Use that button or click the illustrated green door to start the raid.
+
+Three maps expand the pool to seven. Twinriver Wetlands adds wider waterways and more bridge and woodland sites. Ring Observatory has eight surrounding sectors and open relay arrays. Slant Ridge Icefield has diagonal sectors, icy ground and staggered cover.
 
 ## Skills
 
@@ -29,4 +31,4 @@ The original generated rasters are cropped into five in-game PNG atlases in `dis
 
 The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.3 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.4 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.

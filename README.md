@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.3 browser playtest.** Preview and select a map at the holographic terminal, choose the difficulty, then click the illustrated green portal to deploy. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
+> **v0.12.4 browser playtest.** Choose from seven maps at the holographic terminal. The shelter's large Deploy button and illustrated portal both start the selected route. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,10 +12,10 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Builds | v0.12.3 browser playtest · v0.11.3 Windows desktop release |
+| Builds | v0.12.4 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
-| Run variety | 4 map families · 5 difficulties · 10 optional mutators |
+| Run variety | 7 map families · 5 difficulties · 10 optional mutators |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage, Electron |
 | Verification | 355 automated tests; native Windows startup, restart and portable checks |
 | Languages | Simplified Chinese game interface; English and Chinese documentation |
@@ -71,7 +71,7 @@ Extraction adds a second decision: carry on searching for better loot, or return
 - **Bright, raised number tiles:** a white shelter homepage, colourful terrain and rounded number faces with large white numerals. Player and hostile markers distinguish actors from neutral tiles. Deployment, facilities and forging retain separate tabs; combat keeps a compact HUD and dedicated boss bar.
 - **Windows desktop:** a portable Electron build bundles its runtime, starts in its own window, supports fullscreen and keeps progress across updates. A validated JSON export/import flow transfers browser progress with a recoverable backup.
 - **2048-style growth:** equal neutral numbers merge into twice their value, up to 2048. Defeated enemies leave mergeable numbers; living enemies require combat.
-- **Four map families:** tangram ruins, radial fractures, split city blocks and clipped Voronoi wilderness. Select a family or randomise it. Maps contain 7–12 connected sectors with seeded shapes and risks, different landmark sequences and waterways, matching minimap boundaries and safe teaching anchors.
+- **Seven map families:** Tangram Ruins, Radial Fracture, Supply Blocks, Wildlands, Twinriver Wetlands, Ring Observatory and Slant Ridge Icefield. Select a family or randomise it. Maps contain 7–12 connected sectors with seeded shapes and risks, different landmark sequences and waterways, matching minimap boundaries and safe teaching anchors.
 - **Resource strongholds:** most enemies defend resource sites. Small wilderness patrols have their own cap; occupied sites can call limited reinforcements. Guards return when pulled too far away.
 - **Twelve enchantments:** lifesteal, chain lightning, stun, poison clouds, burn, frost, bleed, sunder, on-kill detonation, critical hits, gravity and energy recovery. Forge a permanent starter weapon up to Lv.5 and choose an enchantment; levels improve damage and knockback, while gun type, quality and number advantage also affect pushback.
 - **Reactive defence:** aim toward an incoming attack and right-click for a short parry window. Reflect bullets or interrupt melee attackers, including bosses. Poison and ordinary explosions require movement.
@@ -121,7 +121,7 @@ On **macOS / Linux**:
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-The Windows launcher opens the versioned page automatically. If an older server is using port 8000, it opens port 8012, which has separate browser save data. For the manual command, open [http://127.0.0.1:8000](http://127.0.0.1:8000). Select a map and difficulty, then click the illustrated green portal. Keep the terminal open while you play.
+The Windows launcher opens the versioned page automatically. If an older server is using port 8000, it opens port 8012, which has separate browser save data. For the manual command, open [http://127.0.0.1:8000](http://127.0.0.1:8000). Select a map and difficulty, then click Deploy or the illustrated green portal. Keep the terminal open while you play.
 
 ES modules require an HTTP server; opening `dist/index.html` as a local file is unsupported. The Python server only serves files; simulation runs in the browser.
 

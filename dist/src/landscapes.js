@@ -1,12 +1,22 @@
 import { zoneAt } from './math.js';
+
+const LANDMARK_PATTERNS = {
+  delta: [3, 4, 3, 1, 4, 5],
+  observatory: [6, 5, 0, 6, 2, 5],
+  glacier: [2, 7, 2, 5, 7, 0],
+};
 // Open structures and terrain pockets give large maps places to navigate toward.
 export function buildLandscapes(world,rand,addObstacle){
   const {width,height}=world.bounds,rank=world.difficulty.rank-1,sites=[];
   const spacing=1000+rank*100,scale=.6;let serial=0;
+  const pattern = LANDMARK_PATTERNS[world.layout];
+  const offset = {tangram:0,blocks:1,fracture:2,wilds:4}[world.layout] || 0;
   let index=0;
     for(let cy=900;cy<height-550;cy+=spacing){
       for(let cx=650;cx<width-450;cx+=spacing){
-        const x=cx+rand(-130,130),y=cy+rand(-130,130),sector=zoneAt({x,y},world.zones),offset={tangram:0,blocks:1,fracture:2,wilds:4}[world.layout]||0,kind=(serial++ + offset)%6,cluster=`site-${sector.id}-${index++}`;
+        const x=cx+rand(-130,130),y=cy+rand(-130,130),sector=zoneAt({x,y},world.zones),cluster=`site-${sector.id}-${index++}`;
+        const kind = pattern ? pattern[serial % pattern.length] : (serial + offset) % 6;
+        serial++;
         const place=(dx,dy,w,h,material)=>addObstacle({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,material,cluster});
         const patch=(dx,dy,w,h,ground)=>world.terrain.push({x:x+dx*scale,y:y+dy*scale,w:w*scale,h:h*scale,kind:ground});
         let name;
@@ -30,6 +40,23 @@ export function buildLandscapes(world,rand,addObstacle){
         }else if(kind===4){
           name='隐蔽林地';
           for(let i=0;i<7;i++){const dx=rand(-400,300),dy=rand(-300,260);patch(dx,dy,180,150,'brush');place(dx+70,dy+65,34,34,'tree');}
+        } else if (kind === 6) {
+          name = '观星阵列';
+          patch(-400,-280,800,560,'rubble');
+          place(-45,-40,90,80,'relay');
+          for (const side of [-1, 1]) {
+            place(side * 285 - 14,-196,28,130,'ruin');
+            place(side * 285 - 14,66,28,130,'ruin');
+            place(side * 145 - 64,-220,128,32,'warehouse');
+            place(side * 145 - 64,188,128,32,'warehouse');
+          }
+        } else if (kind === 7) {
+          name = '冰隙前哨';
+          patch(-500,-240,1000,480,'ice');
+          patch(-510,-54,1020,108,'rubble');
+          for (const side of [-1, 1]) {
+            for (let i=0;i<4;i++) place(-405 + i * 190 + (side === 1 ? 70 : 0),side * 145 - 39,98,78,'ridge');
+          }
         }else{
           name='运算中继站';
           place(-35,-35,70,70,'relay');
@@ -40,15 +67,16 @@ export function buildLandscapes(world,rand,addObstacle){
       }
     }
   // Two winding waterways cross polygon sectors instead of defining fixed strips.
-  const rivers=world.layout==='blocks'?1:world.layout==='wilds'?3:2;
+  const rivers = { blocks: 1, wilds: 3, observatory: 1, glacier: 1 }[world.layout] ?? 2;
+  const riverWidth = world.layout === 'delta' ? 300 : 210;
   for(let river=0;river<rivers;river++){
     const riverX=width*(river+1)/(rivers+1);
     for(let y=350;y<height-400;y+=1100){
       const x=riverX+(y/height-.5)*width*.18+Math.sin(y/1200+river)*160;
-      world.terrain.push({x,y,w:210,h:1080,kind:'water'});
-      world.terrain.push({x:x-90,y:y+470,w:390,h:140,kind:'bridge'});
+      world.terrain.push({x,y,w:riverWidth,h:1080,kind:'water'});
+      world.terrain.push({x:x-90,y:y+470,w:riverWidth+180,h:140,kind:'bridge'});
       for(const road of world.roads)if(road.w>road.h&&y<road.y+road.h&&y+1080>road.y){
-        world.terrain.push({x:x-90,y:road.y,w:390,h:road.h,kind:'bridge'});
+        world.terrain.push({x:x-90,y:road.y,w:riverWidth+180,h:road.h,kind:'bridge'});
       }
     }
   }
