@@ -32,13 +32,15 @@ test('desktop export rejects private and unknown fields at every nested boundary
 test('desktop export enforces bounded records, finite observations, controlled choices and the UTF-8 size limit',()=>{
  const base=sample();
  for(const mutate of [
-  data=>{data.schema=2;},data=>{data.balanceVersion='0.12.0';},data=>{data.runs=Array.from({length:101},(_,i)=>({...clone(base.runs[0]),session:i+1}));},
+  data=>{data.schema=2;},data=>{data.balanceVersion='0.12.99';},data=>{data.runs=Array.from({length:101},(_,i)=>({...clone(base.runs[0]),session:i+1}));},
   data=>{data.runs.push(clone(data.runs[0]));},data=>{data.runs[0].session=0;},data=>{data.runs[0].heat=101;},data=>{data.runs[0].hpPercent=-1;},
   data=>{data.runs[0].number=3;},data=>{data.runs[0].seconds=7201;},data=>{data.runs[0].huntersSpawned=121;},
   data=>{data.runs[0].mutators=['fog','fog'];},data=>{data.runs[0].mutators=['arbitrary'];},data=>{data.runs[0].feedback.pressure=6;},data=>{data.runs[0].feedback.unfair='free text';},
  ]){const data=clone(base);mutate(data);assert.equal(validPlaytestText(JSON.stringify(data)),false);}
  for(const value of ['{','null','[]',true,undefined])assert.equal(validPlaytestText(value),false);
  assert.equal(validPlaytestText(JSON.stringify(base)+' '.repeat(PLAYTEST_EXPORT_LIMIT)),false);
+ const legacy=clone(base);legacy.balanceVersion='0.12.0';
+ assert.equal(validPlaytestText(JSON.stringify(legacy)),true);
  const unknown=clone(base);for(const key of ['duration','seconds','firstHunterAt','heat','hpPercent','number','rawValue','gearCount','bagCapacity','chests','huntersSpawned','hunterWaves','kills'])unknown.runs[0][key]=null;
  assert.equal(validPlaytestText(JSON.stringify(unknown)),true);
  const full=clone(base);full.runs=Array.from({length:100},(_,i)=>({...clone(base.runs[0]),session:i+1}));assert.equal(validPlaytestText(JSON.stringify(full)),true);
