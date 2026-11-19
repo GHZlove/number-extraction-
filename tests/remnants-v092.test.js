@@ -149,6 +149,7 @@ test('inventory groups unlimited resources, shows gear-only counts and retains r
 test('recyclable remnants render gold feedback and all remnant states keep finite coordinates',t=>{
   const env=browserStubs(t),r=empty(),renderer=new Renderer(env.canvas,env.ids.get('minimap'));r.player.value=64;
   remnant(r,16,90);remnant(r,64,140);remnant(r,128,180);renderer.camera={...r.player};renderer.draw(r,1,RULES.fixedStep);
-  assert.ok(env.drawCalls.some(call=>call.method==='fillText'&&String(call.args[0]).includes('残骸 +12')));
-  assert.ok(env.drawCalls.some(call=>call.method==='fillText'&&call.args[0]==='同数合成'));
+  assert.ok(env.drawCalls.some(call=>call.method==='fillText'&&call.args[0]==='◇'));
+  assert.ok(env.drawCalls.some(call=>call.method==='stroke'&&call.strokeStyle==='#43a62c99'));
+  assert.equal(env.drawCalls.some(call=>call.method==='fillText'&&call.args[0]==='同数合成'),false);
 });

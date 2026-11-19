@@ -120,7 +120,8 @@ test('fireball snapshots its number, explodes once and applies fire through the 
 test('a skill pressed during hit stop is cast once when simulation resumes', () => {
   const raid = raidFixture();
   raid.hitStop = .03;
-  raid.update(1 / 60, { skill: 'fireball' });
+  raid.equippedSkills = ['fireball'];
+  raid.update(1 / 60, { skill: 0 });
   raid.update(1 / 60, {});
   raid.update(1 / 60, {});
   assert.equal(raid.world.projectiles.length, 1);

@@ -38,12 +38,12 @@ test('failed settings writes leave the saved plan and display unchanged',async t
 
 test('fog paints a radial mask, hides distant hostile labels and disables laser red aiming under jamming',t=>{
  const env=browserStubs(t),raid=new Raid(defaultSave(),52,{mutators:['fog','jammed']}),renderer=new Renderer(env.canvas,env.ids.get('minimap'));
- raid.player.laser=makeEquipment('laser');raid.world.enemies=[createEnemy('near',raid.player.x+100,raid.player.y,4,'hunter'),createEnemy('far',raid.player.x+400,raid.player.y,4,'hunter')];
+ raid.player.aimTarget={x:raid.player.x+120,y:raid.player.y};raid.player.laser=makeEquipment('laser');raid.world.enemies=[createEnemy('near',raid.player.x+100,raid.player.y,4,'hunter'),createEnemy('far',raid.player.x+400,raid.player.y,4,'hunter')];
  for(const e of raid.world.enemies)Object.assign(e,{hunter:true,state:'windup',aimX:raid.player.x,aimY:raid.player.y,timer:.3});
  renderer.draw(raid,1,1/60);
  assert.equal(env.drawCalls.filter(c=>c.method==='createRadialGradient').length,1);
  assert.equal(env.drawCalls.filter(c=>c.method==='fillText'&&String(c.args[0]).includes('追猎 · ')).length,1);
- assert.ok(env.drawCalls.some(c=>c.method==='stroke'&&c.strokeStyle==='#ffffff66'));
+ assert.ok(env.drawCalls.some(c=>c.method==='stroke'&&c.strokeStyle==='#fff4dc'));
  assert.equal(env.drawCalls.some(c=>c.method==='stroke'&&c.strokeStyle==='#ff5d65cc'),false);
  const ui=new UI(new Proxy({},{get:()=>()=>{}}));ui.update(raid,defaultSave(),true,false);assert.equal(env.ids.get('boss-hud').hidden,true);
 });

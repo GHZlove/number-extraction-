@@ -1,3 +1,5 @@
+import { NUMBER_SKILLS, normalizeSkills } from './skill-tree.js';
+import { detectsFlashlight } from './raid-light.js';
 import { enemyShotColor, playerShotColor, setWeaponMotion, swingTime } from './combat-art.js';
 import { impactElement } from './elements.js';
 import { applyMomentum, bounceContact, markImpact, separateEnemyContacts } from './impact-motion.js';
@@ -27,6 +29,8 @@ export class Raid {
     this.random = seededRandom(seed ^ 0x5a91bd);
     this.difficulty = difficultyOf(options.difficulty ?? save.selectedDifficulty);
     this.run=runRules(options.mutators??save.selectedMutators,options.runRules!==false);
+    this.nightMode = save.nightMode === true;
+    this.equippedSkills = normalizeSkills(save.unlockedSkills, save.equippedSkills).equippedSkills;
     this.duration = this.difficulty.seconds*this.run.duration;
     this.rewardMultiplier = rewardMultiplier(save,this.difficulty.id)*this.run.reward;
     this.world = generateWorld(seed,this.difficulty.id,{layout:options.layout||save.selectedMap,boss:options.boss||save.selectedBoss});
@@ -49,7 +53,7 @@ export class Raid {
       invulnerable: 0, chilled:0, facingX: 1, facingY: 0, aimAngle: 0,
       ...loadout, activeSlot: 0, energy: 0, overload: 0, buffs: { fury: 0, phase: 0, magnet: 0 },
     };
-    Object.assign(this.player,{skillCooldowns:{},sectorId:zoneAt(this.player,this.world.zones).id,parryWindow:0,parryCooldown:0,enchantCooldowns:{}});this.sectorNotice=0;
+    Object.assign(this.player,{skillCooldowns:{},flashlight:false,sectorId:zoneAt(this.player,this.world.zones).id,parryWindow:0,parryCooldown:0,enchantCooldowns:{}});this.sectorNotice=0;
     this.playtestMetrics={huntersSpawned:0,firstHunterAt:null};
     this.startingLoadout={weapons:this.player.weapons.map(({weapon,rarity,level=1,enchant='none'})=>({weapon,rarity,level,enchant})),armorRarity:this.player.armor?.rarity||'none',laser:!!this.player.laser};
     this.bag = [];
@@ -446,7 +450,7 @@ export class Raid {
     }
     if(enemy.state==='windup'){enemy.timer-=dt;if(enemy.timer<=0)this.resolveEnemyAttack(enemy,definition);return;}
     const p=this.player,d=distance(enemy,p),conceal=d>160?(this.ground(p)?.concealment||1):1;
-    const visible=this.visible(enemy,p),sight=d<Math.max(850,definition.range+180)*conceal&&visible;
+    const visible=this.visible(enemy,p),sight=visible&&(d<Math.max(850,definition.range+180)*conceal*(this.nightMode?.57:1)||detectsFlashlight(p,enemy));
     enemy.aggro=Math.max(0,(enemy.aggro||0)-dt);if(sight)enemy.aggro=5;
     const pursuing=enemy.horde||enemy.aggro>0;
     const beginWindup=()=>{enemy.state='windup';enemy.windup=Math.max(.28,definition.windup*this.pressureState.windup);enemy.timer=enemy.windup;};
@@ -539,8 +543,9 @@ export class Raid {
   }
   updateInteraction(input, dt) {
     const context = this.context();
+    const skillId=typeof input.skill==='number'?this.equippedSkills[input.skill]:input.skill;
     const stationary = Math.hypot(input.x || 0, input.y || 0) < 0.15 && this.player.dashTime <= 0 &&
-      Math.hypot(this.player.knockX || 0, this.player.knockY || 0) < 22 && input.skill !== 'blink';
+      Math.hypot(this.player.knockX || 0, this.player.knockY || 0) < 22 && !NUMBER_SKILLS[skillId]?.movement;
     if (!context || !input.interact || !stationary) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = null; return; }
     if (context.target.id !== this.interactId) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = context.target.id; }
     if(context.kind==='merchant'){this.event('trade',{id:context.target.id});return;}
@@ -566,16 +571,16 @@ export class Raid {
     if (this.status !== 'playing') return;
     const p=this.player;this.hitStopCooldown=Math.max(0,this.hitStopCooldown-dt);
     if(this.hitStop>0){
-      for(const key of ['attack','divide','heal','dash','pickup','overload','parry'])if(input[key])this.pendingInput[key]=true;
+      for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight'])if(input[key])this.pendingInput[key]=true;
       if(input.slot!==undefined)this.pendingInput.slot=input.slot;
-      if(input.skill)this.pendingInput.skill=input.skill;
+      if(input.skill!==undefined)this.pendingInput.skill=input.skill;
       if(Number.isFinite(input.aimX)){this.pendingInput.aimX=input.aimX;this.pendingInput.aimY=input.aimY;}
       this.hitStop=Math.max(0,this.hitStop-dt);return;
     }
     const buffered=this.pendingInput;this.pendingInput={};
-    for(const key of ['attack','divide','heal','dash','pickup','overload','parry'])if(buffered[key])input={...input,[key]:true};
+    for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight'])if(buffered[key])input={...input,[key]:true};
     if(buffered.slot!==undefined&&input.slot===undefined)input={...input,slot:buffered.slot};
-    if(buffered.skill&&!input.skill)input={...input,skill:buffered.skill};
+    if(buffered.skill!==undefined&&input.skill===undefined)input={...input,skill:buffered.skill};
     if(buffered.aimX!==undefined&&!Number.isFinite(input.aimX))input={...input,aimX:buffered.aimX,aimY:buffered.aimY};
     updateNumberForm(this);
     this.elapsed += dt;tickNumberSkills(p,dt);this.sectorNotice=Math.max(0,this.sectorNotice-dt);
@@ -604,7 +609,7 @@ export class Raid {
       this.move(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt);
       p.dashTime = Math.max(0, p.dashTime-dt);
     } else {
-      const speed = RULES.speed*this.run.playerSpeed*p.form.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
+      const speed = RULES.speed*(p.buffs.haste>0?1.32:1)*this.run.playerSpeed*p.form.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
       this.move(p, mx*speed*dt, my*speed*dt);
     }
     const sector=zoneAt(p,this.world.zones);
@@ -616,7 +621,9 @@ export class Raid {
       if (enemy) p.aimAngle = Math.atan2(enemy.y-p.y, enemy.x-p.x);
     }
     if (input.overload) this.activateOverload();
-    if (input.skill) useNumberSkill(this,input.skill);
+    if (input.flashlight && this.nightMode) p.flashlight = !p.flashlight;
+    const equippedSkill = typeof input.skill==='number' ? this.equippedSkills[input.skill] : input.skill;
+    if (equippedSkill && this.equippedSkills.includes(equippedSkill)) useNumberSkill(this,equippedSkill);
     if (input.divide) this.divide();
     if (input.heal) this.heal();
     this.updateBursts(dt);

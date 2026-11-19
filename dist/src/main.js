@@ -1,3 +1,4 @@
+import { researchSkill, toggleLoadoutSkill } from './skill-tree.js';
 import { analyzePlaytestReports, MAX_REVIEW_REPORTS, MAX_REPORT_BYTES, MAX_REVIEW_BYTES } from './playtest-analysis.js';
 import { readJournal, writeJournal, recordStart, recordCheckpoint, recordFinish, interruptOpenRuns, setFeedback, serializeJournal } from './playtest.js';
 import { MUTATORS, normalizeMutators } from './run-rules.js';
@@ -58,7 +59,7 @@ function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==
 const input=new Input(canvas,pause,inventory);
 const ui=new UI({
   start,close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
-  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules','journal'].includes(key)){ui.shelterTab=key;refreshShelter();}},
+  shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules','journal','skills'].includes(key)){ui.shelterTab=key;refreshShelter();}},
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
   toggleRecording:()=>{if(view!=='shelter')return;changeJournal(next=>{next.enabled=!next.enabled;return true;});refreshShelter();ui.toast(!journalAvailable?'设置仅在本次会话生效，无法写入本机。':journal.enabled?'本机试玩记录已开启。':'本机试玩记录已停用。');},
   playtestFeedback:(id,field,value)=>{if(view!=='shelter'||!['extractReason','pressure','unfair'].includes(field))return;const parsed=value===''?null:field==='pressure'?Number(value):value;if(changeJournal(next=>setFeedback(next,id,{[field]:parsed}))){refreshShelter();ui.toast(journalAvailable?'体验反馈已保存在本机。':'反馈仅暂存于本次会话，可导出保留。');}},
@@ -105,6 +106,9 @@ const ui=new UI({
   selectWeapon:key=>{if(view!=='shelter'||!unlockedWeapons(save).includes(key))return;save.selectedWeapon=key;persist();refreshShelter();},
   trackBoss:key=>{if(view==='shelter'&&bossPool(difficultyOf(save.selectedDifficulty).rank).includes(key)){save.selectedBoss=key;ui.shelterTab='deploy';persist();refreshShelter();ui.toast('首领追踪目标已设置。');}},
   selectBoss:key=>{if(view==='shelter'&&(key==='random'||bossPool(difficultyOf(save.selectedDifficulty).rank).includes(key))){save.selectedBoss=key;persist();refreshShelter();}},
+  toggleNight:()=>{if(view==='shelter')warehouseChange(next=>{next.nightMode=!next.nightMode;return true;},'光照模式已保存。');},
+  researchSkill:key=>{if(view==='shelter')warehouseChange(next=>researchSkill(next,key),'技能已解锁。');},
+  equipSkill:key=>{if(view==='shelter')warehouseChange(next=>toggleLoadoutSkill(next,key),'出击技能已更新。');},
   selectMap:key=>{if(view!=='shelter'||!MAP_LAYOUTS.some(m=>m.id===key))return;save.selectedMap=key;persist();refreshShelter();},
   selectEnchant:key=>{if(view!=='shelter'||!Object.hasOwn(ENCHANTS,key))return;save.selectedEnchant=key;persist();refreshShelter();},
   forge:()=>{if(view==='shelter'&&forgeWeapon(save)){persist();refreshShelter();ui.toast('武器打造完成，之后每次出击自动发放。');}},

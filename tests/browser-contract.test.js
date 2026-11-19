@@ -49,7 +49,7 @@ test('screen-to-world aiming accounts for the camera, CSS size and zoom without 
   assert.deepEqual(renderer.screenToWorld(640, 560), { x: 900, y: 800 });
 });
 
-test('render paths cover all weapon types, enemy warnings and white/red aim guides with finite coordinates', t => {
+test('render paths cover all weapon types, enemy warnings and the crosshair and red laser with finite coordinates', t => {
   const env = browserStubs(t), renderer = new Renderer(env.canvas, env.ids.get('minimap'));
   const raid = new Raid(defaultSave(), 52);
   raid.world.enemies = Object.keys(ENEMY_TYPES).map((type, index) => {
@@ -57,6 +57,7 @@ test('render paths cover all weapon types, enemy warnings and white/red aim guid
     Object.assign(enemy, { state: 'windup', aimX: raid.player.x, aimY: raid.player.y, timer: 0.3 });
     return enemy;
   });
+  raid.player.aimTarget = { x:raid.player.x+120, y:raid.player.y };
   for (const type of Object.keys(WEAPONS)) {
     raid.player.weapons[0] = makeEquipment('weapon', type, 'red'); raid.player.activeSlot = 0;
     renderer.draw(raid, 1, 1/60);
@@ -64,7 +65,7 @@ test('render paths cover all weapon types, enemy warnings and white/red aim guid
   raid.world.spawnWarnings=[{x:raid.player.x+250,y:raid.player.y+80,readyAt:.8,duration:.9}];
   raid.player.weapons[0] = makeEquipment('weapon', 'rifle'); raid.player.laser = makeEquipment('laser');
   renderer.draw(raid, 1, 1/60);
-  assert.ok(env.drawCalls.some(call => call.method === 'stroke' && call.strokeStyle === '#ffffff66'));
+  assert.ok(env.drawCalls.some(call => call.method === 'stroke' && call.strokeStyle === '#fff4dc'));
   assert.ok(env.drawCalls.some(call => call.method === 'stroke' && call.strokeStyle === '#ff5d65cc'));
   for(const site of raid.world.sites.slice(0,6)){
     raid.player.x=site.x;raid.player.y=site.y;renderer.camera={x:site.x,y:site.y};
@@ -81,7 +82,7 @@ test('HUD and equipment dialog use actual HTML ids and display equipped values a
   ui.update(raid, save, true, true); ui.inventory(raid);
   assert.match(env.ids.get('dialog').innerHTML, /紫品 · 狙击枪/);
   assert.match(env.ids.get('dialog').innerHTML, /data-action="equip0"/);
-  assert.match(env.ids.get('laser-label').textContent, /红线/);
+  assert.match(env.ids.get('laser-label').textContent, /红外/);
   assert.equal(Number(env.ids.get('loot-value').textContent), raid.carriedValue());
 });
 

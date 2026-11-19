@@ -1,0 +1,80 @@
+.skill-tree { display:none; }
+#shelter-screen[data-tab="skills"] .shelter-layout { grid-template-columns: minmax(0,1fr); }
+#shelter-screen[data-tab="skills"] :is(.shelter-hero,.facilities-grid,.forge-panel,.shelter-stats,.expedition-panel,.section-heading) { display:none; }
+#shelter-screen[data-tab="skills"] .skill-tree {
+  display:block; padding:22px; color:#292431; background:#fff8e8;
+  border:2px solid #292431; border-radius:10px 14px 8px 12px; box-shadow:4px 4px #292431;
+}
+.skill-tree h2 { font-size:27px; margin:0 0 12px; }
+.skill-tree > p { margin:12px 0 18px; }
+.skill-branches { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.skill-branch { min-width:0; }
+.skill-branch h3 { padding:9px 10px; margin:0 0 10px; border:2px solid #292431; border-radius:7px; background:var(--branch); }
+.skill-node { padding:10px; margin:0 0 8px; border:1.5px solid #30283b; border-left:5px solid var(--branch); border-radius:8px; background:#fffdf5; }
+.skill-node > div { display:flex; align-items:baseline; justify-content:space-between; gap:4px; }
+.skill-node h4 { margin:0; }
+.skill-node p { margin:6px 0; font-size:13px; line-height:1.45; }
+.skill-node small { color:#594d66; display:block; margin-bottom:7px; }
+#shelter-screen .skill-node button, #shelter-screen .skill-loadout button, #shelter-screen .night-select button, #shelter-screen .skill-shortcut {
+  padding:7px 10px; border:1.5px solid #292431; border-radius:7px; color:#292431; background:#f5ecdb; font-weight:800;
+}
+#shelter-screen :is(.skill-node,.night-select) button[aria-pressed="true"] { background:#dcefa6; }
+.skill-loadout { display:flex; flex-wrap:wrap; gap:9px; }
+.skill-loadout button { min-width:125px; }
+.skill-loadout kbd { margin-right:7px; }
+.night-select { display:flex; align-items:center; flex-wrap:wrap; gap:9px; margin:13px 0 9px; }
+.night-select small { color:#54485e; }
+#shelter-screen .skill-shortcut { text-align:left; width:100%; font-weight:500; }
+
+#raid-screen { --hud-ink:#211d2e; --hud-board:#302940; --hud-paper:#fff4dc; --hud-lime:#d9f18d; }
+#raid-screen :is(.player-readout,.raid-timer,.mission-chip,.carried-chip,.energy-readout,.quick-loadout,.mini-wrap,.supply-strip,.number-skillbar,.boss-hud,.interaction) {
+  background:var(--hud-board); border:2px solid var(--hud-ink); color:var(--hud-paper);
+  border-radius:8px 12px 7px 10px; box-shadow:4px 4px 0 #161522cc;
+  backdrop-filter:none;
+}
+#raid-screen .player-readout { min-width:0; width:auto; padding:12px 14px; gap:13px; z-index:2; }
+#raid-screen .number-badge { min-width:67px; color:var(--hud-paper); border-color:#a48baf; }
+#raid-screen .number-badge small { font-size:9px; font-weight:800; color:#d5c7df; }
+#raid-screen #player-value { color:var(--hud-lime); font-weight:900; font-size:38px; line-height:1.05; }
+#raid-screen .vitals { width:clamp(154px,16vw,298px); }
+#raid-screen .vital-label { font-size:13px; font-weight:800; color:var(--hud-paper); }
+#raid-screen .vital-label b { font-size:15px; font-weight:900; color:#fff0d6; }
+#raid-screen .meter { height:13px; border:2px solid var(--hud-ink); background:#1e192b; margin:4px 0 6px; }
+#raid-screen .meter i { height:100%; }
+#raid-screen .armor-meter { height:9px; }
+#raid-screen :is(#form-label,.raid-timer small,.mini-label,.mini-wrap > small) { color:#e0d1e6; font-size:11px; font-weight:750; }
+#raid-screen .raid-timer > b { color:var(--hud-paper); font:900 32px ui-monospace,monospace; }
+#raid-screen .mission-chip { top:136px; }
+#raid-screen .mission-chip b { font-size:14px; }
+#raid-screen .mini-wrap { width:clamp(202px,19vw,282px); padding:8px; }
+#raid-screen .mini-wrap canvas { width:100%; }
+#raid-screen .mini-label { margin-bottom:5px; }
+#raid-screen .supply-strip { font-size:12px; }
+#raid-screen .number-skill { background:#463852; border:2px solid #70617d; min-width:90px; border-radius:6px 9px 6px 8px; }
+#raid-screen .number-skill.ready { border-color:var(--element); }
+#raid-screen .number-skill span { font-size:13px; color:var(--hud-paper); }
+#raid-screen .number-skill small { color:#e9dbf1; font-size:11px; }
+#raid-screen .flashlight-button { min-width:52px; flex-direction:column; line-height:1.05; color:#fff1d2; }
+#raid-screen .flashlight-button[hidden] { display:none; }
+#raid-screen .flashlight-button[aria-pressed="true"] { background:#f4d489; color:#292431; }
+
+@media(max-width:900px) {
+  .skill-branches { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #raid-screen .player-readout { gap:6px; padding:7px 8px; }
+  #raid-screen .vitals { width:120px; }
+  #raid-screen .number-badge { min-width:48px; padding-right:5px; }
+  #raid-screen #player-value { font-size:30px; }
+  #raid-screen .mission-chip { top:120px; }
+  #raid-screen .mini-wrap { width:170px; }
+  #raid-screen .number-skill { min-width:71px; }
+}
+@media(max-width:640px) {
+  .skill-branches { grid-template-columns:minmax(0,1fr); }
+  #raid-screen .vitals { width:96px; }
+  #raid-screen .vital-label,#raid-screen .vital-label b { font-size:11px; }
+  #raid-screen .meter { height:9px; }
+  #raid-screen .armor-meter { height:7px; }
+  #raid-screen .raid-timer { padding:5px 8px; }
+  #raid-screen .raid-timer > b { font-size:20px; }
+  #raid-screen .mini-wrap { width:130px; }
+}

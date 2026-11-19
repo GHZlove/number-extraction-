@@ -56,14 +56,14 @@ export function drawProjectile(c, bullet, reduced) {
   const skill = bullet.weapon === 'fireball';
   const color = projectileColor(bullet);
   const speed = Math.hypot(bullet.vx, bullet.vy);
-  const r = bullet.radius;
+  const r = Math.max(enemy ? 7.3 : 4.6, bullet.radius * 1.18);
   const tail = reduced ? 0 : clamp(speed * (skill ? .046 : .027), 7, 42);
   c.save();
   c.translate(bullet.x, bullet.y);
   c.rotate(Math.atan2(bullet.vy, bullet.vx));
   if (tail > 0) {
     c.strokeStyle = color + '9c';
-    c.lineWidth = r * .75;
+    c.lineWidth = r * .88;
     c.beginPath();
     c.moveTo(-r * .42, 0);
     c.lineTo(-tail - r * .42, 0);
@@ -72,7 +72,7 @@ export function drawProjectile(c, bullet, reduced) {
 
   c.fillStyle = color;
   c.strokeStyle = enemy ? THREAT : INK;
-  c.lineWidth = enemy ? 2 : 1.3;
+  c.lineWidth = enemy ? 2.6 : 1.7;
   c.beginPath();
   if (enemy) {
     c.moveTo(r * 1.2, 0);
@@ -89,7 +89,7 @@ export function drawProjectile(c, bullet, reduced) {
   c.stroke();
   c.fillStyle = enemy ? '#fff0dc' : bullet.intrinsic === 'burn' || skill ? '#ff9a57' : '#fffdee';
   c.beginPath();
-  c.arc(r * .34, -r * .12, Math.max(.9, r * .24), 0, TAU);
+  c.arc(r * .34, -r * .12, Math.max(.9, r * .29), 0, TAU);
   c.fill();
   c.restore();
 }

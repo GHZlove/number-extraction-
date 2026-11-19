@@ -1,3 +1,4 @@
+import { normalizeSkills } from './skill-tree.js';
 import { EXIT_BONUSES, normalizeMutators } from './run-rules.js';
 import { bossPool } from './bosses.js';
 import { defaultWarehouse, normalizeWarehouse, normalizeDeployment, warehouseCapacity, storeExtractedGear } from './warehouse.js';
@@ -7,6 +8,7 @@ import { ENCHANTS, WEAPONS, RARITIES } from './equipment.js';
 
 const integer = (value, max = 1e9) => Number.isFinite(value) ? Math.max(0,Math.min(max,Math.floor(value))) : 0;
 export const defaultSave = () => ({
+  ...normalizeSkills(), nightMode:false,
   version: 5, credits: 0, extractions: 0, deaths: 0, best: 1,
   upgrades: { capacity: 0, divider: 0 }, materials: { alloy: 0, core: 0 },
   shelter: { warehouse:0, storage: 0, supply: 0, workshop: 0, recycler: 0 },
@@ -34,6 +36,8 @@ export function normalizeSave(data) {
     save.forged[key]={level:item.level,rarity:RARITIES[item.level===5?5:item.level-1].id,enchant:Object.hasOwn(ENCHANTS,item.enchant)?item.enchant:'none'};
   }
   save.selectedMutators=normalizeMutators(data.selectedMutators);
+  Object.assign(save,normalizeSkills(data.unlockedSkills,data.equippedSkills));
+  save.nightMode=data.nightMode===true;
   save.warehouse=normalizeWarehouse(data.warehouse);
   const excess=save.warehouse.items.splice(warehouseCapacity(save));save.warehouse.pending.unshift(...excess);
   save.deployment=normalizeDeployment(save,data.deployment);

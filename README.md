@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.6 browser playtest.** Choose from seven maps at the holographic terminal. The shelter's large Deploy button and illustrated portal both start the selected route. Enemy projectiles use their firing tier's colour. Player weapon shots use forged levels, with weapon-specific recoil and melee follow-through. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
+> **v0.12.7 browser playtest.** Choose from seven maps at the holographic terminal. The shelter's large Deploy button and illustrated portal both start the selected route. The comic-style raid HUD has larger vitals, a closer camera, illustrated extraction vehicles, optional moonlight and a 28-skill tree with two equipped slots. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,13 +12,19 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Builds | v0.12.6 browser playtest · v0.11.3 Windows desktop release |
+| Builds | v0.12.7 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
 | Run variety | 7 map families · 5 difficulties · 10 optional mutators |
 | Technology | JavaScript ES modules, Canvas 2D, CSS, Web Audio, localStorage, Electron |
 | Verification | 355 automated tests; native Windows startup, restart and portable checks |
 | Languages | Simplified Chinese game interface; English and Chinese documentation |
+
+## Moonlight playtest
+
+Choose day or moonlight before deploying. On a moonlit raid, press **H** to toggle your flashlight. The beam lights the ground ahead and can draw enemies' attention. The four exits now have distinct transport illustrations and labels on the minimap.
+
+The shelter's skill tree has 28 active moves across lightning, wind, phase and ember. Four starter skills are free. Unlock the rest with Data Coins at ranks 2–5, and equip up to two before departure. Use **3 / 4** to cast them.
 
 ## What makes it different
 

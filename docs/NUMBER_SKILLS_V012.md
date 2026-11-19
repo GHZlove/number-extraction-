@@ -1,4 +1,4 @@
-# Number Extraction v0.12.6 · Illustrated shelter and number skills
+# Number Extraction v0.12.7 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
@@ -12,12 +12,14 @@ Three maps expand the pool to seven. Twinriver Wetlands adds wider waterways and
 
 ## Skills
 
-| Key | Skill | Effect |
+Choose two skills in the shelter, then cast them with **3 / 4**. The tree has four branches and 28 moves. The original four are available from the start. Research higher-rank nodes with Data Coins after unlocking their prerequisites.
+
+| Branch | Starter skill | Effect |
 | --- | --- | --- |
-| 3 | Remnant Lightning | Links 2–6 equal-number enemy remnants. Living enemies near the segments can take damage once per cast. Remnants stay available to merge or recycle. Blocked links and mixed numbers do not use the cooldown. |
-| 4 | Number Gust | Pushes nearby visible foes away. The number difference and boss resistance affect the distance. |
-| 5 | Blink | Moves towards the aim point. It stops before solid walls, checks the landing space and cancels ongoing interactions. No Dodge disables it. |
-| 6 | Ember Orb | Launches a fireball that explodes and applies the shared Burn status. Its damage uses the number at cast time. |
+| Lightning | Remnant Lightning | Links 2–6 equal-number enemy remnants. Living enemies near the segments can take damage once per cast. Remnants stay available to merge or recycle. Blocked links and mixed numbers do not use the cooldown. |
+| Wind | Number Gust | Pushes nearby visible foes away. The number difference and boss resistance affect the distance. |
+| Phase | Blink | Moves towards the aim point. It stops before solid walls, checks the landing space and cancels ongoing interactions. No Dodge disables it. |
+| Ember | Ember Orb | Launches a fireball that explodes and applies the shared Burn status. Its damage uses the number at cast time. |
 
 Contact damage still uses the established number ratios. Both sides can receive recoil, weighted by tier. Sustained contact respects the existing damage cooldown. Nearby enemies also move apart when their bodies overlap. Light hits, heavy hits and collisions have distinct squash and rebound curves. On a merge or remnant recycle, the source tile stretches into a droplet, flows into the player, and leaves a short outward ripple. Reduced motion uses a softly fading fixed ring and disables tile deformation and water scrolling.
 
@@ -37,4 +39,4 @@ The original generated rasters are cropped into five in-game PNG atlases in `dis
 
 The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.6 source branch is the current playtest. Its visual changes use the v0.12.0 balance rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.7 source branch is the current playtest. Existing weapon damage and extraction rules use the v0.12.0 balance rules. The game UI is in Simplified Chinese.
