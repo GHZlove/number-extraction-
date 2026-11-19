@@ -1,3 +1,4 @@
+import { drawComicText } from './comic-type.js';
 import { drawRoadNetwork } from './roads.js';
 import { drawMoonlight, FLASHLIGHT_REACH } from './raid-light.js';
 import { drawVehicle, drawBooster, exitVehicle, nodeLabel, mapBadge, drawSupplyCache, drawVendor, drawPickupBadge } from './raid-art.js';
@@ -47,8 +48,8 @@ export class Renderer {
   rect(x,y,w,h,r,fill,stroke) {
     const c=this.ctx;c.beginPath();c.roundRect(x,y,w,h,r);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.stroke();}
   }
-  text(text,x,y,size,color,weight='400',align='center',font='monospace') {
-    const c=this.ctx;c.font=`${weight} ${size}px ${font}`;c.fillStyle=color;c.textAlign=align;c.fillText(text,x,y);
+  text(text,x,y,size,options) {
+    drawComicText(this.ctx,text,x,y,size,options);
   }
   visible(x,y,pad=100) {return Math.abs(x-this.camera.x)<this.width/this.scale/2+pad&&Math.abs(y-this.camera.y)<this.height/this.scale/2+pad;}
   rectVisible(r){
@@ -74,7 +75,7 @@ export class Renderer {
       if(cloud.bossZone||cloud.runHazard){this.drawBossZone(cloud);continue;}
       c.fillStyle=cloud.owner==='player'?'#a8f43255':'#a849cf66';c.strokeStyle=cloud.owner==='player'?'#4c8c20':'#9d2eaa';c.lineWidth=2;
       c.beginPath();c.arc(cloud.x,cloud.y,cloud.radius,0,TAU);c.fill();c.stroke();
-      this.text(cloud.owner==='player'?'附魔毒雾':'危险毒雾',cloud.x,cloud.y+5,11,PAINT.ink,'800');
+      this.text(cloud.owner==='player'?'附魔毒雾':'危险毒雾',cloud.x,cloud.y+5,11);
     }
     // Sector borders remain visible without a screen-wide grid.
     c.setLineDash([14,9]);c.lineWidth=2;
@@ -86,7 +87,7 @@ export class Renderer {
       if(!this.visible(mark.x,mark.y,90))continue;
       const progress=clamp(1-(mark.readyAt-raid.elapsed)/mark.duration,0,1);
       c.fillStyle='#ff42a233';c.strokeStyle=PAINT.pink;c.lineWidth=3;c.beginPath();c.arc(mark.x,mark.y,38,0,TAU);c.fill();c.stroke();
-      c.beginPath();c.arc(mark.x,mark.y,38*(1-progress),0,TAU);c.stroke();this.text('!',mark.x,mark.y+7,22,PAINT.ink,'900');
+      c.beginPath();c.arc(mark.x,mark.y,38*(1-progress),0,TAU);c.stroke();this.text('!',mark.x,mark.y+7,22,{impact:true});
     }
     for(const exit of w.exits)if(this.visible(exit.x,exit.y,140))this.drawExit(exit,raid,time);
     for(const merchant of w.merchants||[])if(this.visible(merchant.x,merchant.y,130))drawVendor(c,merchant);
@@ -112,10 +113,10 @@ export class Renderer {
       const progress=1-e.life/e.maxLife;c.globalAlpha=Math.min(1,e.life/e.maxLife*2);
       if(e.kind==='text'){
         if(e.text==='击破')this.inkSplat(e.x,e.y,38+progress*20,PAINT.pink,.3,Math.min(.75,e.life/e.maxLife));
-        const badgeWidth=Math.min(190,Math.max(42,e.text.length*11));
-        this.rect(e.x-badgeWidth/2,e.y-progress*25-15,badgeWidth,22,5,PAINT.ink);
-        this.text(e.text,e.x+1,e.y-progress*25+1,14,PAINT.ink,'800');
-        this.text(e.text,e.x,e.y-progress*25,e.heavy?18:14,e.color,'900');
+        const armor=e.text.startsWith('护甲');
+        const damage=/^[−-]\d/.test(e.text);
+        const size=damage?(e.heavy?27:21):armor?17:15;
+        this.text(e.text,e.x,e.y-progress*25,size,{impact:damage||armor});
       }
       else if(e.kind==='gravity'){c.strokeStyle=e.color;c.lineWidth=3;c.beginPath();c.arc(e.x,e.y,e.radius*(1-progress*.7),0,TAU);c.stroke();}
       else if(e.kind==='gust'){
@@ -357,7 +358,7 @@ export class Renderer {
     if(item.kind==='weapon'){
       this.rect(-16,-13,32,26,5,PAINT.ink,color);
       if(!drawWeaponSprite(c,item.weapon,-13,0,26,23)){
-        this.text(weaponOf(item).short,0,4,9,color,'600');
+        this.text(weaponOf(item).short,0,4,9);
       }
     }else drawPickupBadge(c,item,color);
     c.restore();
@@ -369,7 +370,7 @@ export class Renderer {
     if(equal){c.strokeStyle='#43a62c99';c.lineWidth=2;c.beginPath();c.arc(tile.x,y,29,0,TAU);c.stroke();}
     drawNumberTile(c,{x:tile.x,y,size,value:tile.value,stroke:equal?'#83e951':recycle?'#e8bb46':'#ffffffaa'});
     if(recycle){
-      this.text('◇',tile.x+16,y-14,12,'#e5ac24','900');
+      this.text('◇',tile.x+16,y-14,12);
 
     }
   }
@@ -382,11 +383,11 @@ export class Renderer {
       const radius=definition.pattern==='slam'?175:definition.pattern==='blast'?118:64;
       drawAttackWarning(c, e.aimX, e.aimY, radius, progress, definition.pattern==='blast'?'#d66b2b':'#b73345', this.reduced);
       const marker = definition.pattern==='blast'?'爆破':definition.pattern==='slam'?'重击':'近击';
-      this.text(marker,e.aimX,e.aimY+6,16,'#7b1736','800','center','sans-serif');
+      this.text(marker,e.aimX,e.aimY+6,16,{impact:true});
     }else if(['heal','summon','ring'].includes(definition.pattern)){
       const support=definition.pattern==='heal',x=support?e.aimX:e.x,y=support?e.aimY:e.y,r=support?60:definition.pattern==='summon'?110:150;
       c.strokeStyle=support?'#008b70':'#8310d2';c.beginPath();c.arc(x,y,r,0,TAU);c.stroke();c.beginPath();c.arc(x,y,r*(1-progress),0,TAU);c.stroke();
-      this.text(support?'+':definition.pattern==='summon'?'孵化':'环射',x,y+5,14,support?'#008b70':'#8310d2','600','center','sans-serif');
+      this.text(support?'+':definition.pattern==='summon'?'孵化':'环射',x,y+5,14);
     }else if(definition.pattern==='charge'){
       c.save();c.translate(e.x,e.y);c.rotate(angle);c.fillStyle='#ff5a4b44';const length=560*.65*speed+e.radius;c.fillRect(0,-24,length,48);c.setLineDash([8,6]);c.strokeRect(0,-24,length,48);
       c.setLineDash([]);c.beginPath();c.moveTo(length-19,-9);c.lineTo(length-5,0);c.lineTo(length-19,9);c.stroke();c.restore();
@@ -408,7 +409,7 @@ export class Renderer {
       c.beginPath();c.arc(zone.x,zone.y,zone.radius,0,TAU);c.fill();c.stroke();
       if(zone.kind==='gravity'){c.beginPath();c.arc(zone.x,zone.y,25+Math.sin(zone.age*4)*8,0,TAU);c.stroke();}
     }
-    c.restore();this.text((warning?'预警 · ':'')+zone.label,zone.x,zone.y-12,11,PAINT.ink,'800','center','sans-serif');
+    c.restore();this.text((warning?'预警 · ':'')+zone.label,zone.x,zone.y-12,12);
   }
   drawBossTelegraph(e,speed=1){
     const c=this.ctx,progress=clamp(1-e.timer/e.windup,0,1),a=Math.atan2(e.aimY-e.y,e.aimX-e.x);
@@ -419,14 +420,14 @@ export class Renderer {
     }else if(['slam','poison'].includes(e.bossMove)){
       const r=e.bossMove==='poison'?205:e.bossPhase===2?220:175;
       drawAttackWarning(c, e.aimX, e.aimY, r, progress, e.bossMove==='poison'?'#825487':'#b72947', this.reduced);
-      this.text(e.bossMove==='poison'?'毒雾 · 离开红圈':'震地 · 闪避 / 弹反',e.aimX,e.aimY,12,PAINT.ink,'900');
+      this.text(e.bossMove==='poison'?'毒雾 · 离开红圈':'震地 · 闪避 / 弹反',e.aimX,e.aimY,13);
     }else if(['dash','shadowdash'].includes(e.bossMove)){
       const length=(e.bossMove==='shadowdash'?740:590)*(e.bossPhase===2?.7:.5)*speed+42;
       c.save();c.translate(e.x,e.y);c.rotate(a);c.fillRect(0,-48,length,96);c.strokeRect(0,-48,length,96);c.restore();
     }else{
       c.setLineDash([8,7]);
       for(const shot of bossShotPattern(e)){c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.x+Math.cos(shot.angle)*450,e.y+Math.sin(shot.angle)*450);c.stroke();}c.setLineDash([]);
-      this.text(BOSS_MOVES[e.bossMove],e.x,e.y-85,11,BOSSES[e.boss].color,'900');
+      this.text(BOSS_MOVES[e.bossMove],e.x,e.y-85,13,{impact:true});
     }
   }
   drawEnemy(e,p,time,selected) {
@@ -448,27 +449,27 @@ export class Renderer {
     const flash=!this.reduced&&(e.hitFlash||0)>.035;
     drawNumberTile(c,{x:e.x,y:e.y,size:s,value:e.value,stroke,flash,deformation:this.reduced?null:impactScale(e.impactMotion,this.simulationTime)});
     c.fillStyle='#e82d59';c.beginPath();c.arc(e.x+s/2-2,e.y-s/2+1,5,0,TAU);c.fill();
-    this.text('!',e.x+s/2-2,e.y-s/2+4,8,'#ffffff','900');
+    this.text('!',e.x+s/2-2,e.y-s/2+4,9);
     const definition=ENEMY_TYPES[e.type]||ENEMY_TYPES.hunter;
     if(named){this.rect(e.x-45,e.y-s/2-27,90,17,4,PAINT.ink);}
-    if(named)this.text((e.state==='windup'?'! ':'')+(e.bossName||(e.hunter?'追猎 · ':'')+definition.name),e.x,e.y-s/2-14,10,PAINT.paper,'700','center','sans-serif');
+    if(named)this.text((e.state==='windup'?'! ':'')+(e.bossName||(e.hunter?'追猎 · ':'')+definition.name),e.x,e.y-s/2-14,e.boss?15:12);
     if(e.boss){
-      const glyph=BOSSES[e.boss].glyph;this.rect(e.x-s/2-17,e.y-s/2-17,22,22,5,BOSSES[e.boss].color,PAINT.ink);this.text(glyph,e.x-s/2-6,e.y-s/2,16,PAINT.ink,'900');
+      const glyph=BOSSES[e.boss].glyph;this.rect(e.x-s/2-17,e.y-s/2-17,22,22,5,BOSSES[e.boss].color,PAINT.ink);this.text(glyph,e.x-s/2-6,e.y-s/2,16);
       c.strokeStyle=BOSSES[e.boss].color;c.lineWidth=4;c.strokeRect(e.x-s/2-6,e.y-s/2-6,s+12,s+12);
       this.rect(e.x-75,e.y-s/2-52,150,10,4,PAINT.ink);this.rect(e.x-75,e.y-s/2-52,150*e.hp/e.maxHp,10,4,BOSSES[e.boss].color);
-      this.text(`BOSS / 阶段 ${e.bossPhase}`,e.x,e.y+s/2+48,12,PAINT.ink,'900');
+      this.text(`BOSS / 阶段 ${e.bossPhase}`,e.x,e.y+s/2+48,13);
     }
-    if(e.poisoned>0)this.text('毒',e.x+s/2+12,e.y-16,12,'#3c8126','900');
-    if(e.afflictions?.burn)this.text('焰',e.x-s/2-10,e.y+3,12,'#c94e12','900');
-    if(e.afflictions?.bleed)this.text('血',e.x-s/2-10,e.y+18,12,'#bd2e4c','900');
+    if(e.poisoned>0)this.text('毒',e.x+s/2+12,e.y-16,12);
+    if(e.afflictions?.burn)this.text('焰',e.x-s/2-10,e.y+3,12);
+    if(e.afflictions?.bleed)this.text('血',e.x-s/2-10,e.y+18,12);
     if(e.slowTime>0){c.strokeStyle='#79d6ff';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,s*.7,0,TAU);c.stroke();}
-    if(e.sundered>0)this.text('破',e.x+s/2+11,e.y+20,12,'#a16a22','900');
-    if(named&&definition.glyph)this.text(definition.glyph,e.x+s/2+12,e.y+5,16,PAINT.ink,'900');
+    if(e.sundered>0)this.text('破',e.x+s/2+11,e.y+20,12);
+    if(named&&definition.glyph)this.text(definition.glyph,e.x+s/2+12,e.y+5,16);
 
     if(['sentry','gunner','sniper'].includes(e.type)){c.fillStyle=stroke;c.fillRect(e.x-3,e.y-28,6,10);}
     if(e.armor?.durability>0){this.rect(e.x-20,e.y+36,40,3,1,'#142c3f');this.rect(e.x-20,e.y+36,40*e.armor.durability/e.armor.maxDurability,3,1,'#25bdff');}
     if(e.hp<e.maxHp){this.rect(e.x-20,e.y+30,40,3,1,'#0f1c16');this.rect(e.x-20,e.y+30,40*e.hp/e.maxHp,3,1,PAINT.pink);}
-    if(e.stun>0)this.text('眩晕',e.x,e.y-42,12,'#d2a7ff');
+    if(e.stun>0)this.text('眩晕',e.x,e.y-42,12);
     if(selected){c.strokeStyle='#7021cbbb';c.lineWidth=1;for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){c.beginPath();c.moveTo(e.x+sx*30,e.y+sy*20);c.lineTo(e.x+sx*30,e.y+sy*30);c.lineTo(e.x+sx*20,e.y+sy*30);c.stroke();}}
   }
   drawPlayer(p,time,fusionDeformation=null) {
@@ -483,7 +484,7 @@ export class Renderer {
     const deformation = hitDeformation.x !== 1 ? hitDeformation : fusionDeformation;
     drawNumberTile(c,{x:p.x,y:p.y,size,value:p.value,stroke:'#ffffff',deformation:this.reduced?null:deformation});
     c.strokeStyle='#18a49b';c.lineWidth=2;c.strokeRect(p.x-size/2-4,p.y-size/2-4,size+8,size+8);
-    this.rect(p.x-16,p.y-size/2-26,32,14,4,PAINT.ink);this.text('YOU',p.x,p.y-size/2-16,9,'#ffffff','900');
+    this.rect(p.x-16,p.y-size/2-26,32,14,4,PAINT.ink);this.text('YOU',p.x,p.y-size/2-16,9);
     const equipped=activeWeapon(p),weapon=weaponOf(equipped);c.save();c.translate(p.x,p.y);
     const pose=weaponPose(p.weaponMotion,equipped.weapon,p.aimAngle,this.simulationTime,this.reduced);
     c.rotate(pose.angle);
@@ -520,7 +521,7 @@ export class Renderer {
     if(distance(p,exit)<100)return;
     const x=25,y=this.height-(matchMedia('(pointer: coarse)').matches?290:190);
     c.save();c.translate(x+9,y-3);c.rotate(Math.atan2(exit.y-p.y,exit.x-p.x));c.fillStyle='#bed3df';c.beginPath();c.moveTo(7,0);c.lineTo(-5,-5);c.lineTo(-2,0);c.lineTo(-5,5);c.fill();c.restore();
-    this.text(`${exitVehicle(exit).label} · ${raid.extractionReady(exit)?"可撤离":raid.extractionStatus(exit).label} · ${Math.round(distance(p,exit))}`,x+24,y,9,'#bed3df','400','left','sans-serif');
+    this.text(`${exitVehicle(exit).label} · ${raid.extractionReady(exit)?"可撤离":raid.extractionStatus(exit).label} · ${Math.round(distance(p,exit))}`,x+24,y,10,{align:'left'});
   }
   drawMap(raid) {
     const c=this.mctx,w=this.map.width,h=this.map.height,sx=w/this.bounds.width,sy=h/this.bounds.height;
@@ -529,7 +530,7 @@ export class Renderer {
     for(const patch of raid.world.terrain||[]){c.fillStyle=(TERRAIN[patch.kind]?.line||'#93734d')+'55';c.fillRect(patch.x*sx,patch.y*sy,patch.w*sx,patch.h*sy);}
     for(const o of raid.world.obstacles){c.fillStyle='#3f315b88';c.fillRect(o.x*sx,o.y*sy,o.w*sx,o.h*sy);}
     for(const site of raid.world.sites||[]){c.fillStyle='#603bc799';c.fillRect(site.x*sx-1,site.y*sy-1,2,2);}
-    for(const chest of raid.world.chests)if(!chest.opened){c.fillStyle=chest.keyCard?'#e7bc13':'#c68a00cc';const size=chest.keyCard?5:2;c.fillRect(chest.x*sx-size/2,chest.y*sy-size/2,size,size);if(chest.keyCard){c.font='bold 9px Arial';c.fillText('K',chest.x*sx+4,chest.y*sy);}}
+    for(const chest of raid.world.chests)if(!chest.opened){c.fillStyle=chest.keyCard?'#e7bc13':'#c68a00cc';const size=chest.keyCard?5:2;c.fillRect(chest.x*sx-size/2,chest.y*sy-size/2,size,size);if(chest.keyCard)drawComicText(c,'K',chest.x*sx+5,chest.y*sy+3,9,{align:'left'});}
     for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(enemy,raid.player)<Math.min(450,raid.run.vision)){c.fillStyle='#ef228d';c.fillRect(enemy.x*sx-1.5,enemy.y*sy-1.5,3,3);}
     for(const node of raid.world.nodes||[])if(!node.used&&distance(node,raid.player)<2000){c.fillStyle='#7d2ad2';c.fillRect(node.x*sx-1,node.y*sy-1,2,2);}
     for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle=e.safehouse?PAINT.cyan:raid.extractionReady(e)?'#52a80c':'#df8517';c.fillRect(-4,-4,8,8);c.restore();}

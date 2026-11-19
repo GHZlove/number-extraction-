@@ -19,7 +19,7 @@ export function browserStubs(t) {
         if (!contextMethods.has(key)) throw new Error(`Unexpected Canvas method: ${String(key)}`);
         return (...args) => {
           for (const arg of args.flat()) if (typeof arg === 'number' && !Number.isFinite(arg)) throw new Error(`Non-finite Canvas argument: ${key}`);
-          drawCalls.push({ method: key, args, strokeStyle: target.strokeStyle });
+          drawCalls.push({ method: key, args, strokeStyle: target.strokeStyle, fillStyle: target.fillStyle, font: target.font });
           if (key === 'createPattern') return {};
           if (key === 'createLinearGradient'||key==='createRadialGradient') return { addColorStop() {} };
         };

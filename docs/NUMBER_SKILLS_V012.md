@@ -1,4 +1,4 @@
-# Number Extraction v0.12.8 · Illustrated shelter and number skills
+# Number Extraction v0.12.9 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
@@ -35,8 +35,8 @@ Heavy weapons kick further back, each burst shot has a recoil pulse, and melee a
 
 The shelter has an illustrated field workshop beside its numbered display. The shared ink-and-paper interface covers the shelter tabs, expedition controls, forge, warehouse, equipment and field dialogs. At narrow widths the illustration, number board and deployment settings stack vertically. Combat HUD panels keep a dark silhouette over bright terrain.
 
-The original generated rasters are cropped into five in-game PNG atlases in `dist/art/`. The game draws warm ivory numerals with dark outlines over matte, irregular slabs so four-digit values stay readable. River texture motion repeats inside the existing river boundaries, under bridges. Stone, grass and ice use flat-colour textures. Cover uses illustrated containers, barricades, rocks and broken pipe walls. The rendering keeps solid cover inside the same world bounds. Each of the twenty weapons has its own sprite for the held weapon, pickups and loadout.
+The original generated rasters are cropped into five in-game PNG atlases in `dist/art/`. The game uses heavy black-and-white comic lettering with offset shadows for damage, armour, enemy names, minimap labels and tile numerals. Four-digit values fit the original illustrated slabs. River texture motion repeats inside the existing river boundaries, under bridges. Stone, grass and ice use flat-colour textures. Cover uses illustrated containers, barricades, rocks and broken pipe walls. The rendering keeps solid cover inside the same world bounds. Each of the twenty weapons has its own sprite for the held weapon, pickups and loadout.
 
 The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.8 source branch is the current playtest. The v0.12.8 balance group reduces guard and patrol density. Existing weapon damage and extraction requirements still follow the earlier rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.9 source branch is the current playtest. The v0.12.8 balance group reduces guard and patrol density. Existing weapon damage and extraction requirements still follow the earlier rules. The game UI is in Simplified Chinese.

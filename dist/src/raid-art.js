@@ -1,3 +1,5 @@
+import { drawComicText } from './comic-type.js';
+
 const INK='#241d30', PAPER='#fff0ce';
 const vehicles={
   west:{label:'汽车撤离',short:'汽车',color:'#e9a951',kind:'car'},
@@ -80,12 +82,13 @@ export function drawBooster(c,node,time,reduced) {
 }
 
 export function mapBadge(c,text,x,y,width,height,color=PAPER){
-  const w=Math.min(104,text.length*11+10);
+  const w=Math.min(104,text.length*11+14);
   x=Math.max(w/2+1,Math.min(width-w/2-1,x));
   y=Math.max(8,Math.min(height-8,y));
   c.save();c.strokeStyle=INK;c.lineWidth=1;
   box(c,x-w/2,y-7,w,14,3,'#242037ed');
-  c.font='900 10px sans-serif';c.textAlign='center';c.fillStyle=color;c.fillText(text,x,y+3.4);
+  c.fillStyle=color;c.fillRect(x-w/2+2,y-4,3,8);
+  drawComicText(c,text,x+2.1,y+3.2,10);
   c.restore();
 }
 

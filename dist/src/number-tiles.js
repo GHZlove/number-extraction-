@@ -1,3 +1,4 @@
+import { drawComicText } from './comic-type.js';
 import { drawNumberSprite } from './game-art.js';
 
 export const NUMBER_COLORS = Object.freeze({
@@ -43,13 +44,6 @@ export function drawNumberTile(ctx, { x, y, size, value, stroke = INK, flash = f
   }
   const digits = String(value).length;
   const fontSize = size * (digits >= 5 ? .24 : digits === 4 ? .31 : digits === 3 ? .4 : .56);
-  ctx.font = `900 ${fontSize}px "Trebuchet MS", Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.lineWidth = Math.max(1.6, fontSize * .105);
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = INK;
-  ctx.strokeText(String(value), 0, fontSize * .33);
-  ctx.fillStyle = '#fff6de';
-  ctx.fillText(String(value), 0, fontSize * .33);
+  drawComicText(ctx, value, 0, fontSize * .33, fontSize);
   ctx.restore();
 }

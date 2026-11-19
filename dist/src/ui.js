@@ -279,7 +279,7 @@ export class UI {
     form.title=`机动${Math.round(p.form.speed*raid.run.playerSpeed*100)}%${p.form.damage<1?' · 减伤'+Math.round((1-p.form.damage)*100)+'%':''}`;
     $('time-value').textContent=formatTime(raid.duration-raid.elapsed);
     $('map-scale').textContent=`${raid.world.bounds.width*raid.world.bounds.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}×`;$('map-theme').textContent=raid.world.theme+' · '+zone.name+(raid.nightMode?' · 月夜':'');
-    const near=raid.nearbyGear();$('nearby-gear').hidden=!near||paused||!!raid.result;if(near){$('nearby-gear').textContent=`F · ${near.name}`;$('nearby-gear').style.color=rarityOf(near.rarity).color;}
+    const near=raid.nearbyGear();$('nearby-gear').hidden=!near||paused||!!raid.result;if(near){$('nearby-gear').textContent=`F · ${near.name}`;$('nearby-gear').style.setProperty('--rarity',rarityOf(near.rarity).color);}
     const context=raid.context(),active=!paused&&!raid.result&&context;
     const atExit=active&&context.kind==='exit';
     $('exit-timer').hidden=!atExit;
