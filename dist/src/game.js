@@ -345,6 +345,7 @@ export class Raid {
     if (p.invulnerable > 0 || p.dashTime > 0 || this.status !== 'playing') return false;
     const hit = absorbDamage(amount*this.run.incomingDamage*(p.buffs.phase>0?0.7:1)*(p.form?.damage||1), p.armor);
     if (p.armor) p.armor.durability = hit.durability;
+    const previousHp=p.hp;
     p.hp = Math.max(0, p.hp-hit.damage); p.invulnerable = 0.65;
     const source = options.source;
     const angle = source ? Math.atan2(p.y - source.y, p.x - source.x) : p.aimAngle;
@@ -352,7 +353,7 @@ export class Raid {
     this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0;
     this.effect(p.x, p.y-35, `−${Math.round(hit.damage*10)/10}`, '#ef8a7c');
     if (hit.blocked) this.effect(p.x, p.y-58, `护甲 −${Math.round(hit.blocked)}`, '#8fc5ff');
-    this.event('hurt');
+    this.event('hurt',{damage:previousHp-p.hp});
     if (p.hp <= 0) this.finish(false, reason);
     return true;
   }
@@ -396,7 +397,7 @@ export class Raid {
       const living=this.world.enemies.filter(e=>!e.dead&&e.summonerId===enemy.id).length;
       for(let i=0;i<Math.min(2,4-living);i++){
         if((this.world.summonedCount||0)>=RULES.summonBudget||this.world.enemies.filter(e=>!e.dead).length>=640)break;
-        if(enemy.horde&&!enemy.guard&&this.world.enemies.filter(e=>!e.dead&&e.horde&&!e.guard&&!e.hunter).length+this.world.spawnWarnings.filter(m=>!m.guard&&!m.hunter).length>=10)break;
+        if(enemy.horde&&!enemy.guard&&this.world.enemies.filter(e=>!e.dead&&e.horde&&!e.guard&&!e.hunter).length+this.world.spawnWarnings.filter(m=>!m.guard&&!m.hunter).length>=PRESSURE.patrolCap)break;
         if(this.director&&this.world.enemies.filter(e=>!e.dead&&distance(e,p)<1500).length>=this.director.profile(this.elapsed).nearCap)break;
         let child=null;
         for(let j=0;j<12;j++){

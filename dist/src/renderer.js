@@ -1,5 +1,6 @@
+import { drawRoadNetwork } from './roads.js';
 import { drawMoonlight, FLASHLIGHT_REACH } from './raid-light.js';
-import { drawVehicle, drawBooster, exitVehicle, nodeLabel, mapBadge } from './raid-art.js';
+import { drawVehicle, drawBooster, exitVehicle, nodeLabel, mapBadge, drawSupplyCache, drawVendor, drawPickupBadge } from './raid-art.js';
 import { drawProjectile, drawMeleeTrail, drawAttackWarning, drawEnemyImpact, drawMuzzleFlash, weaponPose } from './combat-art.js';
 import { drawScenery, terrainPath, drawTerrainTexture, drawWeaponSprite } from './game-art.js';
 import { impactScale } from './impact-motion.js';
@@ -30,7 +31,7 @@ export class Renderer {
     if(event.type==='kill')this.shake=Math.max(this.shake,strength*3.8);
     if(event.type==='armorbreak')this.shake=Math.max(this.shake,3.5);
     if(event.type==='explosion')this.shake=Math.max(this.shake,5);
-    if(event.type==='hurt')this.shake=Math.max(this.shake,5);
+    if(event.type==='hurt')this.shake=Math.max(this.shake,event.damage>0?8:4);
     if(event.type==='parry')this.shake=Math.max(this.shake,4.5);
   }
   resize() {
@@ -88,10 +89,7 @@ export class Renderer {
       c.beginPath();c.arc(mark.x,mark.y,38*(1-progress),0,TAU);c.stroke();this.text('!',mark.x,mark.y+7,22,PAINT.ink,'900');
     }
     for(const exit of w.exits)if(this.visible(exit.x,exit.y,140))this.drawExit(exit,raid,time);
-    for(const merchant of w.merchants||[])if(this.visible(merchant.x,merchant.y,130)){
-      this.rect(merchant.x-28,merchant.y-25,56,48,8,PAINT.yellow,PAINT.ink);this.text('◇',merchant.x,merchant.y+8,28,PAINT.ink,'900');
-
-    }
+    for(const merchant of w.merchants||[])if(this.visible(merchant.x,merchant.y,130))drawVendor(c,merchant);
     for(const obstacle of obstaclesFor(w,{x:left,y:top},{x:right,y:bottom},20))if(this.rectVisible(obstacle))this.drawObstacle(obstacle);
     for(const chest of w.chests)if(this.visible(chest.x,chest.y))this.drawChest(chest,p,time);
     for(const node of w.nodes||[])if(this.visible(node.x,node.y,140))this.drawNode(node,time);
@@ -222,10 +220,13 @@ export class Renderer {
     const c=this.ctx,hw=this.width/this.scale/2,hh=this.height/this.scale/2;
     const a={x:this.camera.x-hw,y:this.camera.y-hh},b={x:this.camera.x+hw,y:this.camera.y+hh};
     const patches=terrainFor(world,a,b).filter(p=>this.rectVisible(p)).sort((a,b)=>(TERRAIN[a.kind]?.priority||0)-(TERRAIN[b.kind]?.priority||0));
+    let roadsDrawn=false;
     for(const patch of patches){
-      const info=TERRAIN[patch.kind]||TERRAIN.mud,water=patch.kind==='water',bridge=patch.kind==='bridge',road=patch.kind==='road';
+      if(patch.kind==='road')continue;
+      const info=TERRAIN[patch.kind]||TERRAIN.mud,water=patch.kind==='water',bridge=patch.kind==='bridge';
+      if(bridge&&!roadsDrawn){drawRoadNetwork(c,world.roadRoutes);roadsDrawn=true;}
       terrainPath(c,patch);
-      c.fillStyle=info.color+(bridge||road?'':'d6');
+      c.fillStyle=info.color+(bridge?'':'d6');
       c.fill();
       const illustrated=drawTerrainTexture(c,patch,time,this.reduced);
       terrainPath(c,patch);
@@ -236,7 +237,7 @@ export class Renderer {
       c.strokeStyle=info.line+'99';
       c.lineWidth=1;
       if(bridge){
-        const horizontal=patch.w>=patch.h;
+        const horizontal=patch.axis?patch.axis==='x':patch.w>=patch.h;
         const from=horizontal?Math.max(patch.x,Math.floor(a.x/22)*22):Math.max(patch.y,Math.floor(a.y/22)*22);
         const to=horizontal?Math.min(patch.x+patch.w,b.x):Math.min(patch.y+patch.h,b.y);
         for(let n=from;n<to;n+=22){
@@ -245,11 +246,6 @@ export class Renderer {
           else{c.moveTo(patch.x+4,n);c.lineTo(patch.x+patch.w-4,n);}
           c.stroke();
         }
-      }else if(road){
-        c.setLineDash([18,25]);c.beginPath();
-        if(patch.w>patch.h){c.moveTo(patch.x,patch.y+patch.h/2);c.lineTo(patch.x+patch.w,patch.y+patch.h/2);}
-        else{c.moveTo(patch.x+patch.w/2,patch.y);c.lineTo(patch.x+patch.w/2,patch.y+patch.h);}
-        c.stroke();c.setLineDash([]);
       }else if(water&&!illustrated){
         // Keep a simple current visible before the atlas has loaded.
         for(let i=1;i<4;i++){
@@ -259,7 +255,7 @@ export class Renderer {
       }
 
     }
-
+    if(!roadsDrawn)drawRoadNetwork(c,world.roadRoutes);
   }
   drawAim(player,world,layer){
     const c=this.ctx,item=activeWeapon(player),weapon=weaponOf(item);
@@ -348,14 +344,8 @@ export class Renderer {
     c.restore();
     drawVehicle(c,e,ready);
   }
-  drawChest(chest,p,time) {
-    const c=this.ctx;const color=[PAINT.lime,PAINT.yellow,PAINT.pink][chest.zone];
-    if(chest.opened){this.rect(chest.x-15,chest.y-12,30,24,4,'#a4a2ac',PAINT.ink);return;}
-    const near=distance(p,chest)<80;
-    c.shadowColor=color+'40';c.shadowBlur=near?15:0;
-    this.rect(chest.x-19,chest.y-15,38,30,5,color,PAINT.ink);c.shadowBlur=0;
-    c.fillStyle='#fffbee99';c.fillRect(chest.x-15,chest.y-9,30,4);c.fillStyle=PAINT.ink;c.fillRect(chest.x-3,chest.y-5,6,13);
-
+  drawChest(chest,p) {
+    drawSupplyCache(this.ctx,chest,distance(p,chest)<80);
   }
   drawNode(node,time){
     drawBooster(this.ctx,node,time,this.reduced);
@@ -364,12 +354,12 @@ export class Renderer {
     const c=this.ctx,gear=item.kind&&item.kind!=='loot',color=gear?rarityOf(item.rarity).color:PAINT.yellow;
     const y=item.y+(this.reduced?0:Math.sin(time*2+item.x)*2);
     c.save();c.translate(item.x,y);
-    if(gear){
+    if(item.kind==='weapon'){
       this.rect(-16,-13,32,26,5,PAINT.ink,color);
-      if(item.kind!=='weapon'||!drawWeaponSprite(c,item.weapon,-13,0,26,23)){
-        this.text(item.kind==='weapon'?weaponOf(item).short:item.kind==='armor'?'▱':'⊕',0,4,item.kind==='weapon'?9:18,color,'600');
+      if(!drawWeaponSprite(c,item.weapon,-13,0,26,23)){
+        this.text(weaponOf(item).short,0,4,9,color,'600');
       }
-    }else{c.rotate(Math.PI/4);this.rect(-8,-8,16,16,2,color,PAINT.ink);}
+    }else drawPickupBadge(c,item,color);
     c.restore();
 
   }

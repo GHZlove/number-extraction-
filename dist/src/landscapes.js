@@ -1,3 +1,4 @@
+import { roadBridges } from './roads.js';
 import { zoneAt } from './math.js';
 
 const LANDMARK_PATTERNS = {
@@ -73,11 +74,10 @@ export function buildLandscapes(world,rand,addObstacle){
     const riverX=width*(river+1)/(rivers+1);
     for(let y=350;y<height-400;y+=1100){
       const x=riverX+(y/height-.5)*width*.18+Math.sin(y/1200+river)*160;
-      world.terrain.push({x,y,w:riverWidth,h:1080,kind:'water'});
+      const water={x,y,w:riverWidth,h:1080,kind:'water'};
+      world.terrain.push(water);
       world.terrain.push({x:x-90,y:y+470,w:riverWidth+180,h:140,kind:'bridge'});
-      for(const road of world.roads)if(road.w>road.h&&y<road.y+road.h&&y+1080>road.y){
-        world.terrain.push({x:x-90,y:road.y,w:riverWidth+180,h:road.h,kind:'bridge'});
-      }
+      world.terrain.push(...roadBridges(world.roads,water));
     }
   }
   for(const road of world.roads)world.terrain.unshift({...road,kind:'road'});

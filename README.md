@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.7 browser playtest.** Choose from seven maps at the holographic terminal. The shelter's large Deploy button and illustrated portal both start the selected route. The comic-style raid HUD has larger vitals, a closer camera, illustrated extraction vehicles, optional moonlight and a 28-skill tree with two equipped slots. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
+> **v0.12.8 browser playtest.** Choose from seven maps at the holographic terminal. The shelter's large Deploy button and illustrated portal both start the selected route. The comic raid HUD adds a red health strip and a critical-health warning. The extraction clock only appears inside an exit zone. This playtest also reduces enemy density and connects roads and bridges. [Download the playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,7 +12,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Builds | v0.12.7 browser playtest · v0.11.3 Windows desktop release |
+| Builds | v0.12.8 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
 | Run variety | 7 map families · 5 difficulties · 10 optional mutators |

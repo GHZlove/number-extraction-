@@ -88,3 +88,50 @@ export function mapBadge(c,text,x,y,width,height,color=PAPER){
   c.font='900 10px sans-serif';c.textAlign='center';c.fillStyle=color;c.fillText(text,x,y+3.4);
   c.restore();
 }
+
+const cacheColors = ['#c7e585', '#f4c56e', '#ee8da9'];
+
+export function drawSupplyCache(c,chest,highlight) {
+  const color=chest.keyCard?'#abb9fb':cacheColors[chest.zone]||cacheColors[0];
+  c.save();c.translate(chest.x,chest.y);c.strokeStyle=INK;c.lineWidth=2.4;c.lineJoin='round';
+  if(chest.opened){
+    shape(c,[[-25,-9],[-21,-24],[19,-25],[24,-10]],'#9d8fa2');
+    shape(c,[[-24,-7],[22,-7],[25,12],[20,16],[-24,16]],'#a48ea4');
+    box(c,-18,-4,35,11,3,'#393044');
+  }else{
+    if(highlight){c.strokeStyle='#ffefbe';c.lineWidth=3;box(c,-29,-21,58,46,8,'#4b385d40');}
+    c.strokeStyle=INK;c.lineWidth=2.4;
+    shape(c,[[-27,-10],[-17,-17],[23,-17],[28,-10],[27,13],[20,18],[-25,18]],color);
+    shape(c,[[-27,-10],[28,-10],[20,-3],[-26,-3]],'#fff2cbaa');
+    box(c,-6,-6,12,14,3,'#51425b');
+    if(chest.keyCard){c.strokeStyle=PAPER;line(c,[-3,2],[3,2]);}
+    else {line(c,[-19,-8],[-19,10]);line(c,[19,-6],[19,10]);}
+  }
+  c.restore();
+}
+
+export function drawVendor(c,merchant){
+  c.save();c.translate(merchant.x,merchant.y);c.strokeStyle=INK;c.lineWidth=2.5;c.lineJoin='round';
+  box(c,-25,-23,50,38,5,'#aa8979');
+  shape(c,[[-35,-17],[-27,-39],[23,-39],[35,-17],[25,-9],[-25,-9]],'#e9b26c');
+  shape(c,[[-14,-39],[-4,-39],[-4,-10],[-17,-10]],'#f8e6b1');
+  shape(c,[[10,-39],[19,-39],[28,-10],[15,-10]],'#f8e6b1');
+  box(c,-28,12,56,9,3,'#e5c99d');
+  c.strokeStyle=INK;
+  shape(c,[[-8,2],[-2,-3],[6,0],[8,7],[-2,10]],'#b0edb5');
+  c.restore();
+}
+
+export function drawPickupBadge(c,item,color){
+  c.lineWidth=2.1;c.strokeStyle=INK;c.lineJoin='round';
+  if(item.kind==='armor'){
+    shape(c,[[0,-14],[-13,-8],[-11,5],[0,15],[12,5],[13,-8]],color);
+    line(c,[-6,-3],[0,-7],[6,-3]);line(c,[-4,5],[0,8],[4,5]);
+  }else if(item.kind==='laser'){
+    box(c,-13,-8,26,16,4,color);disc(c,7,0,5,'#ec5374');
+    line(c,[-7,-4],[-4,-4]);line(c,[-7,3],[-3,3]);
+  }else{
+    shape(c,[[0,-12],[-11,-1],[-2,12],[8,7],[11,-1]],color);
+    line(c,[0,-12],[1,3],[-2,12]);line(c,[-11,-1],[1,3],[11,-1]);
+  }
+}

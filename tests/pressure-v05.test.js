@@ -23,9 +23,11 @@ test('compact arenas retain dimensions with guards concentrated at resource site
   let totalNear=0;
   for(let seed=0;seed<10;seed++){
     const w=generateWorld(seed);totalNear+=w.enemies.filter(e=>distance(e,w.spawn)<1200).length;
-    assert.ok(w.enemies.length>=90);assert.ok(w.sites.length>=12);
+    assert.ok(w.sites.length>=12);
+    assert.ok(w.enemies.filter(e=>e.guard).length>=w.sites.length*2);
+    assert.ok(w.enemies.length<90);
   }
-  assert.ok(totalNear/10>=4&&totalNear/10<12);
+  assert.ok(totalNear/10>=2&&totalNear/10<10);
 });
 
 test('time and difficulty increase wave size, movement pressure and attack cadence within caps',()=>{
@@ -63,7 +65,7 @@ test('nearby population and pending warnings obey the stage cap during long dire
     const nearby=r.world.enemies.filter(e=>!e.dead&&distance(e,r.player)<1500).length;
     assert.ok(nearby<=r.director.profile(r.elapsed).nearCap);assert.ok(nearby+r.world.spawnWarnings.length<=r.director.profile(r.elapsed).nearCap);
   }
-  assert.ok(r.director.spawned>=8&&r.director.spawned<=10);assert.ok(r.world.enemies.length<=10);
+  assert.ok(r.director.spawned>=5&&r.director.spawned<=PRESSURE.patrolCap);assert.ok(r.world.enemies.length<=PRESSURE.patrolCap);
 });
 
 test('reinforcement surges are limited to occupied resource sites and expire',()=>{

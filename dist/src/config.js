@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.12.7';
+export const VERSION = '0.12.8';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区',description:'从七张地图中抽取一张'},
   {id:'tangram',name:'七巧遗迹',description:'拼片遗迹 · 斜线分区'},
@@ -90,6 +90,6 @@ export const PAINT = Object.freeze({
 });
 
 export const PRESSURE = Object.freeze({
-  graceSeconds:6, warningSeconds:0.9, spawnMin:650, spawnMax:1000,
+  patrolCap:7, graceSeconds:6, warningSeconds:0.9, spawnMin:650, spawnMax:1000,
   safetyRadius:240, surgeEvery:60, surgeSeconds:8, cleanupSeconds:4, maxChaseSpeed:300,
 });

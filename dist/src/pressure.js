@@ -6,8 +6,8 @@ import { createEnemy } from './world.js';
 export function pressureProfile(difficulty,elapsed,surge=false){
   const rank=difficulty.rank-1,stage=Math.min(8,Math.floor(elapsed/45));
   return {
-    stage:stage+1,interval:Math.max(10,22-rank*1.5-stage*.8),batch:2+Math.floor(rank/2)+Math.floor(stage/3),
-    nearCap:Math.min(100,32+rank*12+stage*3),speed:1+Math.min(.18,stage*.025)+(surge?.08:0),
+    stage:stage+1,interval:Math.max(10,25-rank*1.4-stage*.8),batch:2+Math.floor(rank/2)+Math.floor(stage/3),
+    nearCap:Math.min(82,24+rank*10+stage*2),speed:1+Math.min(.18,stage*.025)+(surge?.08:0),
     cooldown:Math.max(.55,.92-rank*.045-stage*.025),windup:Math.max(.78,1-rank*.025-stage*.015),
     label:surge?'据点增援':stage>=5?'警戒提升':'野外巡游',
   };
@@ -68,7 +68,7 @@ export class PressureDirector {
     const profile=this.profile(raid.elapsed);
     if(raid.elapsed>=this.nextPulse&&!sheltered){
       const risk=zoneAt(p,w.zones).risk,patrols=w.enemies.filter(e=>!e.dead&&e.horde&&!e.guard&&!e.hunter).length+w.spawnWarnings.filter(m=>!m.guard&&!m.hunter).length;
-      this.wave++;this.enqueue(raid,anchor?Math.ceil(profile.batch*(1+risk*.15)*1.7):Math.max(0,Math.min(2+Math.floor(this.difficulty.rank/3),10-patrols)),profile,anchor);
+      this.wave++;this.enqueue(raid,anchor?Math.ceil(profile.batch*(1+risk*.15)*1.35):Math.max(0,Math.min(1+Math.floor(this.difficulty.rank/3),PRESSURE.patrolCap-patrols)),profile,anchor);
       this.nextPulse=raid.elapsed+profile.interval/(1+risk*.1);
     }
     this.cleanup+=dt;

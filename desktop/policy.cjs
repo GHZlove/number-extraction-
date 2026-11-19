@@ -50,7 +50,7 @@ const version = value => value === null || typeof value === 'string' && value.le
 function validPlaytestText(text) {
   if (typeof text !== 'string' || Buffer.byteLength(text,'utf8') > PLAYTEST_EXPORT_LIMIT) return false;
   let data;try { data=JSON.parse(text); } catch { return false; }
-  if (!exactKeys(data,['game','schema','balanceVersion','runs']) || data.game !== 'number-extraction-playtest' || data.schema !== 1 || !['0.11.1','0.12.0'].includes(data.balanceVersion) || !Array.isArray(data.runs) || data.runs.length > 100) return false;
+  if (!exactKeys(data,['game','schema','balanceVersion','runs']) || data.game !== 'number-extraction-playtest' || data.schema !== 1 || !['0.11.1','0.12.0','0.12.8'].includes(data.balanceVersion) || !Array.isArray(data.runs) || data.runs.length > 100) return false;
   if (new Set(data.runs.map(run=>run?.session)).size !== data.runs.length) return false;
   return data.runs.every(run=>{
     if (!exactKeys(run,RUN_KEYS) || !finite(run.session,1,1e9,true) || !version(run.buildVersion) || !version(run.balanceVersion) || !optionalNumber(run.seed,0,4294967295,true)) return false;

@@ -40,6 +40,7 @@ function start(){
   const prepared=prepareWarehouseDeployment(save),nextRaid=new Raid(prepared.save,seed[0],{warehouseGear:prepared.gear});
   if(prepared.count&&!writeSave(storage,prepared.save)){ui.toast('无法保存出击装备变更，请检查存档权限后再试。');return;}
   if(prepared.count){save=prepared.save;saveAvailable=true;}
+  document.getElementById('arena').classList.remove('health-hit');
   raid=nextRaid;changeJournal(next=>recordStart(next,raid.playtestSnapshot()));view='raid';paused=false;modal=null;accumulator=0;
   window.numberExtractionDesktop?.setRaidActive(true);
   document.body.dataset.screen='raid';document.getElementById('shelter-screen').hidden=true;document.getElementById('raid-screen').hidden=false;
@@ -162,7 +163,7 @@ function handleEvents(){
     if(event.type==='message')ui.toast(event.text);
     else if(event.type==='trade'){merchantId=event.id;show('merchant');}
     else if(event.type==='finish'){changeJournal(next=>recordFinish(next,event.result));if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
-    else{sound.play(event.type,event);renderer.feedback(event);}
+    else{if(event.type==='hurt'&&event.damage>0)ui.hit(raid.player);sound.play(event.type,event);renderer.feedback(event);}
   }
 }
 function autoPause(){if(view==='raid'&&!paused)show('pause');}

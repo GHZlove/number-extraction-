@@ -78,3 +78,92 @@
   #raid-screen .raid-timer > b { font-size:20px; }
   #raid-screen .mini-wrap { width:130px; }
 }
+
+/* Shared ink and paper treatment for field items, menus, and equipment. */
+:is(#shelter-screen,#dialog) .comic-item-mark {
+  display:inline-grid; place-items:center; width:28px; height:26px; margin-right:7px;
+  padding:3px; vertical-align:middle; background:var(--item-ink,#ead6a5); color:#272133;
+  border:1.5px solid #282431; border-radius:5px 7px 4px 6px; box-shadow:2px 2px #282431;
+}
+.comic-item-mark .icon { width:17px; height:17px; }
+.comic-item-mark.armor { --item-ink:#ace0d6; }
+.comic-item-mark.laser { --item-ink:#e8bad2; }
+.comic-item-mark.medical { --item-ink:#efb099; }
+.comic-item-mark.divider { --item-ink:#cec4ef; }
+#dialog :is(.resource-stack,.recycle-reward,.run-rewards,.exit-bonus) { color:#45324d; }
+#dialog .resource-stack { background:#f1dfb4; border:1px solid #282431; border-radius:7px 5px 8px 4px; }
+:is(#shelter-screen .shelter-hero,#dialog) {
+  background-image:radial-gradient(#58406020 .75px,transparent .85px);
+  background-size:7px 7px;
+}
+#raid-screen :is(.quick-weapon,.number-skill,.overload-button,.hud-actions .icon-button) {
+  border-color:#1e192b; box-shadow:2px 2px #1e192b;
+}
+#raid-screen .quick-weapon.active { border-color:var(--rarity); }
+#raid-screen .hud-actions { align-items:flex-start; }
+#raid-screen .raid-timer {
+  position:static; left:auto; transform:none; flex:0 0 auto; padding:7px 12px; min-width:118px;
+}
+#raid-screen .raid-timer > b { font-size:27px; }
+#raid-screen .heat-readout { min-width:0; }
+#raid-screen .mini-wrap { top:125px; }
+#raid-screen .player-readout {
+  background:none; border:0; box-shadow:none; border-radius:0; padding:0; top:22px;
+}
+#raid-screen .vitals { width:clamp(180px,19vw,310px); }
+#raid-screen .player-readout :is(.vital-label,#form-label) {
+  color:#fff1dc; text-shadow:1px 1px #221829,-1px 1px #221829,0 -1px #221829;
+}
+#raid-screen .player-readout .meter {
+  border:0; border-radius:0; background:#2d2538be;
+  clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%);
+}
+#raid-screen .health-meter { height:17px; }
+#raid-screen .health-meter i { background:linear-gradient(0deg,#c82442 0 55%,#f45b63 56% 100%); border-radius:0; }
+#raid-screen .armor-meter { height:7px; }
+
+#raid-screen .exit-timer {
+  position:absolute; z-index:4; left:50%; top:0; transform:translateX(-50%); min-width:175px;
+  padding:9px 13px; color:#fff1d9; background:#403351; border:2px solid #221b30;
+  border-radius:8px 12px 6px 9px; box-shadow:4px 4px #21192dbb; pointer-events:none;
+}
+#raid-screen .exit-timer[hidden] { display:none; }
+.exit-timer > div:first-child { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+.exit-timer strong { color:#f6d37b; font:900 18px ui-monospace,monospace; }
+.exit-timer .interaction-track { margin-top:6px; }
+
+.low-health-border {
+  position:absolute; inset:0; z-index:11; pointer-events:none;
+  border:5px solid #ff304c; box-shadow:inset 0 0 23px 5px #f7224f99;
+  animation:critical-health 1.1s ease-in-out infinite;
+}
+.low-health-border[hidden] { display:none; }
+@keyframes critical-health {
+  0%,100% { opacity:.48; }
+  50% { opacity:1; }
+}
+.health-hit :is(.hud-top,.player-readout,.mini-wrap,.number-skillbar,.quick-loadout,.energy-readout) {
+  animation:comic-hit .26s ease-out;
+}
+@keyframes comic-hit {
+  0% { translate:0 0; }
+  19% { translate:-3px -6px; }
+  48% { translate:2px 2px; }
+  100% { translate:0 0; }
+}
+@media(max-width:900px) {
+  #raid-screen .vitals { width:156px; }
+  #raid-screen .exit-timer { top:110px; }
+}
+@media(max-width:640px) {
+  #raid-screen .vitals { width:118px; }
+  #raid-screen .health-meter { height:12px; }
+  #raid-screen .hud-actions { top:0; display:grid; grid-template-columns:repeat(4, minmax(27px,auto)); gap:4px; }
+  #raid-screen .raid-timer { grid-column:1/-1; grid-row:1; justify-self:end; min-width:105px; }
+  #raid-screen .raid-timer > b { font-size:20px; }
+  #raid-screen .exit-timer { top:156px; min-width:141px; font-size:12px; z-index:9; }
+  #raid-screen .mini-wrap { top:142px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .low-health-border,.health-hit :is(.hud-top,.player-readout,.mini-wrap,.number-skillbar,.quick-loadout,.energy-readout) { animation:none; }
+}

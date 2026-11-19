@@ -137,10 +137,10 @@ test('safehouses prevent offensive number skills', () => {
   }
 });
 
-test('both journal versions import and all weapon types point to atlas cells', () => {
+test('all supported journal versions import and all weapon types point to atlas cells', () => {
   const report = version => JSON.stringify({
     game: 'number-extraction-playtest', schema: 1, balanceVersion: version, runs: []
   });
-  assert.equal(analyzePlaytestReports([report('0.11.1'), report('0.12.0')]).acceptedReportCount, 2);
+  assert.equal(analyzePlaytestReports([report('0.11.1'), report('0.12.0'), report('0.12.8')]).acceptedReportCount, 3);
   for (const weapon of Object.keys(WEAPONS)) assert.match(weaponBackground(weapon), /weapons(?:-extra)?\.png/);
 });

@@ -5,7 +5,8 @@ import { WEAPONS, RARITIES, ENCHANTS } from './equipment.js';
 
 export const JOURNAL_KEY='number-extraction-playtest-v1';
 export const JOURNAL_LIMIT=100;
-export const BALANCE_VERSION='0.12.0';
+export const BALANCE_VERSION='0.12.8';
+export const REPORT_BALANCE_VERSIONS=[BALANCE_VERSION,'0.12.0','0.11.1'];
 const MAX_BYTES=262144;
 export const EXTRACTION_REASONS=Object.freeze({
  pressure:'热度或敌人压力',resources:'资源已经足够',full_bag:'装备背包已满',time:'行动时间不足',

@@ -20,7 +20,7 @@ test('production action settings persist a maximum of three choices and configur
  action('toggleMutator','fog');let saved=JSON.parse(env.window.localStorage.getItem(SAVE_KEY));assert.deepEqual(saved.selectedMutators,['no_dodge','rich','glass']);
  action('toggleMutator','rich');action('toggleMutator','scarcity');
  saved=JSON.parse(env.window.localStorage.getItem(SAVE_KEY));assert.deepEqual(saved.selectedMutators,['no_dodge','glass','scarcity']);
- action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.equal(env.ids.get('health-value').textContent,75);
+ action('start');assert.equal(env.document.body.dataset.screen,'raid');assert.equal(env.ids.get('health-meter')['aria-valuenow'],75);
  assert.match(env.ids.get('heat-value').textContent,/热度 0/);assert.match(env.ids.get('form-label').textContent,/轻巧/);
  env.ids.get('extract-brief-button').dispatch('click');const dialog=env.ids.get('dialog');
  assert.equal(env.ids.get('overlay').hidden,false);assert.match(dialog.innerHTML,/行动已暂停/);assert.equal((dialog.innerHTML.match(/class="exit-brief-item"/g)||[]).length,4);

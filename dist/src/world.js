@@ -1,3 +1,4 @@
+import { roadNetwork } from './roads.js';
 import { createSectors, sampleSector, containsPoint } from './regions.js';
 import { WORLD, ZONES, LOOT, ENEMY_TYPES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { seededRandom, isFree, distance, zoneAt, maxEnemyHealth } from './math.js';
@@ -32,6 +33,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
   const zones=createSectors(bounds,random,protectedPoints,layout.id);
   const ground = GROUND_BY_LAYOUT[layout.id] || ['mud', 'water'];
   const east = { x: bounds.width-400, y: Math.round(bounds.height*0.72) };
+  const {roads,routes:roadRoutes}=roadNetwork(bounds,east);
   const world = {
     seed, difficulty: mission, bounds, zones, sectors:zones, spawn: { ...WORLD.spawn },
     theme:layout.name,layout:layout.id,
@@ -40,10 +42,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
       { id:'east',...east,radius:90,name:'核心升降梯',label:'EXIT B' },
       { id:'field',x:Math.round(bounds.width*.36),y:Math.round(bounds.height*.32),radius:85,name:'野外接应点',label:'EXIT C' },
       { id:'relay',x:Math.round(bounds.width*.72),y:Math.round(bounds.height*.18),radius:85,name:'北部中继门',label:'EXIT D' }],
-    roads: [{ x:210,y:430,w:200,h:760 },{ x:210,y:960,w:1760,h:200 },
-      { x:1770,y:960,w:200,h:east.y-960+100 },{ x:1770,y:east.y-100,w:east.x-1770+120,h:200 },
-      {x:1770,y:bounds.height*.32-100,w:bounds.width-2100,h:200},
-      {x:bounds.width*.72-100,y:bounds.height*.18-160,w:200,h:bounds.height*.54+260}],
+    roads, roadRoutes,
   };
   for(const exit of world.exits){exit.safehouse=zoneAt(exit,zones).risk===0;exit.safetyRadius=170;exit.serviced=false;}
   const reserved = rect => overlap(rect,{x:100,y:860,w:800,h:500},40) ||
@@ -105,7 +104,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
       const p=spot(zone,40);if(p)world.chests.push({...p,id:`chest-${zone.id}-${i}`,zone:zone.risk,sectorId:zone.id,value:Math.round(rand(...zone.reward)),opened:false,
         dividers:random()<0.6?1:0,medkits:random()<0.3?1:0,gear:[randomEquipment(random,zone.risk,`chest-gear-${zone.id}-${i}`)]});
     }
-    for(let i=0;i<Math.max(1,Math.round((3+rank)*enemyShare(zone)));i++){
+    for(let i=0;i<Math.max(1,Math.round((2+rank*.75)*enemyShare(zone)));i++){
       const p=spot(zone,35,true);if(!p)continue;
       const elite=false;
       const value=elite?Math.max(...zone.values)*scale*4:pick(zone.values.filter(value=>value>=2))*scale;
@@ -128,7 +127,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
     for(let i=0;i<3;i++){const p=spot(zone,35,false,site);if(p)world.tiles.push({...p,id:`site-tile-${index}-${i}`,value:Math.min(2048,pick(zone.values)*scale),dead:false});}
     const p=spot(zone,40,false,site);
     if(p)world.chests.push({...p,id:`site-chest-${index}`,zone:zone.risk,sectorId:zone.id,value:Math.round(rand(...zone.reward)*1.15),opened:false,dividers:1,medkits:index%3===0?1:0,gear:[randomEquipment(random,zone.risk,`site-gear-${index}`)]});
-    for(let guardIndex=0;guardIndex<4+zone.risk*2+rank;guardIndex++){
+    for(let guardIndex=0;guardIndex<3+zone.risk+Math.floor(rank*.75);guardIndex++){
       const ep=spot(zone,35,true,site);if(!ep)continue;
       const e=createEnemy(`site-enemy-${index}-${guardIndex}`,ep.x,ep.y,pick(zone.values.filter(n=>n>=2))*scale,types[(index+guardIndex)%types.length]);
       Object.assign(e,{zone:zone.risk,sectorId:zone.id,guard:true,siteId:index,leash:850,moveScale:rand(.88,1.12)*(1+rank*.04)});

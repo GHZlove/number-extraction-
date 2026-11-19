@@ -22,6 +22,10 @@ const number = value => Math.floor(value).toLocaleString('en-US');
 export const formatTime = seconds => `${Math.floor(Math.max(0,seconds)/60).toString().padStart(2,'0')}:${Math.floor(Math.max(0,seconds)%60).toString().padStart(2,'0')}`;
 const costHTML = cost => `<span>${icon('data')}${number(cost.credits)}</span><span>${icon('alloy')}${cost.alloy}</span>${cost.core?`<span>${icon('core')}${cost.core}</span>`:''}`;
 
+const comicItem = kind => {
+  const symbol=({armor:'shield',laser:'bolt',medical:'medical',divider:'core',loot:'data'})[kind]||'weapon';
+  return `<span class="comic-item-mark ${kind}" aria-hidden="true">${icon(symbol)}</span>`;
+};
 const weaponArt = item => `<i class="inventory-weapon-art sprite-art" aria-hidden="true" style="${weaponBackground(item.weapon)}"></i>`;
 
 const routeColours = ['#456c65','#4f8171','#88a877','#b7c486','#957f9f','#657d9a'];
@@ -141,7 +145,7 @@ export class UI {
   shop(raid,id){
     const trader=raid.world.merchants.find(m=>m.id===id);if(!trader)return;
     const funds=tradeValue(raid);
-    this.show(`<span class="eyebrow">FIELD TRADER</span><h2 id="dialog-title">${escapeHTML(trader.name)}</h2><p>可交易物资 <b>${funds} ◇</b>。消费背包里的物资价值，庇护所存款不受影响。装备商品放入背包，按 B 换装。</p><div class="shop-list">${Object.entries(SHOP).map(([key,offer])=>`<article class="shop-item"><div><b>${offer.name}</b><p>${key==='medkit'?`回复${raid.player.healAmount}生命，按R使用。`:offer.description}</p><small>本局剩余 ${trader.stock[key]} 件</small></div><button data-action="buy" data-key="${key}" ${trader.stock[key]<=0||funds<offer.cost||(!['medkit','divider'].includes(key)&&raid.equipmentCount()>=raid.capacity)?'disabled':''}>${offer.cost} ◇ · 购买</button></article>`).join('')}</div><button class="primary-button" data-action="close">返回战区</button>`,true);
+    this.show(`<span class="eyebrow">FIELD TRADER</span><h2 id="dialog-title">${escapeHTML(trader.name)}</h2><p>可交易物资 <b>${funds} ◇</b>。消费背包里的物资价值，庇护所存款不受影响。装备商品放入背包，按 B 换装。</p><div class="shop-list">${Object.entries(SHOP).map(([key,offer])=>`<article class="shop-item"><div><b>${offer.weapon||key==='weapon'?weaponArt({weapon:offer.weapon||'rifle'}):comicItem(key==='medkit'?'medical':key)}${offer.name}</b><p>${key==='medkit'?`回复${raid.player.healAmount}生命，按R使用。`:offer.description}</p><small>本局剩余 ${trader.stock[key]} 件</small></div><button data-action="buy" data-key="${key}" ${trader.stock[key]<=0||funds<offer.cost||(!['medkit','divider'].includes(key)&&raid.equipmentCount()>=raid.capacity)?'disabled':''}>${offer.cost} ◇ · 购买</button></article>`).join('')}</div><button class="primary-button" data-action="close">返回战区</button>`,true);
   }
   shelter(save,{lastResult=null,saveAvailable=true,journal=emptyJournal(),journalAvailable=true,playtestReview=null,selectedReviewCohort=null}={}) {
     const selected=difficultyOf(save.selectedDifficulty),loadout=applyWarehouseGear(starterLoadout(save),plannedWarehouseGear(save)),level=shelterLevel(save);
@@ -213,16 +217,26 @@ export class UI {
         }).join('')}</section>`).join('')}</div>
     </section>`;
   }
+  updateHealth(player, ended=false) {
+    const hp=Math.max(0,Math.min(100,player.hp/player.maxHp*100));
+    $('health-meter').setAttribute('aria-valuemax',player.maxHp);
+    $('health-meter').setAttribute('aria-valuenow',Math.round(player.hp));
+    $('health-bar').style.width=`${hp}%`;
+    $('low-health-border').hidden=ended||hp>=20;
+  }
+  hit(player) {
+    this.updateHealth(player, player.hp<=0);
+    const arena=$('arena');
+    arena.classList.remove('health-hit');
+    void arena.offsetWidth;
+    arena.classList.add('health-hit');
+  }
   update(raid,save,started,paused) {
     const p=raid.player,zone=zoneAt(p,raid.world.zones),item=activeWeapon(p);
-    $('player-value').textContent=p.value;
-    $('player-value').style.fontSize=p.value>=1000?'22px':p.value>=100?'27px':'';
-    $('health-value').textContent=Number(p.hp.toFixed(1));$('health-bar').style.width=`${100*p.hp/p.maxHp}%`;
-    $('health-bar').style.background=p.hp<30?'var(--red)':'var(--mint)';
+    this.updateHealth(p, !!raid.result);
     const boss=raid.world.enemies.filter(e=>e.boss&&!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<Math.min(950,raid.run.vision)&&(e.hp<e.maxHp||e.state==='windup'||e.bossPhase===2)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
     $('boss-hud').hidden=!boss;if(boss){$('boss-name').textContent=boss.bossName;$('boss-stage').textContent=`阶段 ${boss.bossPhase}`;$('boss-health-fill').style.width=`${100*boss.hp/boss.maxHp}%`;$('boss-health-text').textContent=`${Math.ceil(boss.hp)} / ${boss.maxHp}`;}
     $('armor-name').textContent=p.armor?`${rarityOf(p.armor.rarity).name}品护甲`:'未穿护甲';
-    $('armor-durability').textContent=p.armor?Math.ceil(p.armor.durability):'0';
     $('armor-fill').style.width=p.armor?`${100*p.armor.durability/p.armor.maxDurability}%`:'0';
     $('energy-value').textContent=p.overload>0?`${p.overload.toFixed(1)}s`:Math.floor(p.energy)+'%';
     $('energy-fill').style.width=`${p.energy}%`;
@@ -260,12 +274,26 @@ export class UI {
     const pressure=raid.pressureInfo();$('pressure-readout').textContent=`巡游${pressure.wave} / 近敌${pressure.near}`;$('pressure-readout').title=pressure.label;
     $('heat-value').textContent=`热度 ${Math.floor(pressure.heat)} · 追猎${pressure.heatLevel}`;$('heat-fill').style.width=`${pressure.heat}%`;$('heat-fill').style.background=pressure.heat>=75?'#ff6080':pressure.heat>=50?'#ff9b4d':'#e5c35b';
     $('heat-hunters').textContent=`猎手 ${pressure.hunters} · 钥卡 ${raid.exitKeys}`;
-    $('form-label').textContent=`${p.form.name} · 机动${Math.round(p.form.speed*raid.run.playerSpeed*100)}%${p.form.damage<1?' · 减伤'+Math.round((1-p.form.damage)*100)+'%':''}${p.formPending?' · 体型待展开':''}`;
-    $('exit-status').textContent=raid.extractionReady()?'撤离已开放':`撤离 ${formatTime(raid.difficulty.extractAt-raid.elapsed)} 后开放`;$('time-value').textContent=formatTime(raid.duration-raid.elapsed);
+    const form=$('form-label');
+    form.textContent=p.form.name+(p.formPending?' · 体型待展开':'');
+    form.title=`机动${Math.round(p.form.speed*raid.run.playerSpeed*100)}%${p.form.damage<1?' · 减伤'+Math.round((1-p.form.damage)*100)+'%':''}`;
+    $('time-value').textContent=formatTime(raid.duration-raid.elapsed);
     $('map-scale').textContent=`${raid.world.bounds.width*raid.world.bounds.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}×`;$('map-theme').textContent=raid.world.theme+' · '+zone.name+(raid.nightMode?' · 月夜':'');
     const near=raid.nearbyGear();$('nearby-gear').hidden=!near||paused||!!raid.result;if(near){$('nearby-gear').textContent=`F · ${near.name}`;$('nearby-gear').style.color=rarityOf(near.rarity).color;}
-    const context=raid.context();$('interaction').hidden=!context||paused||!!raid.result;
-    if(context){$('interaction-text').textContent=context.kind==='exit'?(context.locked?context.status.label:'按住 E · '+exitVehicle(context.target).label):context.kind==='merchant'?'E · 与商人交易':context.kind==='node'?'按住 E · '+nodeLabel(context.target):context.target.keyCard?'静止 · 搜索撤离钥卡':'静止 · 按住搜索';$('interaction-count').textContent=context.kind==='exit'?(context.locked?(context.status.wait?formatTime(context.status.wait):'LOCK'):`${Math.max(0,RULES.extractSeconds-raid.extractProgress).toFixed(1)}s`):'';$('interaction-fill').style.width=`${Math.min(100,context.progress*100)}%`;}
+    const context=raid.context(),active=!paused&&!raid.result&&context;
+    const atExit=active&&context.kind==='exit';
+    $('exit-timer').hidden=!atExit;
+    if(atExit){
+      $('exit-status').textContent=context.locked?context.status.label:'按住 E · '+exitVehicle(context.target).label;
+      $('extract-time').textContent=context.locked?(context.status.wait>0?formatTime(context.status.wait):''):`${Math.max(0,RULES.extractSeconds-raid.extractProgress).toFixed(1)}s`;
+      $('extract-fill').style.width=`${Math.min(100,context.progress*100)}%`;
+    }
+    const action=active&&!atExit;
+    $('interaction').hidden=!action;
+    if(action){
+      $('interaction-text').textContent=context.kind==='merchant'?'与商人交易':context.kind==='node'?nodeLabel(context.target):context.target.keyCard?'静止 · 搜索撤离钥卡':'静止 · 按住搜索';
+      $('interaction-fill').style.width=`${Math.min(100,context.progress*100)}%`;
+    }
     document.querySelector('.touch-actions [data-control="ShiftLeft"] small').textContent=raid.run.noDodge?'禁用':'闪避';
     document.querySelector('.touch-actions [data-control="KeyQ"] small').textContent=`${p.dividers} 个`;
     document.querySelector('.touch-actions [data-control="KeyR"] small').textContent=`${p.medkits} 个`;
@@ -343,7 +371,7 @@ export class UI {
     const chosen=[['0','武器 1',plan.weapons[0]],['1','武器 2',plan.weapons[1]],['armor','护甲',plan.armor],['laser','配件',plan.laser]];
     const card=(record,pending)=>{
       const item=hydrateEquipment(record),repair=warehouseRepairCost(record),selected=Object.values(save.deployment).includes(record.id);
-      return `<article class="vault-item" style="--rarity:${rarityOf(item.rarity).color}"><small>${pending?'待收装备':selected?'已选择出击':'仓库装备'}</small><h3>${record.kind==='weapon'?weaponArt(item):''}${escapeHTML(item.name)}</h3><p>${record.kind==='armor'?`${Math.ceil(item.durability)} / ${item.maxDurability} 耐久`:record.kind==='weapon'?`Lv.${item.level} · ${ENCHANTS[item.enchant].name}`:'缩小弹道散布'}</p><div class="vault-actions">${pending?'':record.kind==='weapon'?`<button data-action="vaultSelect" data-key="0:${record.id}">带入武器1</button><button data-action="vaultSelect" data-key="1:${record.id}">带入武器2</button>`:`<button data-action="vaultSelect" data-key="${record.kind}:${record.id}" ${record.kind==='armor'&&record.durability<=0?'disabled':''}>选择出击</button>`}${repair?`<button data-action="repairGear" data-key="${record.id}" ${save.credits<repair?'disabled':''}>修理 · ${repair} ◇</button>`:''}<button class="vault-recycle" data-action="askRecycle" data-key="${record.id}">回收</button></div></article>`;
+      return `<article class="vault-item" style="--rarity:${rarityOf(item.rarity).color}"><small>${pending?'待收装备':selected?'已选择出击':'仓库装备'}</small><h3>${record.kind==='weapon'?weaponArt(item):comicItem(record.kind)}${escapeHTML(item.name)}</h3><p>${record.kind==='armor'?`${Math.ceil(item.durability)} / ${item.maxDurability} 耐久`:record.kind==='weapon'?`Lv.${item.level} · ${ENCHANTS[item.enchant].name}`:'缩小弹道散布'}</p><div class="vault-actions">${pending?'':record.kind==='weapon'?`<button data-action="vaultSelect" data-key="0:${record.id}">带入武器1</button><button data-action="vaultSelect" data-key="1:${record.id}">带入武器2</button>`:`<button data-action="vaultSelect" data-key="${record.kind}:${record.id}" ${record.kind==='armor'&&record.durability<=0?'disabled':''}>选择出击</button>`}${repair?`<button data-action="repairGear" data-key="${record.id}" ${save.credits<repair?'disabled':''}>修理 · ${repair} ◇</button>`:''}<button class="vault-recycle" data-action="askRecycle" data-key="${record.id}">回收</button></div></article>`;
     };
     return `<section class="warehouse-panel"><div class="section-heading"><div><span class="eyebrow">PERSISTENT EQUIPMENT</span><h2>战备仓库</h2></div><b class="warehouse-count">${save.warehouse.items.length} / ${capacity} 格 · Lv.${level}</b></div><p>成功撤离的装备保留品质、附魔、等级和护甲耐久。选择后在出击时带入；失败会丢失带入装备。工坊基础装备与试用品不存仓。</p><div class="vault-toolbar"><button data-action="upgradeFacility" data-key="warehouse" ${canUpgradeFacility(save,'warehouse')?'':'disabled'}>${cost?`扩容 +12格 · ${cost.credits} ◇ / ${cost.alloy} 合金${cost.core?' / '+cost.core+'核心':''}`:'仓库已满级'}</button><button data-action="claimPending" ${!save.warehouse.pending.length||save.warehouse.items.length>=capacity?'disabled':''}>收纳待收装备 · ${save.warehouse.pending.length}件</button></div><div class="deployment-slots">${chosen.map(([slot,label,item])=>`<div><small>${label}</small><b>${item?escapeHTML(item.name):'工坊默认装备'}</b>${item?`<button data-action="vaultSelect" data-key="${slot}:">取消带入</button>`:''}</div>`).join('')}</div><div class="vault-grid">${save.warehouse.items.map(i=>card(i,false)).join('')||'<p class="muted">仓库为空。带装备成功撤离后，装备会存放在这里。</p>'}</div>${save.warehouse.pending.length?`<h3>待收区 · ${save.warehouse.pending.length}件</h3><p>满仓装备暂存在此处。扩容或回收库存后收纳，待收装备需先入仓才能出击。</p><div class="vault-grid">${save.warehouse.pending.map(i=>card(i,true)).join('')}</div>`:''}</section>`;
   }
@@ -358,13 +386,13 @@ export class UI {
       const group=groups.get(key)||{name:item.currencyOnly?'残骸金币':item.bossLoot?'首领核心物资':item.name||'物资',value:0,count:0};
       group.value+=item.value;group.count++;groups.set(key,group);
     }
-    return `<section class="resource-pouch"><div class="section-heading"><h2>资源袋 · 不限量</h2><span>可交易 ${number(tradeValue(raid))} ◇</span></div><p>碎片、金币和材料不占装备格。成功撤离后入库；局内也可用于行商交易。撤离钥卡 ${raid.exitKeys} 张。</p><div class="resource-stacks">${groups.size?[...groups.values()].map(group=>`<div class="resource-stack"><b>${escapeHTML(group.name)}</b><span>${number(group.value)} ◇</span><small>${number(group.count)} 份 · 不占格</small></div>`).join(''):'<p class="muted">尚未收集资源。靠近低等级敌人残骸可回收金币。</p>'}</div><small>本局累计回收 ${raid.recycled} 份残骸，产出 ${number(raid.recycledValue)} 金币。</small></section>`;
+    return `<section class="resource-pouch"><div class="section-heading"><h2>资源袋 · 不限量</h2><span>可交易 ${number(tradeValue(raid))} ◇</span></div><p>碎片、金币和材料不占装备格。成功撤离后入库；局内也可用于行商交易。撤离钥卡 ${raid.exitKeys} 张。</p><div class="resource-stacks">${groups.size?[...groups.values()].map(group=>`<div class="resource-stack"><b>${comicItem('loot')}${escapeHTML(group.name)}</b><span>${number(group.value)} ◇</span><small>${number(group.count)} 份 · 不占格</small></div>`).join(''):'<p class="muted">尚未收集资源。靠近低等级敌人残骸可回收金币。</p>'}</div><small>本局累计回收 ${raid.recycled} 份残骸，产出 ${number(raid.recycledValue)} 金币。</small></section>`;
   }
   inventory(raid) {
     const p=raid.player,full=raid.equipmentCount()>=raid.capacity,disabled=full?'disabled title="装备背包已满"':'';
     const equipped=p.weapons.map((item,slot)=>`<div class="equipped-card" style="--rarity:${rarityOf(item.rarity).color}"><small>武器 ${slot+1}${p.activeSlot===slot?' / 当前':''}</small><b>${weaponArt(item)}${escapeHTML(item.name)}</b><span>${weaponOf(item).mode==='ranged'?'枪械':'近战'} · ${weaponOf(item).range} 范围</span><button class="secondary-button" data-action="slot" data-key="${slot}" ${p.activeSlot===slot?'disabled':''}>切换至此武器</button></div>`).join('');
     const gear=raid.bag.map((item,index)=>({item,index})).filter(({item})=>isEquipment(item));
-    const rows=gear.map(({item,index})=>`<div class="inventory-item" style="--rarity:${rarityOf(item.rarity).color}"><div><b>${escapeHTML(item.name)}</b><small>撤离后入仓${item.kind==='weapon'?' / 伤害×'+rarityOf(item.rarity).multiplier:item.kind==='armor'?' / '+Math.ceil(item.durability)+'耐久':''}</small></div><div class="inventory-actions">${item.kind==='weapon'?`<button data-action="equip0" data-key="${index}">装至1</button><button data-action="equip1" data-key="${index}">装至2</button>`:`<button data-action="equip" data-key="${index}">装备</button>`}<button data-action="drop" data-key="${index}">丢弃</button></div></div>`).join('');
+    const rows=gear.map(({item,index})=>`<div class="inventory-item" style="--rarity:${rarityOf(item.rarity).color}"><div><b>${item.kind==='weapon'?weaponArt(item):comicItem(item.kind)}${escapeHTML(item.name)}</b><small>撤离后入仓${item.kind==='weapon'?' / 伤害×'+rarityOf(item.rarity).multiplier:item.kind==='armor'?' / '+Math.ceil(item.durability)+'耐久':''}</small></div><div class="inventory-actions">${item.kind==='weapon'?`<button data-action="equip0" data-key="${index}">装至1</button><button data-action="equip1" data-key="${index}">装至2</button>`:`<button data-action="equip" data-key="${index}">装备</button>`}<button data-action="drop" data-key="${index}">丢弃</button></div></div>`).join('');
     this.show(`<button class="dialog-close" data-action="close" aria-label="关闭背包">×</button><span class="eyebrow">FIELD LOADOUT</span><h2 id="dialog-title">局内装备</h2><p class="modal-info">行动已暂停。只有武器、护甲和配件占背包格，资源袋不限量。成功撤离后装备入仓、资源入库；带入的仓库装备失败会丢失，工坊基础装备重新发放。</p><div class="equipped-grid">${equipped}</div><div class="attachment-row"><span>${p.armor?escapeHTML(p.armor.name)+' / '+Math.ceil(p.armor.durability)+'耐久':'未穿护甲'}</span>${p.armor?`<button data-action="remove" data-key="armor" ${disabled}>收起护甲</button>`:''}</div><div class="attachment-row"><span>${p.laserDisabled?'本局镭射受干扰 · 准星瞄准':p.laser?'镭射已装配 · 红线瞄准':'未装镭射 · 准星瞄准'}</span>${p.laser?`<button data-action="remove" data-key="laser" ${disabled}>卸下镭射</button>`:''}</div>${this.resourcePouch(raid)}<div class="section-heading"><h2>装备背包 ${raid.equipmentCount()} / ${raid.capacity}</h2><span>预计带出 ${number(Math.round(raid.carriedValue()*raid.rewardMultiplier))} ◇</span></div><div class="inventory-list">${rows||'<p class="muted">装备背包为空。打开装备箱，按F拾取装备。</p>'}</div><button class="primary-button" data-action="close">返回行动 ${icon('arrow')}</button>`,true);
   }
 }
