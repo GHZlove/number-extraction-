@@ -9,8 +9,7 @@ body[data-screen="shelter"]::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(180deg, #1f142bab, #20142b32 38%, #271a2e25 58%, #22152690),
-    linear-gradient(90deg, #20132a99, #22152b33 47%, #21152b22 59%, #191224ba),
+    linear-gradient(180deg, #21172782, transparent 32%, transparent 66%, #21172787),
     var(--route-vista, none),
     url("./art/sector-zero-vista.png");
   background-position: center;
@@ -25,298 +24,429 @@ body[data-shelter-map="delta"] { --route-vista: url("./art/route-delta.png"); }
 body[data-shelter-map="observatory"] { --route-vista: url("./art/route-observatory.png"); }
 body[data-shelter-map="glacier"] { --route-vista: url("./art/route-glacier.png"); }
 
+/* Shelter surfaces share one palette while the centre stays open to the scenery. */
 #shelter-screen {
-  --scene-light: #fff2d9;
-  --scene-muted: #e7d6c1;
-  --scene-accent: #e0f7a5;
-  --scene-shadow: 1px 2px 0 #25192b, 0 2px 10px #1b1326;
+  --shelter-glass: rgba(28, 22, 36, 0.84);
+  --shelter-text-glass: rgba(24, 18, 30, 0.80);
+  --shelter-inset: #302738;
+  --shelter-line: rgba(235, 198, 130, 0.30);
+  --shelter-rule: #ebc68230;
+  --shelter-text: #f4ebd9;
+  --shelter-muted: #dad0df;
+  --shelter-gold: #f1cc8b;
+  --shelter-mint: #c7e6d2;
+  --shelter-ink: #231c2b;
+  --shelter-ink-muted: #4a3f57;
+  --text: var(--shelter-text);
+  --muted: var(--shelter-muted);
+  --panel: var(--shelter-inset);
+  --panel-2: #383043;
+  --line: var(--shelter-line);
+  --mint: var(--shelter-mint);
   position: relative;
   z-index: 1;
   min-height: 100dvh;
-  padding-top: clamp(16px, 2.7vw, 38px);
+  padding-top: clamp(16px, 2.5vw, 34px);
+  color: var(--shelter-text);
+  color-scheme: dark;
 }
+#shelter-screen :where(*) {
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+}
+
+#shelter-screen :is(.brand, .resource-chip, .run-report, .shelter-tabs, .shelter-footer,
+  .shelter-hero, .expedition-panel, :where(.shelter-main) > .section-heading,
+  .forge-panel, .warehouse-panel, .boss-codex, .rules-panel, .playtest-panel, .save-warning),
+#shelter-screen[data-tab="skills"] .skill-tree,
+#shelter-screen .facilities-grid .facility-card,
+#shelter-screen .shelter-stats .stat-card {
+  background: var(--shelter-glass);
+  border: 1px solid var(--shelter-line);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px #110a1640;
+  color: var(--shelter-text);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+#shelter-screen :is(.resource-chip.alloy, .resource-chip.core, .run-report.failed) {
+  background: var(--shelter-glass);
+  border-color: var(--shelter-line);
+}
+#shelter-screen :is(.brand, .shelter-tabs, .shelter-footer) {
+  background: var(--shelter-text-glass);
+}
+#shelter-screen :is(.eyebrow, .brand small, .shelter-build, .shelter-tabs button small,
+  .run-report p, .run-report.failed p, .run-recap, .hero-footer span, .safe-tag, .portal-destination,
+  .holo-screen-caption small, .difficulty-meta span, .night-select small, .expedition-summary small,
+  .section-heading span, .deploy-note, .journal-toolbar span, .journal-run-header span, .journal-feedback label,
+  .review-cohort-label,
+  .facility-title small, .facility-card p, .stat-card small, .forge-panel p, .forge-panel small,
+  .warehouse-panel p, .boss-codex > p, .boss-card small, .rules-panel p, .skill-node small,
+  .playtest-panel p, .playtest-run p, .deployment-slots small, .vault-item small, .vault-item p,
+  .review-grid small, .playtest-review li) {
+  color: var(--shelter-muted);
+}
+#shelter-screen :is(.brand strong, .facility-title h3, .forge-panel h2, .expedition-panel h2,
+  .section-heading h2, .expedition-panel h3, .holo-screen-caption b, .expedition-summary b,
+  .hero-footer b, .run-report b, .stat-card b, .expedition-panel label, .forge-panel label) {
+  color: var(--shelter-text);
+}
+#shelter-screen :is(.brand strong, .shelter-stage h1, .expedition-panel > h2) {
+  text-shadow: 1px 2px 0 #100b16;
+}
+#shelter-screen :is(button, select, summary, a):focus-visible {
+  outline: 2px solid var(--shelter-gold);
+  outline-offset: 3px;
+}
+
 #shelter-screen .shelter-top {
   gap: 12px;
   border: 0;
   padding-bottom: 0;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
-#shelter-screen :is(.brand,.resource-chip,.run-report,.shelter-footer) {
-  background: none;
-  box-shadow: none;
-  border: 0;
-  color: var(--scene-light);
-  text-shadow: var(--scene-shadow);
-}
+#shelter-screen .brand { padding: 7px 12px; gap: 9px; }
 #shelter-screen .brand-logo {
-  background: none;
+  color: var(--shelter-gold);
+  background: transparent;
   border: 0;
   box-shadow: none;
-  color: var(--scene-accent);
-  font-size: 35px;
+  font-size: 32px;
 }
-#shelter-screen .brand strong {
-  color: var(--scene-light);
-  font-size: clamp(22px,2.6vw,35px);
+#shelter-screen .brand strong { font-size: 24px; }
+#shelter-screen .brand small,
+#shelter-screen .shelter-build {
+  font-size: 11px;
+  letter-spacing: .06em;
 }
-#shelter-screen .brand small { color: var(--scene-muted); }
 #shelter-screen .shelter-build {
   align-self: end;
+  background: transparent;
   border: 0;
-  background: none;
-  color: var(--scene-muted);
-  font-size: 11px;
-  padding: 0 0 4px;
+  padding: 0 0 3px;
+}
+#shelter-screen .shelter-resources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 #shelter-screen .resource-chip {
-  padding: 6px clamp(7px,1vw,15px);
-  gap: 6px;
-  min-width: 0;
+  /* Same capsule for coins, alloy and cores. Their pictograms carry the colour. */
+  padding: 7px clamp(9px, 1.15vw, 16px);
+  gap: 8px;
+  min-width: 92px;
+  border-radius: 999px;
 }
-#shelter-screen .resource-chip :is(b,small) { color: var(--scene-light); }
-#shelter-screen .resource-chip .icon { color: #f5da98; }
+#shelter-screen .shelter-resources .resource-chip small { font-size: 12px; margin-bottom: 2px; color: var(--shelter-muted); }
+#shelter-screen .shelter-resources .resource-chip b { color: var(--shelter-text); overflow-wrap: anywhere; }
+#shelter-screen .resource-chip .icon { flex-shrink: 0; color: var(--shelter-gold); }
 #shelter-screen .resource-chip.alloy .icon { color: #acdfe6; }
-#shelter-screen .resource-chip.core .icon { color: #e0bbea; }
-#shelter-screen .run-report { padding: 6px 0 11px; gap: 10px; }
-#shelter-screen .run-report :is(b,p,small,.run-rewards) { color: inherit; }
-#shelter-screen .run-report .icon { color: var(--scene-accent); }
-#shelter-screen .run-report.failed .icon { color: #ffc2aa; }
-#shelter-screen .run-report .run-rewards { padding: 0; background: none; border: 0; }
+#shelter-screen .resource-chip.core .icon { color: #e7c4ef; }
+
+#shelter-screen .run-report {
+  width: fit-content;
+  max-width: min(100%, 650px);
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  gap: 8px 11px;
+  flex-wrap: wrap;
+}
+#shelter-screen .run-report > div { flex: 1 1 230px; min-width: 0; }
+#shelter-screen .run-report .icon { flex: 0 0 18px; width: 18px; height: 18px; color: var(--shelter-mint); }
+#shelter-screen .run-report.failed .icon { color: #f4bba9; }
+#shelter-screen .run-report :is(b, .run-recap) { color: var(--shelter-text); }
+#shelter-screen .run-report b { margin: 0 0 2px; font-size: 14px; }
+#shelter-screen .run-report :is(p, .run-recap, .run-rewards) { font-size: 12px; line-height: 1.5; }
+#shelter-screen .run-report .run-rewards {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--shelter-gold);
+  white-space: normal;
+}
+#shelter-screen .save-warning { width: fit-content; padding: 8px 12px; }
 
 #shelter-screen .shelter-tabs {
-  grid-template-columns: repeat(8,minmax(0,1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 4px;
-  padding: 0;
-  margin-bottom: clamp(16px, 2.2vw, 26px);
-  border: 0;
-  border-radius: 0;
-  border-block-end: 1px solid #fff2d65b;
-  background: none;
-  box-shadow: none;
+  padding: 4px;
+  margin-bottom: clamp(17px, 2vw, 28px);
 }
 #shelter-screen .shelter-tabs button {
   min-width: 0;
   min-height: 47px;
-  padding: 5px 3px 7px;
-  color: var(--scene-light);
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: none;
+  padding: 5px 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
   box-shadow: none;
-  text-shadow: var(--scene-shadow);
+  color: var(--shelter-text);
 }
-#shelter-screen .shelter-tabs button small { color: var(--scene-muted); }
-#shelter-screen .shelter-tabs button:is(:hover,:active,[aria-pressed="true"]) {
-  color: var(--scene-accent);
-  border-bottom-color: var(--scene-accent);
-  background: none;
+#shelter-screen .shelter-tabs button small {
+  margin-top: 3px;
+  font-family: var(--comic-type-body);
+  font-size: 12px;
+  letter-spacing: .015em;
+}
+#shelter-screen .shelter-tabs button:is(:hover, :active, [aria-pressed="true"]) {
+  color: var(--shelter-gold);
+  border-color: var(--shelter-line);
+  background: #57433844;
   box-shadow: none;
   transform: none;
 }
+
+#shelter-screen[data-tab="deploy"] .shelter-layout {
+  grid-template-columns: minmax(0, 1fr) clamp(308px, 29vw, 405px);
+  gap: clamp(28px, 6vw, 100px);
+}
+#shelter-screen[data-tab="deploy"] .shelter-main {
+  padding-top: clamp(128px, 29vh, 340px);
+}
 #shelter-screen .shelter-hero {
-  background: none;
-  border: 0;
-  box-shadow: none;
+  max-width: 510px;
+  padding: clamp(14px, 2vw, 23px);
+  overflow: visible;
 }
-#shelter-screen .shelter-stage {
-  display: flex;
-  flex-direction: column;
-  justify-content: end;
-  min-height: clamp(245px, 31vw, 520px);
-  padding: clamp(9px, 1vw, 17px) 0 clamp(19px, 2vw, 28px);
-  color: var(--scene-light);
-  text-shadow: var(--scene-shadow);
-}
-#shelter-screen .shelter-stage .hero-heading { display: block; padding: 0; }
-#shelter-screen .shelter-stage .eyebrow {
-  color: var(--scene-accent);
-  letter-spacing: .16em;
-}
+#shelter-screen .shelter-stage .hero-heading { padding: 0; align-items: baseline; }
 #shelter-screen .shelter-stage h1 {
-  margin: 0 0 7px;
-  color: var(--scene-light);
-  font-size: clamp(36px, 5.1vw, 72px);
-  line-height: 1.05;
-  text-shadow: 2px 3px 0 #261a30, 0 3px 16px #1e1428;
+  margin: 2px 0 3px;
+  font-size: clamp(27px, 3.15vw, 44px);
+  line-height: 1.12;
+  color: var(--shelter-text);
 }
+#shelter-screen .shelter-stage .eyebrow { color: var(--shelter-gold); font-size: 12px; }
 #shelter-screen .shelter-stage .safe-tag {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--scene-muted);
-  margin-top: 5px;
-  display: inline-flex;
+  color: var(--shelter-muted);
+  font-size: 12px;
 }
-#shelter-screen .portal-controls { padding: 14px 0 0; gap: 6px 15px; }
+#shelter-screen .shelter-stage .signal-dot {
+  background: var(--shelter-mint);
+  box-shadow: none;
+}
+#shelter-screen .portal-controls { padding: 11px 0 13px; gap: 8px 12px; }
 #shelter-screen button.portal-launch {
-  justify-content: flex-start;
-  width: auto;
   min-width: 0;
-  min-height: 44px;
-  padding: 3px 1px 5px;
-  gap: 10px;
-  color: var(--scene-accent);
-  background: none;
-  border: 0;
-  border-bottom: 2px solid var(--scene-accent);
-  border-radius: 0;
+  width: auto;
+  min-height: 43px;
+  padding: 7px 12px;
+  gap: 9px;
+  border: 1px solid #f7cf86;
+  border-radius: 7px;
   box-shadow: none;
-  text-shadow: var(--scene-shadow);
+  background: var(--shelter-gold);
+  color: var(--shelter-ink);
+  font-size: 17px;
 }
-#shelter-screen button.portal-launch:is(:hover,:focus-visible,:active) {
-  color: #f6ffd9;
-  border-bottom-color: #f6ffd9;
-  background: none;
+#shelter-screen button.portal-launch:is(:hover, :focus-visible, :active) {
+  background: #ffe4b5;
+  color: var(--shelter-ink);
   box-shadow: none;
 }
-#shelter-screen .portal-destination,
-#shelter-screen .terminal-jump { color: var(--scene-muted); text-shadow: var(--scene-shadow); }
+#shelter-screen .portal-destination { font-size: 13px; }
+#shelter-screen .terminal-jump { color: var(--shelter-gold); text-underline-offset: 3px; }
 #shelter-screen .shelter-display { display: block; padding: 0; }
-#shelter-screen .shelter-number-board {
-  padding: 0 0 12px;
-  background: none;
-  border: 0;
-  box-shadow: none;
-}
-#shelter-screen .shelter-board-label { color: var(--scene-light); text-shadow: var(--scene-shadow); }
+#shelter-screen .shelter-number-board { padding: 0; background: none; border: 0; box-shadow: none; }
+#shelter-screen .shelter-board-label { color: var(--shelter-muted); font-size: 12px; margin-bottom: 7px; }
 #shelter-screen .shelter-number-board .number-preview {
-  grid-template-columns: repeat(12,minmax(0,1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   max-width: none;
-  gap: clamp(4px, .65vw, 10px);
+  gap: 5px;
+}
+#shelter-screen .preview-number strong {
+  /* A small flat inset keeps every number legible against its coloured tile. */
+  padding: .1em .16em;
+  border-radius: 3px;
+  background: #17111adb;
+  color: var(--shelter-text);
 }
 #shelter-screen .hero-footer {
-  padding: 8px 0;
-  border-top: 1px solid #fff2d65c;
+  margin-top: 12px;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--shelter-rule);
   background: none;
-  text-shadow: var(--scene-shadow);
+  gap: 8px 16px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: end;
 }
-#shelter-screen .hero-footer :is(b,span),
-#shelter-screen :is(.shelter-main>.section-heading,.shelter-main>.section-heading :is(h2,span)) {
-  color: var(--scene-light);
-  text-shadow: var(--scene-shadow);
-}
+#shelter-screen .hero-footer span { font-size: 12px; margin-bottom: 3px; }
+#shelter-screen .hero-footer b { font-size: 13px; }
+#shelter-screen .hero-stage i { background: #f4ebd940; }
+#shelter-screen .hero-stage i.on { background: var(--shelter-mint); }
 
 #shelter-screen .expedition-panel {
-  padding: 10px 0 9px clamp(6px, 1vw, 14px);
-  background: none;
-  border: 0;
-  box-shadow: none;
-  color: var(--scene-light);
-  text-shadow: var(--scene-shadow);
+  padding: clamp(14px, 1.6vw, 21px);
+  scrollbar-color: var(--shelter-gold) var(--shelter-inset);
 }
-#shelter-screen .expedition-panel :is(h2,h3,p,label,small,.weapon-choice label,.expedition-summary b,.expedition-summary small,.deploy-note) {
-  color: var(--scene-light);
-}
-#shelter-screen .expedition-panel > h2 {
+#shelter-screen .expedition-panel > h2 { margin: 0 0 12px; font-size: 25px; }
+#shelter-screen .daily-challenge {
   margin: 0 0 13px;
-  font-size: 26px;
+  padding: 0 0 11px;
+  border-bottom: 1px solid var(--shelter-rule);
 }
-#shelter-screen .holo-terminal {
-  padding: 0 0 10px;
-  background: none;
-  border: 0;
-  box-shadow: none;
+#shelter-screen .daily-challenge :is(h3, p) { margin: 0 0 5px; }
+#shelter-screen .daily-challenge h3,
+#shelter-screen .expedition-difficulty-title { font-size: 15px; }
+#shelter-screen .daily-challenge :is(p, small, summary) { font-size: 13px; line-height: 1.45; }
+#shelter-screen .daily-challenge small { color: var(--shelter-muted); }
+#shelter-screen .daily-challenge summary {
+  width: fit-content;
+  min-height: 27px;
+  cursor: pointer;
+  color: var(--shelter-text);
 }
+#shelter-screen .daily-leaders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 8px 0; }
+#shelter-screen .daily-leaders ol { margin: 5px 0; padding-inline-start: 20px; }
+#shelter-screen .daily-leaders li small { display: block; }
+
+#shelter-screen .holo-terminal { color: var(--shelter-text); padding: 0 0 8px; background: none; border: 0; box-shadow: none; }
 #shelter-screen .holo-terminal::after { display: none; }
-#shelter-screen .holo-screen-caption :is(b,small) {
-  color: var(--scene-light);
-}
-#shelter-screen .holo-screen-caption b { font-size: 17px; }
-#shelter-screen #holo-route-mode { color: var(--scene-accent); }
-#shelter-screen .holo-route-list { gap: 0 14px; margin-top: 5px; }
+#shelter-screen .holo-header { margin-bottom: 4px; }
+#shelter-screen .holo-header h3 { font-size: 15px; }
+#shelter-screen #holo-route-mode { font-size: 12px; color: var(--shelter-mint); }
+#shelter-screen .holo-screen-caption b { font-size: 16px; }
+#shelter-screen .holo-screen-caption small { font-size: 13px; }
+#shelter-screen .holo-route-list { gap: 0 12px; margin-top: 5px; }
 #shelter-screen .holo-terminal button.holo-choice,
-#shelter-screen .expedition-panel :is(button.difficulty-card,.night-select button,button.skill-shortcut,.run-summary button) {
+#shelter-screen .expedition-panel :is(button.difficulty-card, .night-select button, button.skill-shortcut, .run-summary button, .daily-challenge button) {
   margin: 0;
   border: 0;
-  border-bottom: 1px solid #fff3d745;
+  border-bottom: 1px solid var(--shelter-rule);
   border-radius: 0;
-  background: none;
+  background: transparent;
   box-shadow: none;
-  color: var(--scene-light);
-  text-shadow: var(--scene-shadow);
+  color: var(--shelter-text);
+  font-size: 13px;
 }
-#shelter-screen .holo-terminal button.holo-choice { min-height: 40px; padding: 5px 0; }
-#shelter-screen .holo-terminal button.holo-choice:is(:hover,:focus-visible,[aria-pressed="true"]),
-#shelter-screen .expedition-panel :is(button.difficulty-card,.night-select button,button.skill-shortcut,.run-summary button):is(:hover,:focus-visible,[aria-pressed="true"]) {
-  border-bottom-color: var(--scene-accent);
-  background: none;
-  color: var(--scene-accent);
+#shelter-screen .holo-terminal button.holo-choice { min-height: 38px; padding: 5px 2px; }
+#shelter-screen .holo-terminal button.holo-choice:is(:hover, :focus-visible, [aria-pressed="true"]),
+#shelter-screen .expedition-panel :is(button.difficulty-card, .night-select button, button.skill-shortcut, .run-summary button, .daily-challenge button):is(:hover, :focus-visible, [aria-pressed="true"]) {
+  border-bottom-color: var(--shelter-gold);
+  background: #57433838;
+  color: var(--shelter-gold);
   transform: none;
   box-shadow: none;
 }
-#shelter-screen .expedition-panel .difficulty-list { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; }
-#shelter-screen .expedition-panel .difficulty-top b { color: inherit; }
-#shelter-screen .expedition-panel .difficulty-top span { color: var(--difficulty); }
-#shelter-screen .expedition-panel .difficulty-meta > span { color: var(--scene-muted); }
-#shelter-screen .expedition-panel .expedition-summary { border-color: #fff1d75b; }
-#shelter-screen .expedition-panel .run-summary {
-  background: none;
-  border-color: transparent;
-  padding: 9px 0;
+#shelter-screen .holo-choice[aria-pressed="true"] .holo-choice-mark { background: currentColor; }
+#shelter-screen .expedition-panel .daily-challenge button {
+  display: block;
+  min-height: 34px;
+  margin: 4px 0;
+  padding: 4px 1px;
+  color: var(--shelter-gold);
 }
-#shelter-screen .expedition-panel select {
-  border: 0;
-  border-bottom: 1px solid #fff1d783;
-  border-radius: 0;
-  background: none;
-  color: var(--scene-light);
-  color-scheme: dark;
-}
-#shelter-screen .expedition-panel select option { color: #251b2c; background: #f4e7d1; }
-#shelter-screen .shelter-footer {
-  margin-top: 18px;
-  border-top: 1px solid #fff1d75f;
-  padding-top: 10px;
-}
-#shelter-screen .shelter-footer button {
-  color: var(--scene-light);
-  background: none;
+#shelter-screen .expedition-panel .difficulty-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+#shelter-screen .expedition-difficulty-title { margin: 9px 0 3px; }
+#shelter-screen .difficulty-top b { color: inherit; }
+#shelter-screen .difficulty-top span { color: var(--difficulty); }
+#shelter-screen .difficulty-meta { gap: 2px 6px; }
+#shelter-screen .difficulty-meta span,
+#shelter-screen .difficulty-meta span:last-child { font-size: 12px; color: var(--shelter-muted); }
+#shelter-screen .expedition-summary { border-color: var(--shelter-rule); }
+#shelter-screen .deploy-note { font-size: 12px; line-height: 1.5; }
+
+#shelter-screen .shelter-main > .section-heading { padding: 10px 14px; width: fit-content; gap: 10px; }
+#shelter-screen :is(.facility-card, .stat-card) { border-top: 1px solid var(--shelter-line); }
+#shelter-screen .facility-card :is(p, .facility-next),
+#shelter-screen .stat-card small { font-size: 13px; line-height: 1.5; }
+#shelter-screen .facility-title small { font-size: 11px; }
+#shelter-screen :is(.facility-level, .facility-next, .warehouse-count, .rule-summary, .run-summary, .number-form-info,
+  .vault-item, .boss-card, .mutator-card, .skill-node, .journal-card, .playtest-run, .journal-kpis article,
+  .deployment-slots > div, .playtest-review, .review-grid article, .review-context, .journal-modifiers > div) {
+  background: var(--shelter-inset);
+  border-color: var(--shelter-line);
+  color: var(--shelter-text);
   box-shadow: none;
+}
+#shelter-screen :is(.vault-item, .boss-card, .skill-node) { border-left-color: var(--shelter-gold); }
+#shelter-screen .mutator-card.selected {
+  border-color: var(--shelter-mint);
+  background: #33403f;
+}
+#shelter-screen .review-context summary,
+#shelter-screen .review-findings b,
+#shelter-screen .mutator-card :is(b, small, span),
+#shelter-screen .number-form-info :is(b, small, span) { color: var(--shelter-text); }
+#shelter-screen :is(.journal-privacy, .journal-sample-note, .journal-warning, .review-warning, .review-status[data-ready]) {
+  background: var(--shelter-inset);
+  border-color: var(--shelter-line);
+  color: var(--shelter-text) !important;
+}
+#shelter-screen .skill-branch h3,
+#shelter-screen :is(.facility-icon, .boss-glyph, .upgrade-button, .skill-node button, .skill-loadout button, .vault-actions button, .journal-toolbar button) {
+  color: var(--shelter-ink);
+  border-width: 1px;
+  box-shadow: none;
+}
+#shelter-screen :is(.upgrade-button, .skill-node button, .skill-loadout button, .vault-actions button, .journal-toolbar button) small {
+  color: var(--shelter-ink-muted);
+}
+#shelter-screen :is(.upgrade-button, .skill-node button, .skill-loadout button):disabled {
+  background: #433946;
+  border-color: var(--shelter-line);
+  color: var(--shelter-muted);
+}
+#shelter-screen button:disabled small { color: inherit; }
+#shelter-screen :is(select, .forge-panel select) {
+  color-scheme: dark;
+  background: var(--shelter-inset);
+  border: 1px solid var(--shelter-line);
+  color: var(--shelter-text);
+  font-size: 13px;
+}
+#shelter-screen select option { color: var(--shelter-text); background: var(--shelter-inset); }
+
+#shelter-screen .shelter-footer {
+  margin: 18px 0 0;
+  padding: 6px 12px;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+#shelter-screen .shelter-footer > span { color: var(--shelter-muted); }
+#shelter-screen .shelter-footer button {
+  min-height: 36px;
+  padding: 3px 0;
+  color: var(--shelter-text);
   border: 0;
-  text-shadow: var(--scene-shadow);
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
 }
-@media(max-width:1030px) {
-  body[data-screen="shelter"]::before {
-    background-image:
-      linear-gradient(180deg, #20142ba8, #20142b4d 31%, #1c1329a6),
-      var(--route-vista, none), url("./art/sector-zero-vista.png");
-  }
-  #shelter-screen .shelter-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
-  #shelter-screen .expedition-panel { padding-left: 0; }
-}
-@media(max-width:680px) {
-  #shelter-screen .shelter-stage { min-height: 282px; }
-  #shelter-screen .shelter-number-board .number-preview { grid-template-columns: repeat(6,minmax(0,1fr)); }
-  #shelter-screen .brand strong { font-size: 22px; }
-  #shelter-screen .shelter-tabs button span { font-size: 12px; }
-}
-@media(max-width:400px) {
-  #shelter-screen .shelter-tabs button span { font-size: 11px; }
-  #shelter-screen .shelter-tabs button small { letter-spacing: 0; }
+#shelter-screen .shelter-footer button:hover {
+  color: var(--shelter-gold);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  text-decoration: underline;
 }
 
-#shelter-screen .daily-challenge {
-  margin:0 0 19px;
-  padding:0 0 10px;
-  border-bottom:1px solid #fff2d65b;
+body[data-screen="shelter"] #dialog,
+body[data-screen="shelter"] #dialog :is(h2, h3, h4, b, strong, label) { color: #231c2b; }
+body[data-screen="shelter"] #dialog :is(p, small, .muted, .key-help, .eyebrow) { color: #4a3f57; }
+body[data-screen="shelter"] #dialog :where(*) { text-shadow: none; -webkit-text-stroke: 0; }
+
+@media (max-width: 1000px) {
+  #shelter-screen .shelter-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-#shelter-screen .daily-challenge :is(h3,p) { margin:0 0 5px; }
-#shelter-screen .daily-challenge small { color:var(--scene-muted); }
-#shelter-screen .daily-challenge button {
-  display:block;
-  min-height:37px;
-  margin:5px 0;
-  padding:0;
-  color:var(--scene-accent);
-  border:0;
-  border-radius:0;
-  border-bottom:1px solid currentColor;
-  background:none;
-  box-shadow:none;
-  text-shadow:var(--scene-shadow);
+@media (max-width: 900px) {
+  #shelter-screen[data-tab="deploy"] .shelter-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  #shelter-screen[data-tab="deploy"] .shelter-main { padding-top: clamp(38px, 11vh, 94px); }
+  #shelter-screen .shelter-hero { max-width: none; }
+  #shelter-screen .shelter-number-board .number-preview { max-width: 470px; margin-inline: 0; }
 }
-#shelter-screen .daily-challenge summary { width:fit-content; cursor:pointer; color:var(--scene-light); }
-#shelter-screen .daily-leaders { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:8px 0; }
-#shelter-screen .daily-leaders ol { margin:5px 0; padding-inline-start:20px; }
-#shelter-screen .daily-leaders li small { display:block; }
+@media (max-width: 600px) {
+  #shelter-screen .shelter-tabs button small { font-size: 11px; }
+  #shelter-screen .resource-chip { min-width: 0; padding: 6px 8px; gap: 5px; }
+  #shelter-screen .shelter-number-board .number-preview { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  #shelter-screen .run-report .run-rewards { padding-inline-start: 29px; }
+  #shelter-screen .stat-card { flex-wrap: wrap; gap: 4px; padding: 7px 9px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  #shelter-screen { --shelter-glass: #20192a; --shelter-text-glass: #1d1625; }
+}

@@ -76,7 +76,7 @@ export function forgeWeapon(save){
 export function facilityBenefit(key, level) {
   if (key === 'warehouse') return `局外装备 ${24+level*12} 格 · 满仓装备进入待收区`;
   if (key === 'storage') return `装备背包 ${8+level*2} 格 · 资源袋不限量`;
-  if (key === 'supply') return `开局 ÷2 ${2+level} · 修复 ${1+Math.floor(level/2)}`;
+  if (key === 'supply') return `开局 ÷2 ×${2+level} · 修复剂 +${1+Math.floor(level/2)}`;
   if (key === 'recycler') return `撤离资源收益 +${level*5}%`;
   const count = Object.values(WEAPONS).filter(weapon => weapon.unlock <= level).length;
   return `${count} 类出击武器 · ${RARITIES[Math.min(3,Math.floor(level/2))].name}品基础装备`;

@@ -183,7 +183,7 @@ export class UI {
           </div>
           <div class="shelter-display">
             <div class="shelter-number-board">
-              <span class="shelter-board-label">数字陈列</span>
+              <span class="shelter-board-label">数字阵列</span>
               ${this.numberPreview()}
             </div>
           </div><div class="hero-footer"><div><span>当前出击装备</span><b>${escapeHTML(loadout.weapons[0].name)} / ${escapeHTML(loadout.weapons[1].name)}</b></div><div><span>设施建设阶段</span><div class="hero-stage">${Array.from({length:10},(_,i)=>`<i class="${i<level?'on':''}"></i>`).join('')}</div></div></div></section>

@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.13 browser playtest.** The shelter controls sit over one uninterrupted illustration. Prime targets with two-weapon enchantment combos, preview number skills before casting, or try the shared daily seed with local extraction leaderboards. [Download playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
+> **v0.12.14 browser playtest.** A dark translucent interface puts the expedition controls and shelter information in two compact panels over the map artwork. Prime targets with two-weapon enchantment combos, preview number skills before casting, or try the shared daily seed with local extraction leaderboards. [Download playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,7 +12,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Builds | v0.12.13 browser playtest · v0.11.3 Windows desktop release |
+| Builds | v0.12.14 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
 | Run variety | 7 map families · 5 difficulties · 10 optional mutators |
