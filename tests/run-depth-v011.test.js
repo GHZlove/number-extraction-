@@ -228,7 +228,7 @@ test('v0.11 save export/import retains selected mutators and rejects unsupported
 
 test('live HUD and paused intel reflect heat, form, maximum health and all four exit requirements',t=>{
  const env=browserStubs(t),ui=new UI(new Proxy({},{get:()=>()=>{}})),r=empty(['glass','fog']);r.player.value=1024;updateNumberForm(r);r.heat.add(80);r.heat.update(r,0);r.player.hp=37.5;ui.update(r,defaultSave(),true,false);
- assert.equal(env.ids.get('health-bar').style.width,'50%');assert.match(env.ids.get('form-label').textContent,/核心/);assert.match(env.ids.get('heat-value').textContent,/80/);ui.exits(r);assert.equal((env.ids.get('dialog').innerHTML.match(/class="exit-brief-item"/g)||[]).length,4);assert.match(env.ids.get('dialog').innerHTML,/行动已暂停/);
+ assert.equal(env.ids.get('health-meter').style['--health-fill'],'50%');assert.match(env.ids.get('form-label').textContent,/核心/);assert.match(env.ids.get('heat-value').textContent,/80/);ui.exits(r);assert.equal((env.ids.get('dialog').innerHTML.match(/class="exit-brief-item"/g)||[]).length,4);assert.match(env.ids.get('dialog').innerHTML,/行动已暂停/);
 });
 
 test('action settings show ten controls, explicit bonuses and a disabled fourth choice',t=>{

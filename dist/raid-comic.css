@@ -101,12 +101,16 @@
 }
 #raid-screen .quick-weapon.active { border-color:var(--rarity); }
 #raid-screen .hud-actions { align-items:flex-start; }
+#raid-screen .hud-clock {
+  position:absolute; z-index:4; top:0; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none;
+}
 #raid-screen .raid-timer {
-  position:static; left:auto; transform:none; flex:0 0 auto; padding:7px 12px; min-width:118px;
+  position:static; left:auto; transform:none; padding:8px 14px; min-width:130px;
 }
 #raid-screen .raid-timer > b { font-size:27px; }
 #raid-screen .heat-readout { min-width:0; }
-#raid-screen .mini-wrap { top:125px; }
+#raid-screen .mini-wrap { top:85px; }
 #raid-screen .player-readout {
   background:none; border:0; box-shadow:none; border-radius:0; padding:0; top:22px;
 }
@@ -118,12 +122,31 @@
   border:0; border-radius:0; background:#2d2538be;
   clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%);
 }
-#raid-screen .health-meter { height:17px; }
-#raid-screen .health-meter i { background:linear-gradient(0deg,#c82442 0 55%,#f45b63 56% 100%); border-radius:0; }
+#raid-screen .player-readout .health-meter {
+  position:relative; height:27px; overflow:visible; clip-path:none; border:0; margin:0 0 3px;
+  background: url("./art/health-hit-cels.png") 0 0 / 200% 700% no-repeat;
+}
+#raid-screen .player-readout .health-meter i {
+  position:absolute; inset:0; width:100%; height:100%; border-radius:0;
+  background:url("./art/health-hit-cels.png") 100% 0 / 200% 700% no-repeat;
+  clip-path:inset(0 calc(100% - var(--health-fill, 100%)) 0 0);
+}
+#raid-screen .health-hit :is(.health-meter,.health-meter i) {
+  animation:health-drawn-cels .43s steps(1,end);
+}
+@keyframes health-drawn-cels {
+  0% { background-position-y:16.6667%; }
+  14% { background-position-y:33.3333%; }
+  29% { background-position-y:50%; }
+  47% { background-position-y:66.6667%; }
+  65% { background-position-y:83.3333%; }
+  83% { background-position-y:100%; }
+  100% { background-position-y:0%; }
+}
 #raid-screen .armor-meter { height:7px; }
 
 #raid-screen .exit-timer {
-  position:absolute; z-index:4; left:50%; top:0; transform:translateX(-50%); min-width:175px;
+  position:static; min-width:175px;
   padding:9px 13px; color:#fff1d9; background:#403351; border:2px solid #221b30;
   border-radius:8px 12px 6px 9px; box-shadow:4px 4px #21192dbb; pointer-events:none;
 }
@@ -153,17 +176,17 @@
 }
 @media(max-width:900px) {
   #raid-screen .vitals { width:156px; }
-  #raid-screen .exit-timer { top:110px; }
 }
 @media(max-width:640px) {
   #raid-screen .vitals { width:118px; }
-  #raid-screen .health-meter { height:12px; }
-  #raid-screen .hud-actions { top:0; display:grid; grid-template-columns:repeat(4, minmax(27px,auto)); gap:4px; }
-  #raid-screen .raid-timer { grid-column:1/-1; grid-row:1; justify-self:end; min-width:105px; }
+  #raid-screen .player-readout .health-meter { height:21px; }
+  #raid-screen .hud-actions { top:0; display:grid; grid-template-columns:repeat(2, minmax(27px,auto)); gap:4px; }
+  #raid-screen .raid-timer { min-width:80px; padding:5px 7px; }
   #raid-screen .raid-timer > b { font-size:20px; }
-  #raid-screen .exit-timer { top:156px; min-width:141px; font-size:12px; z-index:9; }
-  #raid-screen .mini-wrap { top:142px; }
+  #raid-screen .exit-timer { min-width:123px; font-size:11px; padding:5px 7px; }
+  #raid-screen .mini-wrap { top:112px; }
 }
 @media(prefers-reduced-motion:reduce) {
+  #raid-screen .health-hit :is(.health-meter,.health-meter i) { animation:none; }
   .low-health-border,.health-hit :is(.hud-top,.player-readout,.mini-wrap,.number-skillbar,.quick-loadout,.energy-readout) { animation:none; }
 }

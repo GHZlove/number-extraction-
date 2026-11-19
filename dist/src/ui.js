@@ -221,7 +221,7 @@ export class UI {
     const hp=Math.max(0,Math.min(100,player.hp/player.maxHp*100));
     $('health-meter').setAttribute('aria-valuemax',player.maxHp);
     $('health-meter').setAttribute('aria-valuenow',Math.round(player.hp));
-    $('health-bar').style.width=`${hp}%`;
+    $('health-meter').style.setProperty('--health-fill',`${hp}%`);
     $('low-health-border').hidden=ended||hp>=20;
   }
   hit(player) {

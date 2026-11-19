@@ -15,7 +15,7 @@ test('the frame warns below twenty percent and a hit refreshes the red health me
   assert.equal(env.ids.get('low-health-border').hidden,true);
   player.hp=19;ui.hit(player);
   assert.equal(env.ids.get('health-meter')['aria-valuenow'],19);
-  assert.equal(env.ids.get('health-bar').style.width,'19%');
+  assert.equal(env.ids.get('health-meter').style['--health-fill'],'19%');
   assert.equal(env.ids.get('low-health-border').hidden,false);
   assert.equal(env.ids.get('arena').classList.contains('health-hit'),true);
   ui.updateHealth(player,true);
