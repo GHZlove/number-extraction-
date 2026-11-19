@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { Input } from '../dist/src/input.js';
+import { UI } from '../dist/src/ui.js';
 import { Raid } from '../dist/src/game.js';
 import { defaultSave } from '../dist/src/storage.js';
 import { createEnemy } from '../dist/src/world.js';
@@ -186,4 +188,73 @@ test('a browser flow starts Siege from the normal shelter and renders the core w
   env.frames.shift()(90);
   assert.equal(env.window.localStorage.getItem('number-extraction-v11'),null);
   assert.ok(env.drawCalls.some(call=>call.method==='fillText'&&call.args[0]==='核心'));
+});
+
+function interactionMine(raid,kind){
+  const {siege,player,world}=raid;
+  world.merchants=[];
+  siege.core.x+=300;
+  const [mine]=siege.mines=[{id:'interaction-mine',kind,x:player.x,y:player.y,readyAt:0}];
+  return mine;
+}
+
+test('the crystal node explains its passive boost without advertising an E action', t=>{
+  const env=browserStubs(t),ui=new UI({});
+  const raid=raidFor('siege'),s=raid.siege,save=defaultSave();
+  interactionMine(raid,'crystal_node');
+  const {data,alloy}=s;
+  ui.update(raid,save,true,false);
+  assert.equal(env.ids.get('interaction').hidden,false);
+  assert.equal(env.ids.get('interaction-key').hidden,true);
+  assert.equal(env.ids.get('siege-interact-button').hidden,true);
+  assert.equal(env.ids.get('interaction-track').hidden,true);
+  assert.match(env.ids.get('interaction-text').textContent,/自动加快 250 范围/);
+  raid.updateInteraction({interactPressed:true},RULES.fixedStep);
+  assert.deepEqual([s.data,s.alloy],[data,alloy]);
+  assert.match(raid.lastMessage,/自动加快 250 范围/);
+});
+
+test('a quick E tap survives hit stop and the on-screen E button harvests the same vein', t=>{
+  const env=browserStubs(t), input=new Input(env.canvas,()=>{}),ui=new UI({siegeInteract:()=>input.pressInteract()});
+  const raid=raidFor('siege'),s=raid.siege,save=defaultSave(),mine=interactionMine(raid,'data_vein'),initial=s.data;
+  input.active=true;
+  ui.update(raid,save,true,false);
+  const button=env.ids.get('siege-interact-button');
+  assert.equal(button.hidden,false);
+  assert.match(env.ids.get('interaction-text').textContent,/采集 数据矿脉/);
+  button.focus();
+  env.window.dispatch('keydown',{target:button,code:'KeyE'});
+  env.window.dispatch('keyup',{target:button,code:'KeyE'});
+  const tapped=input.consume();
+  assert.equal(tapped.interact,false);
+  assert.equal(tapped.interactPressed,true);
+  raid.hitStop=RULES.fixedStep;
+  raid.update(RULES.fixedStep,tapped);
+  assert.equal(s.data,initial);
+  raid.update(RULES.fixedStep,input.consume());
+  assert.equal(s.data,initial+9);
+  assert.match(raid.lastMessage,/数据币 \+9/);
+  ui.update(raid,save,true,false);
+  assert.match(env.ids.get('interaction-text').textContent,/3 秒后可采集/);
+
+  button.dispatch('click');
+  raid.updateInteraction(input.consume(),RULES.fixedStep);
+  assert.equal(s.data,initial+9);
+  assert.match(raid.lastMessage,/再次采集/);
+  raid.elapsed=mine.readyAt;
+  button.dispatch('click');
+  raid.updateInteraction(input.consume(),RULES.fixedStep);
+  assert.equal(s.data,initial+18);
+});
+
+test('holding E does not repeat a Siege action, even after its cooldown elapses',()=>{
+  const raid=raidFor('siege'),s=raid.siege,mine=interactionMine(raid,'alloy_vein'),initial=s.alloy;
+  raid.updateInteraction({interact:true,interactPressed:true},RULES.fixedStep);
+  assert.equal(s.alloy,initial+6);
+  raid.elapsed=mine.readyAt;
+  raid.updateInteraction({interact:true},RULES.fixedStep);
+  assert.equal(s.alloy,initial+6);
+  raid.updateInteraction({interact:false},RULES.fixedStep);
+  raid.updateInteraction({interact:true,interactPressed:true},RULES.fixedStep);
+  assert.equal(s.alloy,initial+12);
 });

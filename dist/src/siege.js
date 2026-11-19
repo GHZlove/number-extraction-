@@ -89,18 +89,22 @@ export class Siege {
     if(this.day&&distance(p,this.core)<102)return {kind:'siege',action:'core',target:this.core,
       label:this.core.hp<this.core.maxHp-.01?'修复核心 · 8 合金':'核心升阶 · 数据币＋合金'};
     const mine=close(this.mines,78);
-    if(mine)return {kind:'siege',action:'mine',target:mine,label:mine.kind==='crystal_node'?'晶簇增幅 · 250 范围':'采集 '+MINES[mine.kind].name};
-    return null;
+    if(!mine)return null;
+    if(mine.kind==='crystal_node')return {kind:'siege',action:'inspect',target:mine,label:'晶簇增幅 · 自动加快 250 范围内防御塔的射速'};
+    const wait=Math.ceil(mine.readyAt-raid.elapsed);
+    return {kind:'siege',action:'mine',target:mine,
+      label:wait>0?MINES[mine.kind].name+' · '+wait+' 秒后可采集':'采集 '+MINES[mine.kind].name};
   }
-  interact(raid,pressed){
-    if(!pressed){this.held=false;return;}
-    if(this.held)return;
-    this.held=true;
+  interact(raid,held,pressed=false){
+    const activated=pressed||(held&&!this.held);
+    this.held=!!held;
+    if(!activated)return;
     const context=this.context(raid);
     if(!context)return;
     const {action,target,other}=context;
     if(action==='shop'){raid.event('trade',{id:target.id});return;}
-    if(action==='mine'){this.harvest(raid,target);return;}
+    if(action==='inspect'){raid.message(context.label);return;}
+    if(action==='mine'){this.harvestByHand(raid,target);return;}
     if(!this.day)return;
     if(action==='build')this.deploy(raid);
     else if(action==='linkStart'){
@@ -116,8 +120,8 @@ export class Siege {
     const key=this.selected,def=BLUEPRINTS[key],p=raid.player;
     if(!def||!this.kits[key]||this.buildings.length>=MAX_BUILDINGS)return false;
     const aim=p.aimTarget&&distance(p,p.aimTarget)>48&&distance(p,p.aimTarget)<117?p.aimTarget:pointAt(p,p.aimAngle,64);
-    const mine=key==='harvester'?near(p,this.mines,125):null;
-    if(key==='harvester'&&!mine){raid.message('采集器需要部署在矿点旁。');return false;}
+    const mine=key==='harvester'?near(p,this.mines,125,m=>m.kind!=='crystal_node'&&raid.visible(p,m)):null;
+    if(key==='harvester'&&!mine){raid.message('采集器请部署在数字井、合金矿床或数据矿脉旁。');return false;}
     const point=mine?pointAt(mine,Math.atan2(aim.y-mine.y,aim.x-mine.x),33):{x:aim.x,y:aim.y};
     if(!isFree(point.x,point.y,29,obstaclesFor(raid.world,point,point,29),raid.world.bounds)||
        distance(point,p)<p.radius+23||distance(point,this.core)<this.core.radius+30||
@@ -177,6 +181,17 @@ export class Siege {
     }
     if(building!==this.core||building.value>=1024||!this.spend(28+roundLevel(building.value)*12,21+roundLevel(building.value)*7))return false;
     building.value*=2;building.maxHp+=125;building.hp=building.maxHp;raid.event('siege-merge');return true;
+  }
+  harvestByHand(raid,mine){
+    if(mine.readyAt>raid.elapsed){
+      raid.message(MINES[mine.kind].name+' · '+Math.ceil(mine.readyAt-raid.elapsed)+' 秒后可再次采集。');return;
+    }
+    const data=this.data,alloy=this.alloy;
+    if(!this.harvest(raid,mine)){
+      raid.message('数字井旁的方块已满，先取走一些再采集。');return;
+    }
+    raid.message(mine.kind==='number_well'?'数字井已产出数字 2。':
+      mine.kind==='data_vein'?'数据币 +'+(this.data-data):'合金 +'+(this.alloy-alloy));
   }
   harvest(raid,mine,level=1){
     if(!mine||mine.readyAt>raid.elapsed)return false;

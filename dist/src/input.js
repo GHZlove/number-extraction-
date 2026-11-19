@@ -12,8 +12,9 @@ export class Input {
       if (typing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.code === 'Escape' && !event.repeat) { onPause(); return; }
       if (event.code === 'KeyB' && !event.repeat) { event.preventDefault(); onInventory(); return; }
-      if (!this.active || /^(BUTTON|A)$/.test(event.target?.tagName)) return;
+      if (!this.active || (event.code !== 'KeyE' && /^(BUTTON|A)$/.test(event.target?.tagName))) return;
       if (controlled.has(event.code)) event.preventDefault();
+      if (event.code === 'KeyE' && event.repeat) return;
       if (!this.keys.has(event.code)) this.pressed.add(event.code);
       this.keys.add(event.code);
     });
@@ -77,6 +78,7 @@ export class Input {
     });
     this.resetJoystick = () => { pointerId = null; knob.style.transform = ''; };
   }
+  pressInteract() { if (this.active) this.pressed.add('KeyE'); }
   clear() {
     this.keys.clear(); this.pressed.clear(); this.touchKeys.clear();
     this.mouseAttack = false; this.parryPressed=false;this.rightHeld=false;this.pointer = null; this.joy = { x: 0, y: 0 };
@@ -89,7 +91,7 @@ export class Input {
       x: (held('KeyD') || held('ArrowRight') ? 1 : 0)-(held('KeyA') || held('ArrowLeft') ? 1 : 0)+this.joy.x,
       y: (held('KeyS') || held('ArrowDown') ? 1 : 0)-(held('KeyW') || held('ArrowUp') ? 1 : 0)+this.joy.y,
       attack: held('Space') || this.mouseAttack, autoAim: touch('Space'),
-      interact: held('KeyE'), divide: this.pressed.has('KeyQ'), heal: this.pressed.has('KeyR'),
+      interact: held('KeyE'), interactPressed: this.pressed.has('KeyE'), divide: this.pressed.has('KeyQ'), heal: this.pressed.has('KeyR'),
       parry:this.parryPressed||this.pressed.has('KeyC'),
       dash: this.pressed.has('ShiftLeft') || this.pressed.has('ShiftRight'), pickup: this.pressed.has('KeyF'), overload: this.pressed.has('KeyG'),
       skill: this.pressed.has('Digit3') ? 0 : this.pressed.has('Digit4') ? 1 : undefined,

@@ -77,6 +77,7 @@ export class UI {
     $('ambience-button').onclick = actions.ambience;
     $('operator-strip').addEventListener('click',dispatch);
     $('siege-kits').addEventListener('click',dispatch);
+    $('siege-interact-button').onclick = actions.siegeInteract;
     $('inventory-shortcut').onclick = actions.inventory;
     $('overload-button').onclick = actions.overload;
     for(const slot of [0,1]) $('quick-slot-'+slot).onclick = ()=>actions.slot(String(slot));
@@ -410,11 +411,15 @@ export class UI {
     }
     const action=active&&!atExit;
     $('interaction').hidden=!action;
+    const siegeAction=action&&context.kind==='siege';
+    $('siege-interact-button').hidden=!siegeAction||context.action==='inspect';
+    $('interaction-key').hidden=!!siegeAction;
+    $('interaction-track').hidden=!!siegeAction;
     if(action){
       $('interaction-text').textContent=context.kind==='siege'?context.label:context.kind==='merchant'?'与商人交易':context.kind==='node'?nodeLabel(context.target):
         context.kind==='crossing'?FIELD_PROPS[context.target.kind]:context.target.opensAt>raid.elapsed?'舱门 '+Math.ceil(context.target.opensAt-raid.elapsed)+'s 后开启':
         context.target.keyCard?'静止 · 搜索撤离钥卡':'静止 · 按住搜索';
-      $('interaction-fill').style.width=`${Math.min(100,context.progress*100)}%`;
+      $('interaction-fill').style.width=`${Math.min(100,(context.progress||0)*100)}%`;
     }
     document.querySelector('.touch-actions [data-control="ShiftLeft"] small').textContent=raid.run.noDodge?'禁用':'闪避';
     document.querySelector('.touch-actions [data-control="KeyQ"] small').textContent=`${p.dividers} 个`;

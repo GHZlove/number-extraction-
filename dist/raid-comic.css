@@ -263,6 +263,10 @@
 
 #raid-screen :is(.siege-hud,.siege-kits) { position:absolute; z-index:4; padding:7px; background:#211b2bea; border:1px solid #ead49a; border-radius:7px; }
 #raid-screen .siege-hud { top:21%; left:50%; transform:translateX(-50%); min-width:min(240px,90vw); text-align:center; }
+#raid-screen #siege-interact-button {
+  flex:none; min-width:30px; min-height:30px; padding:0 7px; background:var(--hud-lime); color:var(--hud-ink);
+  border:1px solid var(--hud-ink); border-radius:4px; font-weight:900;
+}
 #raid-screen .siege-hud small { margin-inline-start:10px; }
 #raid-screen .siege-hud span { display:block; margin-block:4px; }
 #raid-screen .siege-hud .interaction-track i { background:#8ae3a5; }

@@ -753,7 +753,7 @@ export class Raid {
     projectiles.length = remaining;
   }
   updateInteraction(input, dt) {
-    if(this.siege){this.siege.interact(this,input.interact);return;}
+    if(this.siege){this.siege.interact(this,input.interact,input.interactPressed);return;}
     const context = this.context();
     const skillId=typeof input.skill==='number'?this.equippedSkills[input.skill]:input.skill;
     const stationary = Math.hypot(input.x || 0, input.y || 0) < 0.15 && this.player.dashTime <= 0 &&
@@ -795,14 +795,14 @@ export class Raid {
     if (this.status !== 'playing') return;
     const p=this.player;this.hitStopCooldown=Math.max(0,this.hitStopCooldown-dt);
     if(this.hitStop>0){
-      for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight','amplify','equalize','lock','numberShock'])if(input[key])this.pendingInput[key]=true;
+      for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight','amplify','equalize','lock','numberShock','interactPressed'])if(input[key])this.pendingInput[key]=true;
       if(input.slot!==undefined)this.pendingInput.slot=input.slot;
       if(input.skill!==undefined)this.pendingInput.skill=input.skill;
       if(Number.isFinite(input.aimX)){this.pendingInput.aimX=input.aimX;this.pendingInput.aimY=input.aimY;}
       this.hitStop=Math.max(0,this.hitStop-dt);return;
     }
     const buffered=this.pendingInput;this.pendingInput={};
-    for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight','amplify','equalize','lock','numberShock'])if(buffered[key])input={...input,[key]:true};
+    for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight','amplify','equalize','lock','numberShock','interactPressed'])if(buffered[key])input={...input,[key]:true};
     if(buffered.slot!==undefined&&input.slot===undefined)input={...input,slot:buffered.slot};
     if(buffered.skill!==undefined&&input.skill===undefined)input={...input,skill:buffered.skill};
     if(buffered.aimX!==undefined&&!Number.isFinite(input.aimX))input={...input,aimX:buffered.aimX,aimY:buffered.aimY};

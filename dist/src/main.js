@@ -77,6 +77,7 @@ const input=new Input(canvas,pause,inventory);
 const ui=new UI({
   start:()=>start(),startDaily:()=>start(true),startTraining:()=>start(false,true),
   selectMode:key=>{if(view==='shelter'&&(key==='extraction'||key==='siege')){mode=key;refreshShelter();}},
+  siegeInteract:()=>{if(view==='raid'&&!paused&&raid.siege){input.pressInteract();canvas.focus();}},
   siegeKit:key=>{if(view==='raid'&&!paused&&raid.siege){raid.siege.select(key);canvas.focus();}},close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
   shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules','journal','skills'].includes(key)){ui.shelterTab=key;refreshShelter();}},
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
