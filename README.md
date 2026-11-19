@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.12.11 browser playtest.** The full-page Sector Zero vista surrounds the shelter controls. The hand-drawn portal remains an active entrance. [Download playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
+> **v0.12.12 browser playtest.** The shelter controls sit over one uninterrupted illustration. Preview or choose one of seven map panoramas at the route selector, then deploy. [Download playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,7 +12,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Builds | v0.12.11 browser playtest · v0.11.3 Windows desktop release |
+| Builds | v0.12.12 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
 | Run variety | 7 map families · 5 difficulties · 10 optional mutators |
@@ -127,7 +127,7 @@ On **macOS / Linux**:
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-The Windows launcher opens the versioned page automatically. If an older server is using port 8000, it opens port 8012, which has separate browser save data. For the manual command, open [http://127.0.0.1:8000](http://127.0.0.1:8000). Select a map and difficulty, then click Deploy or the illustrated green portal. Keep the terminal open while you play.
+The Windows launcher opens the versioned page automatically. If an older server is using port 8000, it opens port 8012, which has separate browser save data. For the manual command, open [http://127.0.0.1:8000](http://127.0.0.1:8000). Select a map and difficulty, then click Deploy. Keep the terminal open while you play.
 
 ES modules require an HTTP server; opening `dist/index.html` as a local file is unsupported. The Python server only serves files; simulation runs in the browser.
 

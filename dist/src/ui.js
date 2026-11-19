@@ -7,8 +7,7 @@ import { RUN_BALANCE, NUMBER_FORMS, exitRewardMultiplier, MUTATORS, normalizeMut
 import { warehouseCapacity, plannedWarehouseGear, applyWarehouseGear, hydrateEquipment, warehouseRepairCost } from './warehouse.js';
 import { BOSSES, BOSS_MOVES, bossPool } from './bosses.js';
 import { RULES, FACILITIES, DIFFICULTIES, LEGACY_WORLD, difficultyOf, VERSION, ENEMY_TYPES, MAP_LAYOUTS } from './config.js';
-import { createSectors } from './regions.js';
-import { tier, zoneAt, seededRandom } from './math.js';
+import { tier, zoneAt } from './math.js';
 import { activeWeapon, weaponOf, rarityOf, WEAPONS, ENCHANTS, RARITIES, isEquipment } from './equipment.js';
 import { facilityLevel, facilityCost, facilityBenefit, canUpgradeFacility, workshopGrade, starterLoadout, rewardMultiplier, shelterLevel, forgeCost, canForge } from './shelter.js';
 import { SHOP, tradeValue } from './commerce.js';
@@ -27,17 +26,6 @@ const comicItem = kind => {
   return `<span class="comic-item-mark ${kind}" aria-hidden="true">${icon(symbol)}</span>`;
 };
 const weaponArt = item => `<i class="inventory-weapon-art sprite-art" aria-hidden="true" style="${weaponBackground(item.weapon)}"></i>`;
-
-const routeColours = ['#456c65','#4f8171','#88a877','#b7c486','#957f9f','#657d9a'];
-const projectedRoutes = Object.fromEntries(MAP_LAYOUTS.map(({ id }, index) => {
-  if (id === 'random') return [id, '<span class="holo-random-art">?</span>'];
-  const pieces = createSectors({ width: 100, height: 100 }, seededRandom(18793 + index * 471), [], id);
-  const drawn = pieces.map(({ vertices }, piece) => {
-    const corners = vertices.map(({ x, y }) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(', ');
-    return `<i class="holo-sector" style="--sector-fill:${routeColours[piece % routeColours.length]};clip-path:polygon(${corners})"></i>`;
-  }).join('');
-  return [id, drawn];
-}));
 
 export class UI {
   constructor(actions) {
@@ -93,22 +81,18 @@ export class UI {
   previewRoute(id) {
     const route = MAP_LAYOUTS.find(layout => layout.id === id);
     if (!route || this.shelterTab !== 'deploy') return;
-    const display = $('holo-route-projection');
     const terminal = $('holo-terminal');
-    if (!display || !terminal || terminal.dataset.preview === id) return;
+    if (!terminal || terminal.dataset.preview === id) return;
     terminal.dataset.preview = id;
+    document.body.dataset.shelterMap = id;
     $('holo-route-name').textContent = route.name;
     $('holo-route-description').textContent = route.description;
     $('holo-route-mode').textContent = id === terminal.dataset.selected ? '已锁定' : '预览中';
-    display.innerHTML = projectedRoutes[id];
   }
   expeditionTerminal(active) {
     return `<section class="holo-terminal" id="holo-terminal" aria-label="战区选择" data-selected="${active.id}" data-preview="${active.id}">
-      <div class="holo-header"><h3>战区投影</h3><span id="holo-route-mode">已锁定</span></div>
-      <div class="holo-screen">
-        <div class="holo-route-projection" id="holo-route-projection" aria-hidden="true">${projectedRoutes[active.id]}</div>
-        <div class="holo-screen-caption"><b id="holo-route-name">${active.name}</b><small id="holo-route-description">${active.description}</small></div>
-      </div>
+      <div class="holo-header"><h3>选择战区</h3><span id="holo-route-mode">已锁定</span></div>
+      <div class="holo-screen-caption"><b id="holo-route-name">${active.name}</b><small id="holo-route-description">${active.description}</small></div>
       <div class="holo-route-list" role="group" aria-label="选择战区">${MAP_LAYOUTS.map(layout =>
         `<button type="button" class="holo-choice" id="holo-map-${layout.id}" data-action="selectMap" data-key="${layout.id}" aria-pressed="${layout.id === active.id}">
           <i class="holo-choice-mark" aria-hidden="true"></i><span>${layout.name}</span>
@@ -119,18 +103,7 @@ export class UI {
   bindExpeditionTerminal() {
     const terminal = $('holo-terminal');
     if (!terminal || this.shelterTab !== 'deploy') return;
-    terminal.addEventListener('pointermove', event => {
-      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
-      const rect = terminal.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-      terminal.style.setProperty('--holo-x', `${Math.round((event.clientX - rect.left) / rect.width * 100)}%`);
-      terminal.style.setProperty('--holo-y', `${Math.round((event.clientY - rect.top) / rect.height * 100)}%`);
-      terminal.classList.add('pointer-engaged');
-    });
-    terminal.addEventListener('pointerleave', () => {
-      terminal.classList.remove('pointer-engaged');
-      this.previewRoute(terminal.dataset.selected);
-    });
+    terminal.addEventListener('pointerleave', () => this.previewRoute(terminal.dataset.selected));
     terminal.addEventListener('focusout', event => {
       if (!event.relatedTarget?.nodeType || !terminal.contains(event.relatedTarget)) this.previewRoute(terminal.dataset.selected);
     });
@@ -158,6 +131,7 @@ export class UI {
       const current=facilityLevel(save,key),cost=facilityCost(key,current),next=Math.min(current+1,definition.max);
       return `<article class="facility-card"><div class="facility-title"><span class="facility-icon">${icon(definition.icon)}</span><div><h3>${definition.name}</h3><small>${definition.en}</small></div><span class="facility-level">Lv.${String(current).padStart(2,'0')}</span></div><p>${facilityBenefit(key,current)}</p><div class="facility-next">${cost?'下一级：'+facilityBenefit(key,next):'设施已达到当前上限'}</div><button class="upgrade-button" data-action="upgradeFacility" data-key="${key}" ${canUpgradeFacility(save,key)?'':'disabled'}><span>${cost?'升级设施':'已满级'}</span>${cost?`<span class="cost-list">${costHTML(cost)}</span>`:''}</button></article>`;
     }).join('');
+    document.body.dataset.shelterMap=this.shelterTab==='deploy'?activeRoute.id:'random';
     $('shelter-screen').dataset.tab=this.shelterTab;
     $('shelter-screen').innerHTML=`
       <header class="shelter-top"><div class="brand"><span class="brand-logo">n</span><div><strong>数字进化</strong><small>NUMBER EXTRACTION / SHELTER</small></div><span class="shelter-build">v${VERSION}</span></div><div class="shelter-resources">${resources.map(([symbol,label,value,cls])=>`<div class="resource-chip ${cls}">${icon(symbol)}<div><small>${label}</small><b>${number(value)}</b></div></div>`).join('')}</div></header>
@@ -166,26 +140,19 @@ export class UI {
       <div class="shelter-layout"><div class="shelter-main">
         <section class="shelter-hero">
           <div class="shelter-stage">
-            <figure class="shelter-illustration">
-              <img src="./art/shelter-workshop.png" alt="" width="1448" height="1086" decoding="async">
-              <button type="button" class="portal-hotspot" data-action="start" tabindex="-1" aria-label="点击传送门进入${activeRoute.name}，${selected.name}"></button>
-            </figure>
-            <div class="shelter-stage-card">
-              <div class="hero-heading">
-                <div>
-                  <span class="eyebrow">HOME / SECTOR ZERO</span>
-                  <h1>第零庇护所</h1>
-                  <p>在终端选关，点传送门出击。</p>
-                  <a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a>
-                </div>
-                <span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span>
+            <div class="hero-heading">
+              <div>
+                <span class="eyebrow">SECTOR ZERO</span>
+                <h1>第零庇护所</h1>
+                <a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a>
               </div>
-              <div class="portal-controls">
-                <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入关卡，${activeRoute.name}，${selected.name}">
-                  进入关卡 ${icon('arrow')}
-                </button>
-                <span class="portal-destination"><small>前往</small> <strong>${activeRoute.name} · ${selected.name}</strong></span>
-              </div>
+              <span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span>
+            </div>
+            <div class="portal-controls">
+              <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入关卡，${activeRoute.name}，${selected.name}">
+                进入关卡 ${icon('arrow')}
+              </button>
+              <span class="portal-destination">${activeRoute.name} · ${selected.name}</span>
             </div>
           </div>
           <div class="shelter-display">
@@ -204,7 +171,7 @@ export class UI {
         <div class="difficulty-list" role="group" aria-labelledby="expedition-difficulty">${DIFFICULTIES.map(mission=>`<button type="button" id="mission-${mission.id}" class="difficulty-card ${mission.id===selected.id?'selected':''}" style="--difficulty:${mission.color}" data-action="selectDifficulty" data-key="${mission.id}" aria-pressed="${mission.id===selected.id}"><div class="difficulty-top"><b>${mission.name}</b><span>${'◆'.repeat(mission.rank)}${'◇'.repeat(5-mission.rank)}</span></div><div class="difficulty-meta"><span>地图 ×${mission.width*mission.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}</span><span>敌人 ${2**(mission.enemyShift+1)}–${128*2**mission.enemyShift}</span><span>收益 ×${mission.reward}</span></div></button>`).join('')}</div>
         <div class="night-select"><button type="button" data-action="toggleNight" aria-pressed="${save.nightMode}">${save.nightMode?'☾ 月夜战区':'☀ 白昼战区'}</button><small>${save.nightMode?'H 手电筒 · 光束会暴露位置':'可切换至月夜'}</small></div>
         <button class="skill-shortcut" data-action="shelterTab" data-key="skills"><b>出击技能</b> ${save.equippedSkills.map(id=>NUMBER_SKILLS[id].label).join(' / ')||'未装备'} ↗</button>
-        <a class="terminal-jump" href="#portal-launch">返回传送门 ↑</a>
+        <a class="terminal-jump" href="#portal-launch">返回出击入口 ↑</a>
         <div class="weapon-choice"><label for="starter-choice">工坊出击武器 · ${workshopGrade(save).name}品</label><select id="starter-choice" data-action="selectWeapon">${Object.entries(WEAPONS).map(([key,weapon])=>`<option value="${key}" ${key===save.selectedWeapon?'selected':''} ${weapon.unlock>facilityLevel(save,'workshop')?'disabled':''}>${weapon.name}${weapon.unlock>facilityLevel(save,'workshop')?' · 工坊Lv.'+weapon.unlock+'解锁':''}</option>`).join('')}</select><p>工坊 2 级配备基础护甲，4 级配备镭射。撤离装备存入战备仓库，可选择带入下一局；未选仓库装备的槽位领取工坊基础装备。</p></div>
         <div class="expedition-summary"><div><small>战区尺寸</small><b>${selected.width} × ${selected.height}</b></div><div><small>行动时限</small><b>${formatTime(selected.seconds*runRules(save.selectedMutators).duration)}</b></div><div><small>撤离开放</small><b>${formatTime(selected.extractAt)} 后</b></div><div><small>怪潮节奏</small><b>据点驻守 / 稀疏巡游</b></div><div><small>装备容量</small><b>${RULES.bagCapacity+facilityLevel(save,'storage')*2} 格</b></div><div><small>基础收益倍率</small><b>×${(rewardMultiplier(save,selected.id)*runRules(save.selectedMutators).reward).toFixed(2)}</b></div></div>
         <div class="weapon-choice"><label for="boss-choice">优先追踪首领 · 高危据点</label><select id="boss-choice" data-action="selectBoss"><option value="random">随机首领</option>${bossPool(selected.rank).map(key=>`<option value="${key}" ${save.selectedBoss===key?'selected':''}>${BOSSES[key].name}</option>`).join('')}</select><p>首个首领据点优先出现追踪目标，位置见小地图。仓库选装请前往“战备仓库”。</p></div><div class="run-summary"><b>本局词条：${save.selectedMutators.length?save.selectedMutators.map(id=>MUTATORS[id].name).join(' · '):'无'}</b><p>热度随停留和行动上升；64 / 256 / 1024改变体型。特殊出口每局变化，路线奖励另加8–15%币与材料；西侧按原时限开放，之后持续可用。</p><button data-action="shelterTab" data-key="rules">配置行动词条</button></div><p class="deploy-note">成功撤离保存装备 · 带入的仓库装备失败会丢失</p>

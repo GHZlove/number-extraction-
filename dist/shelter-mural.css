@@ -1,6 +1,6 @@
-/* The artwork is the backdrop for every shelter tab. */
+/* The selectable scenery is one continuous layer, beneath all controls. */
 body[data-screen="shelter"] {
-  background: #825d55;
+  background: #3e3142;
 }
 body[data-screen="shelter"]::before {
   content: '';
@@ -8,168 +8,290 @@ body[data-screen="shelter"]::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: linear-gradient(180deg, #22152618 0%, transparent 45%, #21172445 100%), url("./art/sector-zero-vista.png");
-  background-position: 50% 50%;
+  background-image:
+    linear-gradient(180deg, #1f142bab, #20142b32 38%, #271a2e25 58%, #22152690),
+    linear-gradient(90deg, #20132a99, #22152b33 47%, #21152b22 59%, #191224ba),
+    var(--route-vista, none),
+    url("./art/sector-zero-vista.png");
+  background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
 }
+body[data-shelter-map="tangram"] { --route-vista: url("./art/route-tangram.png"); }
+body[data-shelter-map="fracture"] { --route-vista: url("./art/route-fracture.png"); }
+body[data-shelter-map="blocks"] { --route-vista: url("./art/route-blocks.png"); }
+body[data-shelter-map="wilds"] { --route-vista: url("./art/route-wilds.png"); }
+body[data-shelter-map="delta"] { --route-vista: url("./art/route-delta.png"); }
+body[data-shelter-map="observatory"] { --route-vista: url("./art/route-observatory.png"); }
+body[data-shelter-map="glacier"] { --route-vista: url("./art/route-glacier.png"); }
+
 #shelter-screen {
+  --scene-light: #fff2d9;
+  --scene-muted: #e7d6c1;
+  --scene-accent: #e0f7a5;
+  --scene-shadow: 1px 2px 0 #25192b, 0 2px 10px #1b1326;
   position: relative;
   z-index: 1;
   min-height: 100dvh;
-  padding-top: clamp(16px, 2.7vw, 40px);
+  padding-top: clamp(16px, 2.7vw, 38px);
 }
 #shelter-screen .shelter-top {
-  gap: 11px;
+  gap: 12px;
   border: 0;
   padding-bottom: 0;
   margin-bottom: 14px;
 }
-#shelter-screen .brand,
-#shelter-screen .shelter-footer {
-  padding: 10px 14px;
-  background: #f3e4c9;
-  border: 2px solid var(--cel-ink);
-  border-radius: 8px 12px 6px 9px;
-  box-shadow: 4px 4px 0 var(--cel-ink);
+#shelter-screen :is(.brand,.resource-chip,.run-report,.shelter-footer) {
+  background: none;
+  box-shadow: none;
+  border: 0;
+  color: var(--scene-light);
+  text-shadow: var(--scene-shadow);
 }
-#shelter-screen .brand small { color: #53475d; }
-#shelter-screen .resource-chip { box-shadow: 3px 3px 0 var(--cel-ink); }
+#shelter-screen .brand-logo {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--scene-accent);
+  font-size: 35px;
+}
+#shelter-screen .brand strong {
+  color: var(--scene-light);
+  font-size: clamp(22px,2.6vw,35px);
+}
+#shelter-screen .brand small { color: var(--scene-muted); }
+#shelter-screen .shelter-build {
+  align-self: end;
+  border: 0;
+  background: none;
+  color: var(--scene-muted);
+  font-size: 11px;
+  padding: 0 0 4px;
+}
+#shelter-screen .resource-chip {
+  padding: 6px clamp(7px,1vw,15px);
+  gap: 6px;
+  min-width: 0;
+}
+#shelter-screen .resource-chip :is(b,small) { color: var(--scene-light); }
+#shelter-screen .resource-chip .icon { color: #f5da98; }
+#shelter-screen .resource-chip.alloy .icon { color: #acdfe6; }
+#shelter-screen .resource-chip.core .icon { color: #e0bbea; }
+#shelter-screen .run-report { padding: 6px 0 11px; gap: 10px; }
+#shelter-screen .run-report :is(b,p,small,.run-rewards) { color: inherit; }
+#shelter-screen .run-report .icon { color: var(--scene-accent); }
+#shelter-screen .run-report.failed .icon { color: #ffc2aa; }
+#shelter-screen .run-report .run-rewards { padding: 0; background: none; border: 0; }
+
 #shelter-screen .shelter-tabs {
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  border: 2px solid #231d2d;
-  margin-bottom: clamp(13px, 2vw, 25px);
-  background: #463848ee;
-  box-shadow: 4px 5px 0 #231d2d;
+  grid-template-columns: repeat(8,minmax(0,1fr));
+  gap: 4px;
+  padding: 0;
+  margin-bottom: clamp(16px, 2.2vw, 26px);
+  border: 0;
+  border-radius: 0;
+  border-block-end: 1px solid #fff2d65b;
+  background: none;
+  box-shadow: none;
 }
 #shelter-screen .shelter-tabs button {
   min-width: 0;
-  padding: 8px 5px;
-  background: #f0e2c7;
+  min-height: 47px;
+  padding: 5px 3px 7px;
+  color: var(--scene-light);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  text-shadow: var(--scene-shadow);
 }
-#shelter-screen .shelter-tabs button[aria-pressed="true"] {
-  background: #d7ec9d;
+#shelter-screen .shelter-tabs button small { color: var(--scene-muted); }
+#shelter-screen .shelter-tabs button:is(:hover,:active,[aria-pressed="true"]) {
+  color: var(--scene-accent);
+  border-bottom-color: var(--scene-accent);
+  background: none;
+  box-shadow: none;
+  transform: none;
 }
 #shelter-screen .shelter-hero {
-  background: #5b465a;
-  background-image: none;
-  border-radius: 12px 7px 13px 8px;
-  overflow: hidden;
+  background: none;
+  border: 0;
+  box-shadow: none;
 }
 #shelter-screen .shelter-stage {
-  position: relative;
-  background: #c2bd98;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  min-height: clamp(245px, 31vw, 520px);
+  padding: clamp(9px, 1vw, 17px) 0 clamp(19px, 2vw, 28px);
+  color: var(--scene-light);
+  text-shadow: var(--scene-shadow);
 }
-#shelter-screen .shelter-stage .shelter-illustration {
-  aspect-ratio: 4 / 3;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+#shelter-screen .shelter-stage .hero-heading { display: block; padding: 0; }
+#shelter-screen .shelter-stage .eyebrow {
+  color: var(--scene-accent);
+  letter-spacing: .16em;
 }
-#shelter-screen .shelter-stage .shelter-illustration img {
-  object-fit: fill;
-}
-#shelter-screen .shelter-stage-card {
-  position: absolute;
-  inset: clamp(12px, 2vw, 31px) auto auto clamp(12px, 2vw, 31px);
-  z-index: 2;
-  width: min(45%, 367px);
-  padding: clamp(10px, 1.5vw, 20px);
-  background: #f9ebd4f5;
-  border: 2px solid var(--cel-ink);
-  border-radius: 8px 14px 7px 10px;
-  box-shadow: 4px 5px 0 #261f30d9;
-}
-#shelter-screen .shelter-stage-card .hero-heading {
-  display: block;
-  padding: 0;
-}
-#shelter-screen .shelter-stage-card h1 {
-  font-size: clamp(24px, 3vw, 43px);
+#shelter-screen .shelter-stage h1 {
+  margin: 0 0 7px;
+  color: var(--scene-light);
+  font-size: clamp(36px, 5.1vw, 72px);
   line-height: 1.05;
-  margin: 0 0 9px;
+  text-shadow: 2px 3px 0 #261a30, 0 3px 16px #1e1428;
 }
-#shelter-screen .shelter-stage-card .safe-tag {
-  display: inline-flex;
-  margin-top: 10px;
-}
-#shelter-screen .shelter-stage-card .portal-controls {
-  align-items: flex-start;
-  gap: 9px 13px;
-  padding: 12px 0 0;
-}
-#shelter-screen .shelter-stage-card button.portal-launch {
-  min-height: 45px;
-  min-width: 148px;
-  font-size: clamp(16px, 1.8vw, 22px);
-}
-#shelter-screen .shelter-stage-card .portal-destination {
-  flex: 1 1 144px;
-  align-self: center;
-}
-#shelter-screen .shelter-display {
-  display: block;
+#shelter-screen .shelter-stage .safe-tag {
   padding: 0;
-  border-top: 2px solid #241e2e;
-}
-#shelter-screen .shelter-number-board {
-  padding: 11px clamp(10px, 1.5vw, 19px) 15px;
   border: 0;
+  background: none;
+  color: var(--scene-muted);
+  margin-top: 5px;
+  display: inline-flex;
+}
+#shelter-screen .portal-controls { padding: 14px 0 0; gap: 6px 15px; }
+#shelter-screen button.portal-launch {
+  justify-content: flex-start;
+  width: auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 3px 1px 5px;
+  gap: 10px;
+  color: var(--scene-accent);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid var(--scene-accent);
   border-radius: 0;
-  background: #48394e;
+  box-shadow: none;
+  text-shadow: var(--scene-shadow);
+}
+#shelter-screen button.portal-launch:is(:hover,:focus-visible,:active) {
+  color: #f6ffd9;
+  border-bottom-color: #f6ffd9;
+  background: none;
   box-shadow: none;
 }
-#shelter-screen .shelter-board-label {
-  color: #fff1d3;
-  margin-bottom: 6px;
+#shelter-screen .portal-destination,
+#shelter-screen .terminal-jump { color: var(--scene-muted); text-shadow: var(--scene-shadow); }
+#shelter-screen .shelter-display { display: block; padding: 0; }
+#shelter-screen .shelter-number-board {
+  padding: 0 0 12px;
+  background: none;
+  border: 0;
+  box-shadow: none;
 }
+#shelter-screen .shelter-board-label { color: var(--scene-light); text-shadow: var(--scene-shadow); }
 #shelter-screen .shelter-number-board .number-preview {
   grid-template-columns: repeat(12,minmax(0,1fr));
-  width: 100%;
   max-width: none;
-  gap: clamp(4px,.6vw,9px);
+  gap: clamp(4px, .65vw, 10px);
 }
 #shelter-screen .hero-footer {
-  padding: 12px clamp(10px, 1.5vw, 19px);
-  background: #ead7b7;
+  padding: 8px 0;
+  border-top: 1px solid #fff2d65c;
+  background: none;
+  text-shadow: var(--scene-shadow);
 }
+#shelter-screen .hero-footer :is(b,span),
+#shelter-screen :is(.shelter-main>.section-heading,.shelter-main>.section-heading :is(h2,span)) {
+  color: var(--scene-light);
+  text-shadow: var(--scene-shadow);
+}
+
 #shelter-screen .expedition-panel {
-  border-width: 2px;
-  background: #f2e3c8f7;
-  box-shadow: 4px 5px 0 #211a28;
+  padding: 10px 0 9px clamp(6px, 1vw, 14px);
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--scene-light);
+  text-shadow: var(--scene-shadow);
+}
+#shelter-screen .expedition-panel :is(h2,h3,p,label,small,.weapon-choice label,.expedition-summary b,.expedition-summary small,.deploy-note) {
+  color: var(--scene-light);
 }
 #shelter-screen .expedition-panel > h2 {
-  padding: 3px 0 9px;
-  border-bottom: 2px solid #8e685f;
+  margin: 0 0 13px;
+  font-size: 26px;
 }
+#shelter-screen .holo-terminal {
+  padding: 0 0 10px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+#shelter-screen .holo-terminal::after { display: none; }
+#shelter-screen .holo-screen-caption :is(b,small) {
+  color: var(--scene-light);
+}
+#shelter-screen .holo-screen-caption b { font-size: 17px; }
+#shelter-screen #holo-route-mode { color: var(--scene-accent); }
+#shelter-screen .holo-route-list { gap: 0 14px; margin-top: 5px; }
+#shelter-screen .holo-terminal button.holo-choice,
+#shelter-screen .expedition-panel :is(button.difficulty-card,.night-select button,button.skill-shortcut,.run-summary button) {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid #fff3d745;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--scene-light);
+  text-shadow: var(--scene-shadow);
+}
+#shelter-screen .holo-terminal button.holo-choice { min-height: 40px; padding: 5px 0; }
+#shelter-screen .holo-terminal button.holo-choice:is(:hover,:focus-visible,[aria-pressed="true"]),
+#shelter-screen .expedition-panel :is(button.difficulty-card,.night-select button,button.skill-shortcut,.run-summary button):is(:hover,:focus-visible,[aria-pressed="true"]) {
+  border-bottom-color: var(--scene-accent);
+  background: none;
+  color: var(--scene-accent);
+  transform: none;
+  box-shadow: none;
+}
+#shelter-screen .expedition-panel .difficulty-list { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; }
+#shelter-screen .expedition-panel .difficulty-top b { color: inherit; }
+#shelter-screen .expedition-panel .difficulty-top span { color: var(--difficulty); }
+#shelter-screen .expedition-panel .difficulty-meta > span { color: var(--scene-muted); }
+#shelter-screen .expedition-panel .expedition-summary { border-color: #fff1d75b; }
+#shelter-screen .expedition-panel .run-summary {
+  background: none;
+  border-color: transparent;
+  padding: 9px 0;
+}
+#shelter-screen .expedition-panel select {
+  border: 0;
+  border-bottom: 1px solid #fff1d783;
+  border-radius: 0;
+  background: none;
+  color: var(--scene-light);
+  color-scheme: dark;
+}
+#shelter-screen .expedition-panel select option { color: #251b2c; background: #f4e7d1; }
 #shelter-screen .shelter-footer {
-  margin-top: 21px;
+  margin-top: 18px;
+  border-top: 1px solid #fff1d75f;
+  padding-top: 10px;
+}
+#shelter-screen .shelter-footer button {
+  color: var(--scene-light);
+  background: none;
+  box-shadow: none;
+  border: 0;
+  text-shadow: var(--scene-shadow);
 }
 @media(max-width:1030px) {
+  body[data-screen="shelter"]::before {
+    background-image:
+      linear-gradient(180deg, #20142ba8, #20142b4d 31%, #1c1329a6),
+      var(--route-vista, none), url("./art/sector-zero-vista.png");
+  }
   #shelter-screen .shelter-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  #shelter-screen .expedition-panel { padding-left: 0; }
 }
 @media(max-width:680px) {
-  #shelter-screen .shelter-stage-card {
-    position: relative;
-    inset: auto;
-    width: auto;
-    margin: 0;
-    padding: 13px;
-    border: 0;
-    border-bottom: 2px solid var(--cel-ink);
-    border-radius: 0;
-    box-shadow: none;
-  }
-  #shelter-screen .shelter-stage {
-    display: flex;
-    flex-direction: column;
-  }
-  #shelter-screen .shelter-stage .shelter-illustration { order: 1; }
+  #shelter-screen .shelter-stage { min-height: 282px; }
   #shelter-screen .shelter-number-board .number-preview { grid-template-columns: repeat(6,minmax(0,1fr)); }
-  #shelter-screen .shelter-stage-card .portal-destination { flex: auto; }
+  #shelter-screen .brand strong { font-size: 22px; }
+  #shelter-screen .shelter-tabs button span { font-size: 12px; }
 }
 @media(max-width:400px) {
-  #shelter-screen .shelter-tabs { gap: 4px; padding: 4px; }
   #shelter-screen .shelter-tabs button span { font-size: 11px; }
   #shelter-screen .shelter-tabs button small { letter-spacing: 0; }
 }
