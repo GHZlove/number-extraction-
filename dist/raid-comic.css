@@ -190,3 +190,28 @@
   #raid-screen .health-hit :is(.health-meter,.health-meter i) { animation:none; }
   .low-health-border,.health-hit :is(.hud-top,.player-readout,.mini-wrap,.number-skillbar,.quick-loadout,.energy-readout) { animation:none; }
 }
+
+.context-tips {
+  position:absolute;
+  z-index:4;
+  inset-inline-start:clamp(10px, 2vw, 30px);
+  inset-block-start:clamp(135px, 21vh, 195px);
+  display:grid;
+  justify-items:start;
+  gap:6px;
+  pointer-events:none;
+}
+.context-tips span {
+  padding:5px 9px;
+  color:#fffefa;
+  background:#272130ed;
+  border:2px solid #121216;
+  box-shadow:2px 2px #121216;
+  font-weight:800;
+  font-size:clamp(11px, 1.2vw, 15px);
+}
+.context-tips span[hidden] { display:none; }
+.context-tips kbd { margin-inline-end:4px; vertical-align:baseline; }
+.context-tips .tip-overload { color:#f1ffbe; animation:tip-ready 1.15s ease-in-out infinite alternate; }
+@keyframes tip-ready { from { border-color:#161318; } to { border-color:#eff8a5; } }
+@media(prefers-reduced-motion:reduce) { .context-tips .tip-overload { animation:none; } }

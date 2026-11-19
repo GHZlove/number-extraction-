@@ -1,3 +1,12 @@
+import { NUMBER_SKILLS } from './skill-tree.js';
+
+const SKILL_TONES = {
+  lightning: [760, 1450, 'triangle'],
+  wind: [230, 90, 'sine', 1700],
+  space: [820, 390, 'sine'],
+  fire: [165, 65, 'triangle', 840],
+};
+
 // Short synthesized transients, rate-limited for dense crowds. No audio assets.
 const GUNS={
   pistol:[.045,.075,2200,120],smg:[.025,.045,2700,150],rifle:[.05,.08,1900,95],carbine:[.035,.06,2400,140],lmg:[.045,.075,1600,90],
@@ -40,9 +49,15 @@ export class Sound {
         if(setting){const[d,v,cutoff,f]=setting;this.noise(d,v,cutoff);this.tone(f,d+.025,'triangle',.035,f*.45);}
         else{const heavy=['greatsword','warhammer','battleaxe'].includes(event.weapon);this.noise(heavy?.1:.055,.055,heavy?1100:2400);this.tone(heavy?85:190,.07,'triangle',.025);}
       }else if(type==='skill'){
-        const tones={storm:[760,1450,'triangle'],gust:[230,90,'sine'],blink:[820,390,'sine'],fireball:[165,65,'triangle']};
-        const tone=tones[event.skill];if(tone)this.tone(tone[0],.14,tone[2],.045,tone[1]);
-        if(event.skill==='gust'||event.skill==='fireball')this.noise(.09,.04,event.skill==='gust'?1700:840);
+        const tone = SKILL_TONES[NUMBER_SKILLS[event.skill]?.branch];
+        if (tone) {
+          const [start, end, wave, cutoff] = tone;
+          this.tone(start,.14,wave,.045,end);
+          if (cutoff) this.noise(.09,.04,cutoff);
+        }
+      }else if(type==='synergy'){
+        const thermal=event.pair==='thermal';
+        this.tone(thermal?370:980,.18,'triangle',.045,thermal?110:1570);
       }else if(type==='hit'){
         const heavy=event.strength>=.9;this.noise(heavy?.055:.025,event.blocked?.035:heavy?.075:.045,event.blocked?3500:1900);
         this.tone(event.blocked?820:heavy?120:230,heavy?.075:.035,event.blocked?'sine':'triangle',.025);

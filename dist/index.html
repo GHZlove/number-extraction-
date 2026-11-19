@@ -35,6 +35,11 @@
       </div>
       <div class="supply-strip"><span><kbd>Q</kbd> ÷2 <b id="divider-count">2</b></span><span><kbd>R</kbd> 修复 <b id="medkit-count">1</b></span><span><kbd>右键 / C</kbd> <b id="parry-status">弹反就绪</b></span><button id="inventory-shortcut"><kbd>B</kbd> 装备 <b id="bag-count">0 / 8</b></button><span id="buff-label" class="buff-label"></span></div>
       <div class="nearby-gear" id="nearby-gear" hidden></div>
+      <div class="context-tips" aria-label="情境操作">
+        <span id="tip-overload" class="tip-overload" hidden><kbd>G</kbd> 过载</span>
+        <span id="tip-parry" hidden><kbd>右键 / C</kbd> 准备弹反</span>
+        <span id="tip-form" hidden></span>
+      </div>
       <div class="interaction" id="interaction" hidden><div><kbd>E</kbd><span id="interaction-text">保持静止</span></div><div class="interaction-track"><i id="interaction-fill"></i></div></div>
       <aside class="mini-wrap" aria-label="区域小地图"><div class="mini-label"><span>区域信号</span><span id="map-scale">16×</span></div><canvas id="minimap" width="278" height="174" aria-label="小地图：玩家与撤离点"></canvas><small id="map-theme">雨后废墟</small></aside>
       <div class="number-skillbar" aria-label="已装备的数字技能"><button type="button" class="number-skill" id="number-skill-0" data-control="Digit3"><kbd>3</kbd><b id="number-skill-0-glyph" aria-hidden="true"></b><span id="number-skill-0-name"></span><small id="number-skill-0-status"></small></button><button type="button" class="number-skill" id="number-skill-1" data-control="Digit4"><kbd>4</kbd><b id="number-skill-1-glyph" aria-hidden="true"></b><span id="number-skill-1-name"></span><small id="number-skill-1-status"></small></button></div>

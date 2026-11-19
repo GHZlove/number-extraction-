@@ -295,3 +295,28 @@ body[data-shelter-map="glacier"] { --route-vista: url("./art/route-glacier.png")
   #shelter-screen .shelter-tabs button span { font-size: 11px; }
   #shelter-screen .shelter-tabs button small { letter-spacing: 0; }
 }
+
+#shelter-screen .daily-challenge {
+  margin:0 0 19px;
+  padding:0 0 10px;
+  border-bottom:1px solid #fff2d65b;
+}
+#shelter-screen .daily-challenge :is(h3,p) { margin:0 0 5px; }
+#shelter-screen .daily-challenge small { color:var(--scene-muted); }
+#shelter-screen .daily-challenge button {
+  display:block;
+  min-height:37px;
+  margin:5px 0;
+  padding:0;
+  color:var(--scene-accent);
+  border:0;
+  border-radius:0;
+  border-bottom:1px solid currentColor;
+  background:none;
+  box-shadow:none;
+  text-shadow:var(--scene-shadow);
+}
+#shelter-screen .daily-challenge summary { width:fit-content; cursor:pointer; color:var(--scene-light); }
+#shelter-screen .daily-leaders { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:8px 0; }
+#shelter-screen .daily-leaders ol { margin:5px 0; padding-inline-start:20px; }
+#shelter-screen .daily-leaders li small { display:block; }

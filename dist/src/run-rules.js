@@ -36,7 +36,13 @@ export const NUMBER_FORMS=Object.freeze([
 ]);
 export const numberForm=value=>NUMBER_FORMS.findLast(form=>value>=form.from)||NUMBER_FORMS[0];
 export function updateNumberForm(raid){
- const p=raid.player,form=raid.run.enabled?numberForm(p.value):NUMBER_FORMS[0];p.form=form;
+ const p=raid.player,previous=p.form,form=raid.run.enabled?numberForm(p.value):NUMBER_FORMS[0];p.form=form;
+ if (previous && previous !== form) {
+   const speed = Math.round(form.speed*100), reduction = Math.round((1-form.damage)*100);
+   p.formNotice = `${form.name}形态 · 机动 ${speed}%${reduction ? ' · 减伤 '+reduction+'%' : ''}`;
+   p.formNoticeUntil = raid.elapsed + 3;
+   raid.effect(p.x,p.y-p.radius-46,p.formNotice,'#e5c8ff','text',1.5);
+ }
  // Expand only where the real collision body fits. Never push through a wall.
  p.formPending=false;
  if(p.radius!==form.radius){if(form.radius<p.radius||isFree(p.x,p.y,form.radius,obstaclesFor(raid.world,p,p,form.radius),raid.world.bounds))p.radius=form.radius;else p.formPending=true;}

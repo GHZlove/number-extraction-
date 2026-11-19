@@ -1,3 +1,4 @@
+import { Synergies } from './synergies.js';
 import { NUMBER_SKILLS, normalizeSkills } from './skill-tree.js';
 import { detectsFlashlight } from './raid-light.js';
 import { enemyShotColor, playerShotColor, setWeaponMotion, swingTime } from './combat-art.js';
@@ -26,6 +27,7 @@ import { SpatialGrid, obstaclesFor, terrainFor } from './spatial.js';
 export class Raid {
   constructor(save, seed = Date.now() >>> 0, options = {}) {
     this.id = `${Date.now()}-${seed}`;
+    this.daily = options.daily || null;
     this.random = seededRandom(seed ^ 0x5a91bd);
     this.difficulty = difficultyOf(options.difficulty ?? save.selectedDifficulty);
     this.run=runRules(options.mutators??save.selectedMutators,options.runRules!==false);
@@ -42,7 +44,9 @@ export class Raid {
     this.pressureState=this.director?.profile(0)||{speed:1,cooldown:1,windup:1};
     this.pressureState.speed*=this.run.enemySpeed;
     this.heat=this.run.enabled?new HeatDirector(this.difficulty,this.run.heatRate):null;this.exitKeys=0;
-    this.crowdGrid=null;this.hordeKills=0;
+    this.crowdGrid=null;this.projectileCandidates=[];this.projectileHits=[];this.hordeKills=0;
+    this.synergies=options.synergies===false?null:new Synergies();this.synergyShelter=false;
+    this.showHints=this.difficulty.id==='scout'||(save.extractions||0)+(save.deaths||0)<2;
     this.result = null;
     const loadout = applyWarehouseGear(starterLoadout(save,options.weapon),options.warehouseGear);
     const supply = facilityLevel(save,'supply');
@@ -55,7 +59,7 @@ export class Raid {
     };
     Object.assign(this.player,{skillCooldowns:{},flashlight:false,sectorId:zoneAt(this.player,this.world.zones).id,parryWindow:0,parryCooldown:0,enchantCooldowns:{}});this.sectorNotice=0;
     this.playtestMetrics={huntersSpawned:0,firstHunterAt:null};
-    this.startingLoadout={weapons:this.player.weapons.map(({weapon,rarity,level=1,enchant='none'})=>({weapon,rarity,level,enchant})),armorRarity:this.player.armor?.rarity||'none',laser:!!this.player.laser};
+    this.startingLoadout={weapons:this.player.weapons.filter(Boolean).map(({weapon,rarity,level=1,enchant='none'})=>({weapon,rarity,level,enchant})),armorRarity:this.player.armor?.rarity||'none',laser:!!this.player.laser};
     this.bag = [];
     this.capacity = RULES.bagCapacity + facilityLevel(save,'storage') * 2;
     this.kills = 0; this.merges = 0; this.opened = 0;
@@ -77,7 +81,9 @@ export class Raid {
   visible(a,b,pad=0) { return lineOfSight(a,b,obstaclesFor(this.world,a,b,pad),pad); }
   move(entity,dx,dy) {
     const end={x:entity.x+dx,y:entity.y+dy};
+    const cell=this.projectileStep&&this.crowdGrid.pointOrder?.has(entity)?this.crowdGrid.pointCell(entity):null;
     moveEntity(entity,dx,dy,obstaclesFor(this.world,entity,end,entity.radius+1),this.world.bounds);
+    if(cell!==null)this.crowdGrid.movePoint(entity,cell);
   }
   ground(entity=this.player){return terrainAt(entity,terrainFor(this.world,entity));}
   safehouseAt(point=this.player,pad=0){return this.world.exits.find(e=>e.safehouse&&distance(e,point)<e.safetyRadius+pad)||null;}
@@ -140,6 +146,26 @@ export class Raid {
     const node=(this.world.nodes||[]).find(target=>!target.used&&distance(p,target)<85&&this.visible(p,target));
     return node?{kind:'node',target:node,progress:this.nodeProgress/0.9}:null;
   }
+  parryThreat() {
+    const p = this.player;
+    if (p.parryCooldown > 0 || this.safehouseAt()) return false;
+    const facing = point => Math.cos(Math.atan2(point.y-p.y,point.x-p.x)-p.aimAngle) >= .15;
+    for (const bullet of this.world.projectiles) {
+      if (bullet.dead || bullet.owner !== 'enemy' || bullet.blast || !facing(bullet)) continue;
+      const step = Math.min(.38,bullet.life);
+      const next = { x: bullet.x+bullet.vx*step, y: bullet.y+bullet.vy*step };
+      const at = segmentCircleFraction(bullet,next,p,p.radius+bullet.radius);
+      if (at < firstWallFraction(bullet,next,obstaclesFor(this.world,bullet,next,bullet.radius),bullet.radius)) return true;
+    }
+    for (const enemy of this.world.enemies) {
+      if (enemy.dead || enemy.stun > 0 || !facing(enemy)) continue;
+      const melee = ENEMY_TYPES[enemy.type];
+      const windup = enemy.state === 'windup' && melee?.pattern === 'strike' && distance(p,enemy) <= melee.range + p.radius;
+      const contact = enemy.contactCooldown <= 0 && distance(p,enemy) <= p.radius + enemy.radius + 28;
+      if ((windup || contact) && this.visible(p,enemy)) return true;
+    }
+    return false;
+  }
   nearbyGear() {
     return this.world.drops.filter(item => !item.dead && isEquipment(item) &&
       distance(this.player, item) < 75 && this.visible(this.player, item))
@@ -154,10 +180,29 @@ export class Raid {
     this.event('loot'); this.effect(x, y, item.kind === 'loot' || !item.kind ? `+${item.value} ◇` : item.name, '#e7c381');
     return true;
   }
+  emptyGearSlot(item) {
+    if (item.kind === 'weapon') return this.player.weapons[1] ? null : 1;
+    return this.player[item.kind] ? null : item.kind;
+  }
   pickupGear() {
     const item = this.nearbyGear();
-    if (item && this.addLoot(item)) { item.dead = true; this.message(`拾取 ${item.name}，按 B 打开背包换装。`); return true; }
-    return false;
+    if (!item || this.status !== 'playing') return false;
+    const slot = this.emptyGearSlot(item);
+    if (slot !== null) {
+      const { x, y, dead, ...gear } = item;
+      if (slot === 1) {
+        this.player.weapons[1] = gear;
+        this.synergies?.changed(1);
+      } else this.player[slot] = gear;
+      item.dead = true;
+      this.event('loot');
+      this.effect(x, y, `装备 ${item.name}`, '#e7c381');
+      return true;
+    }
+    if (!this.addLoot(item)) return false;
+    item.dead = true;
+    this.message(`拾取 ${item.name}，按 B 打开背包换装。`);
+    return true;
   }
   equip(index, slot = this.player.activeSlot) {
     if (this.status !== 'playing' || !Number.isInteger(index)) return false;
@@ -167,16 +212,23 @@ export class Raid {
     if (item.kind === 'weapon') {
       if (slot !== 0 && slot !== 1) return false;
       old = this.player.weapons[slot]; this.player.weapons[slot] = item;
+      this.synergies?.changed(slot);
     } else { old = this.player[item.kind]; this.player[item.kind] = item; }
     this.bag.splice(index, 1);
     if (old && !old.starter) this.bag.splice(index, 0, old);
     this.event('equip'); return true;
   }
   removeEquipment(kind) {
-    if (this.status !== 'playing' || !['armor', 'laser'].includes(kind)) return false;
-    const item = this.player[kind];
+    if (this.status !== 'playing' || !['armor', 'laser', 'secondary'].includes(kind)) return false;
+    const item = kind === 'secondary' ? this.player.weapons[1] : this.player[kind];
     if (!item || this.equipmentCount() >= this.capacity) return false;
-    this.bag.push(item); this.player[kind] = null; return true;
+    this.bag.push(item);
+    if (kind === 'secondary') {
+      this.player.weapons[1] = null;
+      this.player.activeSlot = 0;
+      this.synergies?.changed(1);
+    } else this.player[kind] = null;
+    return true;
   }
   dropItem(index) {
     if (this.status !== 'playing' || !Number.isInteger(index) || !this.bag[index]) return false;
@@ -187,7 +239,7 @@ export class Raid {
     return true;
   }
   switchWeapon(slot) {
-    if ((slot !== 0 && slot !== 1) || this.status !== 'playing') return false;
+    if ((slot !== 0 && slot !== 1) || this.status !== 'playing' || !this.player.weapons[slot]) return false;
     this.player.activeSlot = slot;
     // A shared cooldown prevents switching from bypassing the previous weapon's cadence.
     return true;
@@ -197,38 +249,40 @@ export class Raid {
 
   shoot(origin, angle, speed, range, owner, value, rarity = 'white', options = {}) {
     this.world.projectiles.push({ x: origin.x, y: origin.y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-      radius: options.radius||(owner === 'player' ? 3 : 6), life: range/speed, owner, value, rarity, weapon:options.weapon||'',intrinsic:options.intrinsic||'',element:options.element||'',enchant:options.enchant||'none',level:options.level||1,power: options.power ?? 1, blast: options.blast || 0, pierce: options.pierce || 0, hitIds: [], dead: false });
+      radius: options.radius||(owner === 'player' ? 3 : 6), life: range/speed, owner, value, rarity, weapon:options.weapon||'',intrinsic:options.intrinsic||'',element:options.element||'',enchant:options.enchant||'none',level:options.level||1,action:options.action,power: options.power ?? 1, blast: options.blast || 0, pierce: options.pierce || 0, hitIds: [], dead: false });
   }
   attack() {
     const p = this.player;
     if (p.attackCooldown > 0 || this.status !== 'playing') return false;
     if(this.safehouseAt()){this.message('安全屋内收起武器。离开保护圈后可以攻击。');return false;}
-    const item = activeWeapon(p), weapon = weaponOf(item);
+    const item = activeWeapon(p), weapon = weaponOf(item), action = this.synergies?.attack(p);
     p.attackCooldown = weapon.interval*(p.overload>0?0.75:1);
     this.event('attack',{weapon:item.weapon});
     if (weapon.mode === 'ranged') {
       const power=this.damagePower()*weaponPower(item)/(weapon.burst||1);
-      this.fireWeapon(item,p.aimAngle,power);
-      if(weapon.burst)this.bursts.push({remaining:weapon.burst-1,wait:weapon.burstDelay,delay:weapon.burstDelay,item:{...item},angle:p.aimAngle,power,slot:p.activeSlot});
+      this.fireWeapon(item,p.aimAngle,power,action);
+      if(weapon.burst)this.bursts.push({remaining:weapon.burst-1,wait:weapon.burstDelay,delay:weapon.burstDelay,item,angle:p.aimAngle,power,slot:p.activeSlot,action});
     } else {
       const { side } = setWeaponMotion(p, item.weapon, p.aimAngle, this.elapsed);
       this.effect(p.x, p.y, '', playerShotColor(item.level), 'slash', swingTime(item.weapon), {
         angle: p.aimAngle, arc: weapon.arc, radius: weapon.range, side, weapon: item.weapon,
       });
-      for (const enemy of this.world.enemies) {
-        if (!enemy.dead && inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && this.visible(p, enemy)) {
-          this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity)*this.damagePower()*weaponPower(item),{weapon:item.weapon,intrinsic:weapon.intrinsic,angle:p.aimAngle,enchant:item.enchant,level:item.level,value:p.value,rarity:item.rarity});
-          if(weapon.stun&&!enemy.dead){enemy.stun=Math.max(enemy.stun,weapon.stun);enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;}
-        }
+      const targets = this.world.enemies.filter(enemy => !enemy.dead &&
+        inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && this.visible(p, enemy));
+      targets.sort((a, b) => distance(p, a) - distance(p, b) || a.id.localeCompare(b.id));
+      for (const enemy of targets) {
+        this.damageEnemy(enemy, attackDamage(p.value, enemy.value, enemy.maxHp, item.rarity)*this.damagePower()*weaponPower(item),
+          {weapon:item.weapon,intrinsic:weapon.intrinsic,angle:p.aimAngle,enchant:item.enchant,level:item.level,value:p.value,rarity:item.rarity,action});
+        if(weapon.stun&&!enemy.dead){enemy.stun=Math.max(enemy.stun,weapon.stun);enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;}
       }
     }
     return true;
   }
-  fireWeapon(item,angle,power){
+  fireWeapon(item,angle,power,action){
     const weapon=weaponOf(item),pellets=weapon.pellets||1,p=this.player;
     for(let i=0;i<pellets;i++){
       const offset=pellets===1?this.random()*2-1:i/(pellets-1)*2-1;
-      this.shoot(p,angle+offset*spreadOf(item,p.laser&&!p.laserDisabled),weapon.speed,weapon.range,'player',p.value,item.rarity,{weapon:item.weapon,intrinsic:weapon.intrinsic,radius:weapon.radius,enchant:item.enchant,level:item.level,power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
+      this.shoot(p,angle+offset*spreadOf(item,p.laser&&!p.laserDisabled),weapon.speed,weapon.range,'player',action?.value??p.value,item.rarity,{action,weapon:item.weapon,intrinsic:weapon.intrinsic,radius:weapon.radius,enchant:item.enchant,level:item.level,power:power/pellets,pierce:weapon.pierce||0,blast:weapon.blast||0});
     }
     setWeaponMotion(p, item.weapon, angle, this.elapsed);
     this.effect(p.x, p.y, '', playerShotColor(item.level), 'muzzle', .12, {
@@ -239,9 +293,9 @@ export class Raid {
   updateBursts(dt){
     if(this.safehouseAt()){this.bursts=[];return;}
     for(const job of this.bursts){
-      if(this.player.activeSlot!==job.slot||activeWeapon(this.player).id!==job.item.id){job.remaining=0;continue;}
+      if(this.player.activeSlot!==job.slot||activeWeapon(this.player)!==job.item){job.remaining=0;continue;}
       job.wait-=dt;
-      while(job.remaining>0&&job.wait<=0){this.event('attack',{weapon:job.item.weapon});this.fireWeapon(job.item,job.angle,job.power);job.remaining--;job.wait+=job.delay;}
+      while(job.remaining>0&&job.wait<=0){this.event('attack',{weapon:job.item.weapon});this.fireWeapon(job.item,job.angle,job.power,job.action);job.remaining--;job.wait+=job.delay;}
     }
     this.bursts=this.bursts.filter(job=>job.remaining>0);
   }
@@ -266,7 +320,9 @@ export class Raid {
     if(oldArmor>0&&hit.durability<=0){this.effect(enemy.x,enemy.y-45,'破甲','#7ad8ff','text',.9);this.event('armorbreak',{strength:1});}
     else if(hit.blocked)this.effect(enemy.x,enemy.y-42,'护甲','#8fc5ff');
     if(enemy.hp<=0)this.kill(enemy,impact);
-    applyEnchantment(this,enemy,Math.min(oldHp,hit.damage),{...impact,baseAmount:amount});
+    const lostHp = Math.min(oldHp,hit.damage);
+    const applied = applyEnchantment(this,enemy,lostHp,{...impact,baseAmount:amount});
+    if (impact.action && !impact.secondary && lostHp > 0) this.synergies?.hit(this,enemy,impact,applied);
   }
   kill(enemy,impact={}){
     if(enemy.dead)return;
@@ -307,10 +363,24 @@ export class Raid {
     }
     return spawned;
   }
+  divideTarget() {
+    const p = this.player, aimX = Math.cos(p.aimAngle), aimY = Math.sin(p.aimAngle);
+    const range = Math.min(RULES.divideRange, this.run.vision);
+    let target = null, best = Infinity;
+    for (const enemy of this.world.enemies) {
+      if (enemy.dead || enemy.value <= 1) continue;
+      const dx = enemy.x - p.x, dy = enemy.y - p.y, d = Math.hypot(dx,dy);
+      if (d > range || !this.visible(p,enemy)) continue;
+      const direction = d > 0 ? (dx*aimX + dy*aimY)/d : 0;
+      const score = d + (1 - direction)*range*.75 - (enemy.value > p.value ? range*.18 : 0);
+      if (score < best || (score === best && enemy.id < target.id)) { target = enemy; best = score; }
+    }
+    return target;
+  }
   divide() {
     const p = this.player;
     if (!p.dividers) { this.message('没有 ÷2 道具了。补给箱中可能找到运算道具。'); return; }
-    const enemy = this.nearestEnemy(RULES.divideRange, e => e.value > p.value) || this.nearestEnemy(RULES.divideRange, e => e.value > 1);
+    const enemy = this.divideTarget();
     if (!enemy) { this.message('÷2 需要 215 范围内、有视线且数字大于 1 的敌人。'); return; }
     p.dividers--;
     const old = enemy.value, ratio = clamp(enemy.hp/enemy.maxHp, 0, 1);
@@ -493,25 +563,36 @@ export class Raid {
       const d=distance(point,enemy);
       if(!enemy.dead&&d<=bullet.blast+enemy.radius&&this.visible(point,enemy)){
         const falloff=Math.max(.35,1-d/bullet.blast*.6);
-        this.damageEnemy(enemy,attackDamage(bullet.value,enemy.value,enemy.maxHp,bullet.rarity)*bullet.power*falloff,{weapon:bullet.weapon||'grenade',intrinsic:bullet.intrinsic,element:bullet.element,angle:Math.atan2(enemy.y-point.y,enemy.x-point.x),enchant:bullet.enchant,level:bullet.level,value:bullet.value,rarity:bullet.rarity});
+        this.damageEnemy(enemy,attackDamage(bullet.value,enemy.value,enemy.maxHp,bullet.rarity)*bullet.power*falloff,{weapon:bullet.weapon||'grenade',intrinsic:bullet.intrinsic,element:bullet.element,angle:Math.atan2(enemy.y-point.y,enemy.x-point.x),enchant:bullet.enchant,level:bullet.level,value:bullet.value,rarity:bullet.rarity,action:bullet.action});
       }
     }
   }
   updateProjectiles(dt) {
-    const bounds=this.world.bounds;
-    for(const bullet of this.world.projectiles){
+    const projectiles = this.world.projectiles;
+    if (!projectiles.length) return;
+    const bounds = this.world.bounds, grid = (this.crowdGrid ||= new SpatialGrid([],96));
+    const candidates = this.projectileCandidates, hits = this.projectileHits;
+    // Enemies have already moved and separated. Index their actual impact-time positions once.
+    if (projectiles.some(bullet => !bullet.dead && bullet.owner === 'player')) grid.rebuildLivingPoints(this.world.enemies);
+    this.projectileStep = true;
+    for(const bullet of projectiles){
       if(bullet.dead)continue;
       const step=Math.min(dt,bullet.life),next={x:bullet.x+bullet.vx*step,y:bullet.y+bullet.vy*step};
       const wall=firstWallFraction(bullet,next,obstaclesFor(this.world,bullet,next,bullet.radius),bullet.radius);
-      const targets=bullet.owner==='player'?this.world.enemies.filter(enemy=>!enemy.dead):[this.player];
-      const hits=[];
-      for(const target of targets){
+      if (bullet.owner === 'player') {
+        grid.queryPoints(bullet, next, grid.maxRadius + bullet.radius, candidates);
+      } else {
+        candidates.length = 1;
+        candidates[0] = this.player;
+      }
+      hits.length = 0;
+      for(const target of candidates){
         const id=target===this.player?'player':target.id;
-        if(bullet.hitIds.includes(id))continue;
+        if(target.dead||bullet.hitIds.includes(id))continue;
         const at=segmentCircleFraction(bullet,next,target,target.radius+bullet.radius);
         if(at<wall)hits.push({target,id,at});
       }
-      hits.sort((a,b)=>a.at-b.at);
+      if (hits.length > 1) hits.sort((a,b) => a.at-b.at || grid.pointOrder.get(a.target)-grid.pointOrder.get(b.target));
       if(bullet.blast){
         const impact=hits[0]?.at??Infinity,t=Math.min(impact,wall);
         if(t!==Infinity)this.explode(bullet,{x:bullet.x+(next.x-bullet.x)*Math.max(0,t-.001),y:bullet.y+(next.y-bullet.y)*Math.max(0,t-.001)});
@@ -520,12 +601,13 @@ export class Raid {
         bullet.x=next.x;bullet.y=next.y;bullet.life-=step;continue;
       }
       for(const hit of hits){
+        if(hit.target.dead)continue;
         if(bullet.owner==='enemy'&&this.tryParry(bullet,{projectile:true})){
           const item=activeWeapon(this.player),speed=Math.max(700,Math.hypot(bullet.vx,bullet.vy)),a=this.player.aimAngle;
-          Object.assign(bullet,{owner:'player',value:this.player.value,rarity:item.rarity,shotLevel:item.level,power:1.25,weapon:'pistol',vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,x:this.player.x+Math.cos(a)*34,y:this.player.y+Math.sin(a)*34,life:1.5,hitIds:[],reflected:true});break;
+          Object.assign(bullet,{owner:'player',value:this.player.value,rarity:item.rarity,shotLevel:item.level,power:1.25,weapon:'pistol',vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,x:this.player.x+Math.cos(a)*34,y:this.player.y+Math.sin(a)*34,life:1.5,hitIds:[],reflected:true,action:undefined});break;
         }
         const damage=attackDamage(bullet.value,hit.target.value,hit.target.maxHp,bullet.rarity)*bullet.power;
-        if(bullet.owner==='player')this.damageEnemy(hit.target,damage,{weapon:bullet.weapon||'pistol',intrinsic:bullet.intrinsic,angle:Math.atan2(bullet.vy,bullet.vx),x:bullet.x+(next.x-bullet.x)*hit.at,y:bullet.y+(next.y-bullet.y)*hit.at,enchant:bullet.enchant,level:bullet.level,value:bullet.value,rarity:bullet.rarity});
+        if(bullet.owner==='player')this.damageEnemy(hit.target,damage,{weapon:bullet.weapon||'pistol',intrinsic:bullet.intrinsic,angle:Math.atan2(bullet.vy,bullet.vx),x:bullet.x+(next.x-bullet.x)*hit.at,y:bullet.y+(next.y-bullet.y)*hit.at,enchant:bullet.enchant,level:bullet.level,value:bullet.value,rarity:bullet.rarity,action:bullet.action});
         else if (this.hurt(damage, '被敌方弹丸击破', { source: bullet })) {
           const angle = Math.atan2(bullet.vy, bullet.vx);
           this.effect(bullet.x + (next.x - bullet.x) * hit.at, bullet.y + (next.y - bullet.y) * hit.at,
@@ -538,9 +620,14 @@ export class Raid {
       if(wall!==Infinity)bullet.dead=true;
       bullet.x=next.x;bullet.y=next.y;bullet.life-=step;
       if(bullet.life<=0||next.x<0||next.y<0||next.x>bounds.width||next.y>bounds.height)bullet.dead=true;
-      if(this.status!=='playing')return;
+      if(this.status!=='playing')break;
     }
-    this.world.projectiles=this.world.projectiles.filter(bullet=>!bullet.dead);
+    this.projectileStep = false;
+    hits.length = 0;
+    candidates.length = 0;
+    let remaining = 0;
+    for (const bullet of projectiles) if (!bullet.dead) projectiles[remaining++] = bullet;
+    projectiles.length = remaining;
   }
   updateInteraction(input, dt) {
     const context = this.context();
@@ -615,6 +702,8 @@ export class Raid {
     }
     const sector=zoneAt(p,this.world.zones);
     const house=this.safehouseAt();
+    if(house&&!this.synergyShelter)this.synergies?.clear();
+    this.synergyShelter=!!house;
     if(house&&!house.serviced){house.serviced=true;p.hp=Math.min(p.maxHp,p.hp+25);if(p.armor)p.armor.durability=Math.min(p.armor.maxDurability,p.armor.durability+15);this.message('进入安全屋：回复25生命、修补15护甲。保护圈内无法攻击，可安全交易和等待撤离。');}
     if(p.sectorId!==sector.id){p.sectorId=sector.id;if(this.sectorNotice<=0){this.message(`进入 ${sector.name} · ${sector.riskLabel} / 箱子价值 ${sector.reward[0]}–${sector.reward[1]}`);this.sectorNotice=1.5;}}
     if (input.autoAim && input.attack) {
@@ -624,7 +713,11 @@ export class Raid {
     if (input.overload) this.activateOverload();
     if (input.flashlight && this.nightMode) p.flashlight = !p.flashlight;
     const equippedSkill = typeof input.skill==='number' ? this.equippedSkills[input.skill] : input.skill;
-    if (equippedSkill && this.equippedSkills.includes(equippedSkill)) useNumberSkill(this,equippedSkill);
+    if (equippedSkill && this.equippedSkills.includes(equippedSkill)) {
+      if (useNumberSkill(this,equippedSkill) && NUMBER_SKILLS[equippedSkill].movement && this.safehouseAt()) {
+        this.synergies?.clear();this.synergyShelter=true;
+      }
+    }
     if (input.divide) this.divide();
     if (input.heal) this.heal();
     this.updateBursts(dt);
@@ -651,7 +744,8 @@ export class Raid {
     this.navigation.update(p,dt);
     this.heat?.update(this,dt);
     this.director?.update(this,dt);this.pressureState=this.director?.profile(this.elapsed)||{speed:1,cooldown:1,windup:1};this.pressureState.speed*=this.run.enemySpeed;
-    this.crowdGrid=new SpatialGrid(this.world.enemies.filter(e=>!e.dead&&distance(e,p)<RULES.activeEnemyRadius),96);
+    this.crowdGrid ||= new SpatialGrid([],96);
+    this.crowdGrid.rebuildLivingPoints(this.world.enemies,p,RULES.activeEnemyRadius);
     for (const enemy of this.world.enemies) {
       this.updateEnemy(enemy, dt); this.clash(enemy);
       if (this.status !== 'playing') return;
@@ -674,6 +768,7 @@ export class Raid {
   finish(success, reason) {
     if (this.result) return;
     this.status = success ? 'success' : 'dead';
+    this.synergies?.clear();
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
     const items=[...this.bag,...equipped],materials=salvageMaterials(this.bag.filter(item=>!isEquipment(item)));
     const exitMultiplier=success?exitRewardMultiplier({kind:this.extractedVia}):1,multiplier=this.rewardMultiplier*exitMultiplier;
@@ -682,6 +777,7 @@ export class Raid {
       materials:{alloy:Math.round(materials.alloy*multiplier),core:Math.round(materials.core*multiplier)},
       gear:this.carriedEquipment().map(item=>({...item})),loot:items.map(item=>({...item})) };
     this.result.playtest=this.playtestSnapshot();
+    if (this.daily) this.result.daily = this.daily.date;
     this.event('finish', { result: this.result });
   }
 }

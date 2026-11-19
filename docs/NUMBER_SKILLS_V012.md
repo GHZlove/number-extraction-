@@ -1,4 +1,4 @@
-# Number Extraction v0.12.12 · Illustrated shelter and number skills
+# Number Extraction v0.12.13 · Illustrated shelter and number skills
 
 This is the browser/source playtest for the new art and combat. Download the [source ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip), extract it, and run the project from the extracted folder.
 
@@ -10,9 +10,16 @@ Hover over a map or use Tab to preview its illustrated backdrop. Click or tap to
 
 Three maps expand the pool to seven. Twinriver Wetlands adds wider waterways and more bridge and woodland sites. Ring Observatory has eight surrounding sectors and open relay arrays. Slant Ridge Icefield has diagonal sectors, icy ground and staggered cover.
 
+## Combat and daily runs
+
+- **Thermal Rupture:** Hit with Burn, then switch and land Frost on the same target within 2.5 seconds. Two explicit enchantments can work in reverse. The burst respects armour and is smaller against bosses.
+- **Grounded Circuit:** Interrupt an enemy with Stun and then land Energize from the other slot within 1.5 seconds. The circuit adds 4 energy, or 2 against a boss, up to the existing cap. Each attack can complete one combo.
+- **Q** selects an in-range enemy by aim direction, distance and the advantage of halving a higher number. **F** equips ground gear directly into an empty armour, laser or secondary weapon slot. Scout and the first two regular runs show contextual overload and parry prompts.
+- **Daily Seed Challenge** lives in the Expedition Terminal. It rotates at UTC midnight with a fixed map, a standard-difficulty loadout and independent records for highest extraction value and fastest extraction. Each list keeps the five best successful extractions on this device. Daily runs use a fresh loadout and leave shelter progression and warehouse gear untouched.
+
 ## Skills
 
-Choose two skills in the shelter, then cast them with **3 / 4**. The tree has four branches and 28 moves. The original four are available from the start. Research higher-rank nodes with Data Coins after unlocking their prerequisites.
+Choose two skills in the shelter, then cast them with **3 / 4**. The tree has four branches and 28 moves. The original four are available from the start. Research higher-rank nodes with Data Coins after unlocking their prerequisites. Remnant Lightning highlights available links, while Ground Wire, Thunder and Blink show their landing areas. All four skill branches have sound cues when audio is enabled.
 
 | Branch | Starter skill | Effect |
 | --- | --- | --- |
@@ -39,4 +46,4 @@ The original generated rasters are cropped into five in-game PNG atlases in `dis
 
 The shelter and warehouse use the existing save schema. To keep a browser save, use the same browser and exact URL as before or transfer it with the save menu. The playtest journal can still import v0.11.1 balance exports, and v0.12.0 observations are grouped separately.
 
-The existing v0.11.3 desktop EXE is the previous release. The v0.12.12 source branch is the current playtest. The v0.12.8 balance group reduces guard and patrol density. Existing weapon damage and extraction requirements still follow the earlier rules. The game UI is in Simplified Chinese.
+The existing v0.11.3 desktop EXE is the previous release. The v0.12.13 source branch is the current playtest. The v0.12.8 balance group reduces guard and patrol density. Existing weapon damage and extraction requirements still follow the earlier rules. The game UI is in Simplified Chinese.

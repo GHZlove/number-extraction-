@@ -1,7 +1,8 @@
 import { readdir, readFile, access } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
-const root=resolve(import.meta.dirname,'..');
+import { fileURLToPath } from 'node:url';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 let count=0;
 for(const file of await readdir(resolve(root,'dist/src'))){
   if(!file.endsWith('.js'))continue;

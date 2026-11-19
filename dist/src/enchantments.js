@@ -12,11 +12,11 @@ export const slowMultiplier=enemy=>enemy.slowTime>0?(enemy.slowScale||1):1;
 
 export function applyEnchantment(raid,enemy,damage,impact){
   const p=raid.player,key=impact.enchant,level=impact.level||1;
-  if(impact.secondary||damage<=0)return;
+  if(impact.secondary||damage<=0)return null;
   const snapshot={...impact,value:impact.value||p.value};
   if(impact.intrinsic==='burn')afflict(enemy,'burn',snapshot,.035,3);
   if(impact.intrinsic==='bleed')afflict(enemy,'bleed',snapshot,.035,4);
-  if(!key||key==='none')return;
+  if(!key||key==='none')return null;
   if(key==='leech'){
     const heal=Math.min(4,damage*.12),before=p.hp;p.hp=Math.min(p.maxHp,p.hp+heal);
     if(p.hp>before)raid.effect(p.x,p.y-40,'吸血 +'+(p.hp-before).toFixed(1),'#ff85a9','text',.55);
@@ -32,15 +32,18 @@ export function applyEnchantment(raid,enemy,damage,impact){
       raid.damageEnemy(next,damage*.35,{secondary:true,weapon:'contact',element:'lightning'});seen.add(next.id);from=next;
     }
   }else if(key==='stun'&&!enemy.dead){
-    p.enchantCooldowns[key]=1.1;enemy.stun=Math.max(enemy.stun,(.32+level*.06)*(enemy.boss?.4:1));
+    p.enchantCooldowns[key]=1.1;const previous=enemy.stun||0,interrupted=enemy.state==='windup'||enemy.chargeTime>0||enemy.burstLeft>0;
+    enemy.stun=Math.max(previous,(.32+level*.06)*(enemy.boss?.4:1));
     enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;
     raid.effect(enemy.x,enemy.y-48,'眩晕','#ffe64d','text',.6);
+    return enemy.stun>previous||interrupted?'stun':null;
   }else if(key==='poison'){
     p.enchantCooldowns[key]=1.25;
     raid.world.hazards.push({kind:'poison',owner:'player',x:enemy.x,y:enemy.y,radius:90+level*5,life:3.5,tick:0,value:impact.value||p.value,rarity:impact.rarity||'white',power:.07+level*.01});
   }else if(key==='burn'||key==='bleed'){
     p.enchantCooldowns[key]=.45;
     afflict(enemy,key,snapshot,key==='burn'?.06+level*.005:.04+level*.005,key==='burn'?3:4);
+    if(key==='burn'&&!enemy.dead)return 'burn';
   }else if(key==='frost'&&!enemy.dead){
     p.enchantCooldowns[key]=.45;enemy.slowTime=2.5+level*.2;enemy.slowScale=enemy.boss?.8:.55;
     enemy.chillStacks=(enemy.chillStacks||0)+1;
@@ -48,6 +51,7 @@ export function applyEnchantment(raid,enemy,damage,impact){
       enemy.stun=Math.max(enemy.stun,enemy.boss?.18:.5);enemy.chillStacks=0;enemy.freezeCooldown=3;
       enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;raid.effect(enemy.x,enemy.y-48,'冻结','#89e8ff','text',.65);
     }
+    return 'frost';
   }else if(key==='sunder'&&!enemy.dead){
     p.enchantCooldowns[key]=.6;enemy.sundered=3;
     const before=enemy.armor?.durability||0;
@@ -74,6 +78,7 @@ export function applyEnchantment(raid,enemy,damage,impact){
   }else if(key==='energize'){
     p.enchantCooldowns[key]=.65;const gain=3+level;p.energy=Math.min(100,p.energy+gain);
     raid.effect(p.x,p.y-42,'能量 +'+gain,'#6befb1','text',.55);
+    return 'energize';
   }
 }
 

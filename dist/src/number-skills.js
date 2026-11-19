@@ -8,7 +8,7 @@ export { NUMBER_SKILLS } from './skill-tree.js';
 const skillRange = (value, base, scale, maximum) =>
   Math.min(maximum, base + Math.max(0, Math.log2(value)) * scale);
 
-function storm(raid) {
+function stormChain(raid) {
   const p = raid.player;
   const radius = skillRange(p.value, 275, 18, 455);
   const linkRange = radius * .75;
@@ -32,6 +32,11 @@ function storm(raid) {
     if (candidate.length > chain.length) chain = candidate;
     if (chain.length === 6) break;
   }
+  return { chain, radius };
+}
+
+function storm(raid) {
+  const p = raid.player, { chain } = stormChain(raid);
   if (chain.length < 2) {
     raid.message('附近需要两块同数敌人残骸才能连成雷链。');
     return false;
@@ -72,12 +77,8 @@ function gust(raid) {
   return true;
 }
 
-function blink(raid, reverse = false, extended = false) {
+function blinkLanding(raid, reverse = false, extended = false) {
   const p = raid.player;
-  if (raid.run.noDodge) {
-    raid.message('本局词条同时限制闪避和折跃。');
-    return false;
-  }
   const start = { x: p.x, y: p.y };
   const reach = skillRange(p.value, extended ? 230 : 170, 8, extended ? 320 : 255);
   const direction = reverse ? -1 : 1;
@@ -97,7 +98,12 @@ function blink(raid, reverse = false, extended = false) {
   while (distance(start, target) >= 14 && !hasClearLanding(target)) {
     target = { x: target.x - dx * 7, y: target.y - dy * 7 };
   }
-  if (distance(start, target) < 14) {
+  return { start, target, ready: distance(start, target) >= 14 };
+}
+
+function blink(raid, reverse = false, extended = false) {
+  const p = raid.player, { start, target, ready } = blinkLanding(raid, reverse, extended);
+  if (!ready) {
     raid.message('折跃落点没有足够空间。');
     return false;
   }
@@ -140,9 +146,17 @@ function ahead(raid,reach) {
   }
   return point;
 }
+const aimedLightning = {
+  groundWire: { base: 103, reach: 300, power: .77, stun: .55 },
+  thunder: { base: 152, reach: 415, power: 1.25, stun: .52 },
+};
+
+function pulseArea(raid, base, reach) {
+  return { target: reach ? ahead(raid, reach) : raid.player, radius: skillRange(raid.player.value,base,5,base+45) };
+}
+
 function pulse(raid,id,element,base,power,stun=0,reach=0,cone=false) {
-  const p=raid.player,point=reach?ahead(raid,reach):p;
-  const radius=skillRange(p.value,base,5,base+45);
+  const p=raid.player,{ target: point, radius }=pulseArea(raid,base,reach);
   raid.effect(point.x,point.y,'',NUMBER_SKILLS[id].color,cone?'enemy-impact':element==='fire'?'impact':element==='wind'?'gust':'overload',.4,{
     radius, angle:p.aimAngle, ...(cone?{arc:2*Math.acos(.64)}:{}),
   });
@@ -189,14 +203,38 @@ function buff(p,id,seconds) {
   p.buffs[id]=Math.max(seconds,p.buffs[id]||0);
   return true;
 }
+function lightningPulse(raid, id) {
+  const { base, reach, power, stun } = aimedLightning[id];
+  return pulse(raid,id,'lightning',base,power,stun,reach);
+}
+
+export function numberSkillPreview(raid, id) {
+  if (!id || raid.player.skillCooldowns[id] > 0 || raid.status !== 'playing') return null;
+  const skill = NUMBER_SKILLS[id];
+  if (!skill || (skill.movement && raid.run.noDodge) || (!skill.defensive && raid.safehouseAt())) return null;
+  if (id === 'storm') {
+    const { chain, radius } = stormChain(raid);
+    return { chain, radius, ready: chain.length >= 2, target: raid.player, label: '需要两块同数残骸' };
+  }
+  if (id === 'blink') {
+    const { start, target, ready } = blinkLanding(raid);
+    return { start, target, ready, radius: raid.player.radius + 4, label: '折跃落点受阻' };
+  }
+  if (Object.hasOwn(aimedLightning,id)) {
+    const { base, reach } = aimedLightning[id];
+    return { ...pulseArea(raid,base,reach), ready: true };
+  }
+  return null;
+}
+
 const handlers = {
   storm, gust, blink, fireball,
   spark:r=>arcBurst(r,'spark',false),
   staticPulse:r=>pulse(r,'staticPulse','lightning',128,.6,.75),
   fork:r=>arcBurst(r,'fork',true),
-  groundWire:r=>pulse(r,'groundWire','lightning',103,.77,.55,300),
+  groundWire:r=>lightningPulse(r,'groundWire'),
   arcWard:r=>{buff(r.player,'phase',3.5);r.player.energy=Math.min(100,r.player.energy+18);return pulse(r,'arcWard','lightning',125,.37,.2);},
-  thunder:r=>pulse(r,'thunder','lightning',152,1.25,.52,415),
+  thunder:r=>lightningPulse(r,'thunder'),
   airStep:r=>buff(r.player,'haste',3.4),
   vortex:r=>{
     for(const enemy of nearest(r,skillRange(r.player.value,205,11,320))){

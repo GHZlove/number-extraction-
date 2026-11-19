@@ -85,6 +85,7 @@ test('resources never block gear pickups but the equipment limit still preserves
   const r=empty();r.capacity=1;r.bag=Array.from({length:30},(_,i)=>createLoot(0,0,0,16,'data-'+i));
   const gun={...makeEquipment('weapon','rifle','green','gun'),x:r.player.x,y:r.player.y,dead:false};r.world.drops=[gun];
   assert.equal(r.pickupGear(),true);assert.equal(r.equipmentCount(),1);
+  r.player.armor=makeEquipment('armor'); // This pickup must use the equipment bag.
   const second={...makeEquipment('armor','','white','second'),x:r.player.x,y:r.player.y,dead:false};r.world.drops.push(second);
   assert.equal(r.pickupGear(),false);assert.equal(second.dead,false);
   const index=r.bag.findIndex(i=>i.id==='gun');assert.equal(r.dropItem(index),true);assert.equal(r.equipmentCount(),0);

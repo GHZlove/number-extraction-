@@ -1,3 +1,4 @@
+import { NUMBER_SKILLS, numberSkillPreview } from './number-skills.js';
 import { drawComicText } from './comic-type.js';
 import { drawRoadNetwork } from './roads.js';
 import { drawMoonlight, FLASHLIGHT_REACH } from './raid-light.js';
@@ -97,8 +98,12 @@ export class Renderer {
     for(const tile of w.tiles)if(!tile.dead&&distance(tile,p)<raid.run.vision&&this.visible(tile.x,tile.y))this.drawTile(tile,p,time);
     for(const loot of w.drops)if(!loot.dead&&distance(loot,p)<raid.run.vision&&this.visible(loot.x,loot.y))this.drawDrop(loot,p,time);
     for(const enemy of w.enemies)if(!enemy.dead&&enemy.state==='windup'&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y,800))this.drawTelegraph(enemy,time,raid.enemyMoveScale());
-    const selected=raid.nearestEnemy(RULES.divideRange,e=>e.value>p.value)||raid.nearestEnemy(RULES.divideRange,e=>e.value>1);
-    for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y))this.drawEnemy(enemy,p,time,enemy===selected);
+    const selected=p.dividers>0?raid.divideTarget():null;
+    for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y)){
+      this.drawEnemy(enemy,p,time,enemy===selected);
+      const cue=raid.synergies?.cue(raid,enemy);
+      if(cue)this.text(cue.text,enemy.x,enemy.y+enemy.radius+27,13,{fill:cue.color});
+    }
     for (const bullet of w.projectiles) {
       if (!bullet.dead && this.visible(bullet.x,bullet.y,60)) drawProjectile(c, bullet, this.reduced);
     }
@@ -108,6 +113,7 @@ export class Renderer {
       fusionDeformation = drawTileFusion(c, effect, p, this.reduced) || fusionDeformation;
     }
     this.drawPlayer(p,time,fusionDeformation);
+    this.drawSkillPreviews(raid);
     for(const e of w.effects) {
       if (e.kind === 'tile-fusion') continue;
       const progress=1-e.life/e.maxLife;c.globalAlpha=Math.min(1,e.life/e.maxLife*2);
@@ -168,6 +174,45 @@ export class Renderer {
     c.restore();
     if(raid.carriedValue()>0)this.drawExitArrow(raid);
     if(time-this.lastMapDraw>0.15){this.drawMap(raid);this.lastMapDraw=time;}
+  }
+  drawSkillPreviews(raid) {
+    const c=this.ctx;
+    for (const [slot, id] of raid.equippedSkills.entries()) {
+      let preview;
+      if (id === 'storm') {
+        const cached = this.stormPreview;
+        if (!cached || cached.raid !== raid || raid.elapsed - cached.at >= .1) {
+          this.stormPreview = { raid, at: raid.elapsed, preview: numberSkillPreview(raid,id) };
+        }
+        preview = raid.player.skillCooldowns[id] > 0 || raid.safehouseAt() ? null : this.stormPreview.preview;
+      } else preview = numberSkillPreview(raid,id);
+      if (!preview) continue;
+      const color = NUMBER_SKILLS[id].color, { start, target, chain, ready, radius } = preview;
+      c.save();
+      c.strokeStyle = ready ? color : '#e8dad4';
+      c.globalAlpha = ready ? .82 : .36;
+      c.lineWidth = 2.5;
+      c.setLineDash([7, 6]);
+      if (chain && ready) {
+        c.beginPath();
+        c.moveTo(chain[0].x, chain[0].y);
+        for (const tile of chain.slice(1)) c.lineTo(tile.x,tile.y);
+        c.stroke();
+        for (const tile of chain) {
+          c.beginPath(); c.arc(tile.x,tile.y,25,0,TAU); c.stroke();
+        }
+      } else {
+        if (start && ready) {
+          c.beginPath(); c.moveTo(start.x,start.y); c.lineTo(target.x,target.y); c.stroke();
+        }
+        c.beginPath(); c.arc(target.x,target.y,radius,0,TAU); c.stroke();
+      }
+      c.restore();
+      const point=chain&&ready?chain[0]:target;
+      const offset=chain&&ready?34:ready?radius+9:raid.player.radius+50;
+      const label = ready ? (slot+3)+' · '+NUMBER_SKILLS[id].label : (slot+3)+' · '+preview.label;
+      if (this.visible(point.x,point.y-offset,12)) this.text(label,point.x,point.y-offset,12,{fill:color});
+    }
   }
   inkSplat(x,y,r,color,angle=0,alpha=1){
     const c=this.ctx;

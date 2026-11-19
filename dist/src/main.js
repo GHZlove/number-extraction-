@@ -1,3 +1,4 @@
+import { dailyChallenge, readDaily, recordDaily } from './daily.js';
 import { researchSkill, toggleLoadoutSkill } from './skill-tree.js';
 import { analyzePlaytestReports, MAX_REVIEW_REPORTS, MAX_REPORT_BYTES, MAX_REVIEW_BYTES } from './playtest-analysis.js';
 import { readJournal, writeJournal, recordStart, recordCheckpoint, recordFinish, interruptOpenRuns, setFeedback, serializeJournal } from './playtest.js';
@@ -10,7 +11,7 @@ import { Input } from './input.js';
 import { Renderer } from './renderer.js';
 import { Sound } from './audio.js';
 import { UI } from './ui.js';
-import { readSave,settleRun,writeSave } from './storage.js';
+import { defaultSave,readSave,settleRun,writeSave } from './storage.js';
 import { upgradeFacility,unlockedWeapons,forgeWeapon } from './shelter.js';
 import { ENCHANTS } from './equipment.js';
 import { buyFromMerchant } from './commerce.js';
@@ -22,26 +23,37 @@ const initial=readSave(storage);let save=initial.save,saveAvailable=initial.avai
 if(initial.migrated)saveAvailable=writeSave(storage,save);
 const journalInitial=readJournal(storage);let journal=journalInitial.journal,journalAvailable=journalInitial.available;
 if(interruptOpenRuns(journal))journalAvailable=writeJournal(storage,journal);
+let daily=readDaily(storage),dailyDate='',lastDailyCheck=0;
 let playtestReview=null,selectedReviewCohort=null,reviewRequest=0;
 let raid=null,view='shelter',paused=true,modal=null,accumulator=0,lastTime=0,lastUI=0,lastResult=null,merchantId=null,pendingSave=null,pendingRecycle=null;
 const canvas=document.getElementById('game-canvas'),renderer=new Renderer(canvas,document.getElementById('minimap')),sound=new Sound();
 const persist=()=>{saveAvailable=writeSave(storage,save);};
 function clearInput(){input.active=false;input.clear();accumulator=0;}
-function refreshShelter(){ui.shelter(save,{lastResult,saveAvailable,journal,journalAvailable,playtestReview,selectedReviewCohort});}
+function refreshShelter(challenge=dailyChallenge()){
+  dailyDate=challenge.date;
+  ui.shelter(save,{lastResult,saveAvailable,journal,journalAvailable,playtestReview,selectedReviewCohort,daily,challenge});
+}
 function enterShelter(){
   view='shelter';paused=true;modal=null;clearInput();
   window.numberExtractionDesktop?.setRaidActive(false);
   document.body.dataset.screen='shelter';document.getElementById('raid-screen').hidden=true;document.getElementById('shelter-screen').hidden=false;
   ui.hide(false);refreshShelter();
 }
-function start(){
+function start(dailyRun = false){
   if(view==='raid')return;
-  const seed=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(seed);else seed[0]=Date.now();
-  const prepared=prepareWarehouseDeployment(save),nextRaid=new Raid(prepared.save,seed[0],{warehouseGear:prepared.gear});
+  const challenge = dailyRun ? dailyChallenge() : null;
+  const seed=new Uint32Array(1);
+  if(challenge)seed[0]=challenge.seed;
+  else if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(seed);
+  else seed[0]=Date.now();
+  const prepared=challenge?{save:defaultSave(),count:0}:prepareWarehouseDeployment(save);
+  const nextRaid=new Raid(prepared.save,seed[0],challenge
+    ? {layout:challenge.layout.id,difficulty:challenge.difficulty,daily:challenge}
+    : {warehouseGear:prepared.gear});
   if(prepared.count&&!writeSave(storage,prepared.save)){ui.toast('无法保存出击装备变更，请检查存档权限后再试。');return;}
   if(prepared.count){save=prepared.save;saveAvailable=true;}
   document.getElementById('arena').classList.remove('health-hit');
-  raid=nextRaid;changeJournal(next=>recordStart(next,raid.playtestSnapshot()));view='raid';paused=false;modal=null;accumulator=0;
+  raid=nextRaid;if(!challenge)changeJournal(next=>recordStart(next,raid.playtestSnapshot()));view='raid';paused=false;modal=null;accumulator=0;
   window.numberExtractionDesktop?.setRaidActive(true);
   document.body.dataset.screen='raid';document.getElementById('shelter-screen').hidden=true;document.getElementById('raid-screen').hidden=false;
   renderer.resize();renderer.camera={...raid.player};renderer.lastMapDraw=-Infinity;input.clear();input.active=true;ui.hide();ui.update(raid,save,true,false);
@@ -59,7 +71,7 @@ function pause(){if(modal){close();return;}if(view==='raid'&&raid.status==='play
 function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==='inventory')close();else show('inventory');}
 const input=new Input(canvas,pause,inventory);
 const ui=new UI({
-  start,close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
+  start:()=>start(),startDaily:()=>start(true),close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
   shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules','journal','skills'].includes(key)){ui.shelterTab=key;refreshShelter();}},
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
   toggleRecording:()=>{if(view!=='shelter')return;changeJournal(next=>{next.enabled=!next.enabled;return true;});refreshShelter();ui.toast(!journalAvailable?'设置仅在本次会话生效，无法写入本机。':journal.enabled?'本机试玩记录已开启。':'本机试玩记录已停用。');},
@@ -144,7 +156,7 @@ function changeJournal(action){
   try{if(!action(next))return false;journal=next;journalAvailable=writeJournal(storage,journal);return true;}
   catch{journalAvailable=false;return false;}
 }
-function checkpointJournal(){if(raid?.status==='playing')changeJournal(next=>recordCheckpoint(next,raid.playtestSnapshot()));}
+function checkpointJournal(){if(raid?.status==='playing'&&!raid.daily)changeJournal(next=>recordCheckpoint(next,raid.playtestSnapshot()));}
 window.addEventListener('beforeunload',checkpointJournal);
 function warehouseChange(action,message){
   if(view!=='shelter')return false;
@@ -162,7 +174,15 @@ function handleEvents(){
   for(const event of raid.events.splice(0)){
     if(event.type==='message')ui.toast(event.text);
     else if(event.type==='trade'){merchantId=event.id;show('merchant');}
-    else if(event.type==='finish'){changeJournal(next=>recordFinish(next,event.result));if(settleRun(save,event.result))persist();lastResult=event.result;sound.play('finish');enterShelter();}
+    else if(event.type==='finish'){
+      if (raid.daily) {
+        daily = recordDaily(storage,daily,raid.daily,event.result);
+      } else {
+        changeJournal(next=>recordFinish(next,event.result));
+        if(settleRun(save,event.result))persist();
+      }
+      lastResult=event.result;sound.play('finish');enterShelter();
+    }
     else{if(event.type==='hurt'&&event.damage>0)ui.hit(raid.player);sound.play(event.type,event);renderer.feedback(event);}
   }
 }
@@ -180,6 +200,11 @@ function frame(timestamp){
       }
     }else accumulator=0;
     if(view==='raid'){renderer.draw(raid,timestamp/1000,dt);if(timestamp-lastUI>80){ui.update(raid,save,true,paused);lastUI=timestamp;}}
+  }
+  if (view==='shelter' && !modal && timestamp-lastDailyCheck>30000) {
+    lastDailyCheck=timestamp;
+    const challenge=dailyChallenge();
+    if (challenge.date!==dailyDate) refreshShelter(challenge);
   }
   ui.tick();requestAnimationFrame(frame);
 }
