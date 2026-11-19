@@ -25,6 +25,7 @@ export function impactScale(motion, elapsed) {
 export function pushActor(actor, x, y, speed) {
   const n = Math.hypot(x, y);
   if (n < 1e-6 || speed <= 0) return;
+  if(actor.affixes?.includes('unstoppable'))speed*=.1;
   const vx = (actor.knockX || 0) + x / n * speed;
   const vy = (actor.knockY || 0) + y / n * speed;
   const factor = Math.min(1, MAX_RECOIL_SPEED / Math.hypot(vx, vy));

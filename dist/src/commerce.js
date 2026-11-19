@@ -52,3 +52,9 @@ export function barterWeapon(raid,merchantId,request){
   merchant.barters--;
   raid.event('loot');return true;
 }
+
+export function buySiegeSupply(raid,merchantId,key){
+  const merchant=raid.world.merchants.find(actor=>actor.id===merchantId&&actor.siege);
+  if(!merchant||Math.hypot(merchant.x-raid.player.x,merchant.y-raid.player.y)>91||!raid.visible(raid.player,merchant))return false;
+  return !!raid.siege?.buy(raid,key);
+}

@@ -1,3 +1,4 @@
+import { defenderNumber } from './enemy-tactics.js';
 import { attackDamage, distance } from './math.js';
 
 export function bossZone(raid,boss,spec){
@@ -34,7 +35,7 @@ export function updateBossZones(raid,dt){
     }
     if(zone.kind==='frost'){p.chilled=Math.max(p.chilled||0,.55);}
     zone.tick-=dt;
-    if(zone.tick<=0){zone.tick=.7;raid.hurt(attackDamage(zone.value,p.value,p.maxHp)*zone.power,`被${zone.label}击破`);}
+    if(zone.tick<=0){zone.tick=.7;raid.hurt(attackDamage(zone.value,defenderNumber(p),p.maxHp)*zone.power,`被${zone.label}击破`);}
   }
   raid.world.hazards=raid.world.hazards.filter(h=>h.life>0);
 }

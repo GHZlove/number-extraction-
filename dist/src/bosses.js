@@ -1,3 +1,4 @@
+import { defenderNumber } from './enemy-tactics.js';
 import { attackDamage, distance, inAttackArc } from './math.js';
 import { slowMultiplier } from './enchantments.js';
 import { bossZone } from './boss-hazards.js';
@@ -55,7 +56,7 @@ function resolve(raid,e){
       radius, angle, arc: cleave ? Math.PI * 1.15 : Math.PI * 2, heavy: true,
     });
     const hit=cleave?inAttackArc(e,p,angle,Math.PI*1.15,radius):distance(p,{x:e.aimX,y:e.aimY})<radius+p.radius;
-    if(hit&&raid.visible(e,p))raid.hurt(attackDamage(e.value,p.value,p.maxHp)*.7,'被首领重击击破',{source:e,parryable:true});
+    if(hit&&raid.visible(e,p))raid.hurt(attackDamage(e.value,defenderNumber(p),p.maxHp)*.7,'被首领重击击破',{source:e,parryable:true});
   }else if(e.bossMove==='dash'||e.bossMove==='shadowdash'){
     raid.enemyLaunch(e, angle, 'rush');
     e.state='boss-charge';e.chargeTime=enraged?.7:.5;e.chargeSpeed=e.bossMove==='shadowdash'?740:590;e.chargeX=Math.cos(angle);e.chargeY=Math.sin(angle);return;
@@ -85,7 +86,7 @@ export function updateBoss(raid,e,dt){
   if(raid.safehouseAt(p)&&['windup','boss-charge'].includes(e.state)){e.state='idle';e.chargeTime=0;e.cooldown=1.5;}
   if(e.state==='boss-charge'){
     const before={x:e.x,y:e.y};raid.move(e,e.chargeX*(e.chargeSpeed||590)*dt*slowMultiplier(e)*raid.enemyMoveScale(),e.chargeY*(e.chargeSpeed||590)*dt*slowMultiplier(e)*raid.enemyMoveScale());e.chargeTime-=dt;
-    if(d<e.radius+p.radius+12)raid.hurt(attackDamage(e.value,p.value,p.maxHp)*.65,'被首领冲锋击破',{source:e,parryable:true});
+    if(d<e.radius+p.radius+12)raid.hurt(attackDamage(e.value,defenderNumber(p),p.maxHp)*.65,'被首领冲锋击破',{source:e,parryable:true});
     if(e.chargeTime<=0||distance(before,e)<.1){e.state='idle';e.cooldown=1.4;}return;
   }
   if(e.state==='windup'){e.timer-=dt;if(e.timer<=0)resolve(raid,e);return;}

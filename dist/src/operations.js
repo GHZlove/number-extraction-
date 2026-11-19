@@ -72,13 +72,19 @@ export function numberShock(raid) {
   if (raid.status !== 'playing' || actualNumber(p) !== 2048 || raid.safehouseAt()) return false;
   p.value = 1024;
   updateNumberForm(raid);
-  const range = Math.min(1050,raid.run.vision);
+  const view=raid.actionView;
+  const farthest=view?Math.hypot(
+    Math.max(Math.abs(p.x-view.left),Math.abs(p.x-view.right)),
+    Math.max(Math.abs(p.y-view.top),Math.abs(p.y-view.bottom)),
+  ):1050;
+  const range=Math.min(farthest,raid.run.vision);
   raid.effect(p.x,p.y,'','#b5e9ff','overload',.7,{radius:range});
   raid.effect(p.x,p.y-57,'2048 → 1024','#f3d7ff','comic',.85);
   for (const enemy of raid.world.enemies) {
-    if (enemy.dead || distance(p,enemy) > range || !raid.visible(p,enemy)) continue;
-    const damage = enemy.boss ? enemy.maxHp*.2 :
-      Math.max(enemy.value < 2048 ? enemy.maxHp*1.4 : enemy.maxHp*.5, attackDamage(2048,enemy.value,enemy.maxHp));
+    if(enemy.dead||distance(p,enemy)>range||!raid.visible(p,enemy))continue;
+    if(view&&(enemy.x<view.left||enemy.x>view.right||enemy.y<view.top||enemy.y>view.bottom))continue;
+    const base=attackDamage(2048,enemy.value,enemy.maxHp);
+    const damage=enemy.boss?Math.min(enemy.maxHp*.2,base):base*(enemy.value<2048?3.2:2);
     raid.damageEnemy(enemy,damage,{secondary:true,element:'lightning'});
   }
   raid.event('overload');

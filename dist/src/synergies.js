@@ -45,6 +45,7 @@ export class Synergies {
   }
   clear() {
     this.primers=new WeakMap();
+    this.towerPrimers=new WeakMap();
     this.setMarks={};
     this.focus={};
   }
@@ -62,15 +63,39 @@ export class Synergies {
     if (mark.from==='sunder' && !(enemy.sundered>0)) return null;
     return mark;
   }
+  towerRoute(tag){
+    if(tag==='burn')return {pair:'thermal',from:'burn',to:'frost'};
+    if(tag==='frost')return {pair:'thermal',from:'frost',to:'burn'};
+    if(tag==='sunder')return {pair:'fault',from:'sunder',to:'critical'};
+    return null;
+  }
+  primeTower(raid,enemy,tower,tag){
+    const route=this.towerRoute(tag);
+    if(!route||tower.dead||!raid.siege||!raid.player.weapons.some(item=>item?.enchant===route.to))return;
+    const marks=this.towerPrimers.get(enemy)||{};
+    marks[route.pair]={...route,tower,expires:raid.elapsed+REACTIONS[route.pair].seconds};
+    this.towerPrimers.set(enemy,marks);
+    this.focus[route.pair]=enemy;
+  }
+  towerMark(raid,enemy,pair){
+    const mark=this.towerPrimers.get(enemy)?.[pair];
+    if(!mark||mark.tower.dead||enemy.dead||raid.elapsed>mark.expires)return null;
+    if(mark.from==='burn'&&!enemy.afflictions?.burn?.life||mark.from==='frost'&&!(enemy.slowTime>0)||
+       mark.from==='sunder'&&!(enemy.sundered>0))return null;
+    return mark;
+  }
+  cueText(raid,mark,def){
+    const slot=mark.action?2-mark.action.slot:raid.player.weapons.findIndex(item=>item?.enchant===mark.to)+1;
+    if(!slot)return null;
+    const names=def.set?WEAPONS:ENCHANTS;
+    return {color:def.color,text:`[${slot}] ${names[mark.to].name}`};
+  }
   available(raid,pair){return raid.elapsed>=this.readyAt.any&&raid.elapsed>=(this.readyAt[pair]||0);}
   cue(raid,enemy) {
-    if(!this.primers.has(enemy)&&!Object.values(this.setMarks).some(mark=>mark.enemy===enemy))return null;
+    if(!this.primers.has(enemy)&&!this.towerPrimers.has(enemy)&&!Object.values(this.setMarks).some(mark=>mark.enemy===enemy))return null;
     for(const [pair,def] of PAIRS){
-      const mark=this.mark(raid,enemy,pair);
-      if(mark && this.available(raid,pair)){
-        const names=def.set?WEAPONS:ENCHANTS;
-        return { color:def.color,text:`[${2-mark.action.slot}] ${names[mark.to].name}` };
-      }
+      const mark=this.mark(raid,enemy,pair)||this.towerMark(raid,enemy,pair);
+      if(mark&&this.available(raid,pair))return this.cueText(raid,mark,def);
     }
     return null;
   }
@@ -79,20 +104,21 @@ export class Synergies {
     for(const [id,def] of PAIRS){
       const enemy=this.focus[id];
       if(!enemy||enemy.dead||!visible(enemy)||distance(raid.player,enemy)>raid.run.vision)continue;
-      const gap=distance(point,enemy),mark=this.mark(raid,enemy,id);
+      const gap=distance(point,enemy),mark=this.mark(raid,enemy,id)||this.towerMark(raid,enemy,id);
       if(gap>=nearest||!mark||!this.available(raid,id))continue;
-      const names=def.set?WEAPONS:ENCHANTS;
-      cue={color:def.color,text:`[${2-mark.action.slot}] ${names[mark.to].name}`};nearest=gap;
+      const hint=this.cueText(raid,mark,def);
+      if(hint){cue=hint;nearest=gap;}
     }
     return cue;
   }
   indicators(raid) {
     return PAIRS.flatMap(([id,def])=>{
-      const direction=directions(raid.player,def,0)||directions(raid.player,def,1);
+      const enemy=this.focus[id], mark=enemy&&!enemy.dead&&(this.mark(raid,enemy,id)||this.towerMark(raid,enemy,id));
+      const direction=directions(raid.player,def,0)||directions(raid.player,def,1)||mark;
       if(!direction)return [];
-      const enemy=this.focus[id], mark=enemy&&!enemy.dead&&this.mark(raid,enemy,id);
       const ready=this.available(raid,id),names=def.set?WEAPONS:ENCHANTS;
       return [{id,label:def.label,glyph:def.glyph,color:def.color,armed:ready&&!!mark,ready,
+        remaining:mark?Math.max(0,mark.expires-raid.elapsed):0,
         description:`${names[direction.from].name} → ${names[direction.to].name} · ${def.seconds}s`}];
     });
   }
@@ -102,14 +128,14 @@ export class Synergies {
     if(!this.valid(raid.player,action))return;
     const tag=applied?.tag||applied;
     for(const [pair,def] of PAIRS){
-      const mark=this.mark(raid,enemy,pair);
-      if(!mark||action.spent||mark.action===action||mark.action.slot===action.slot||!this.available(raid,pair))continue;
+      const mark=this.mark(raid,enemy,pair)||this.towerMark(raid,enemy,pair);
+      if(!mark||action.spent||mark.action===action||mark.action?.slot===action.slot||!this.available(raid,pair))continue;
       if(def.set ? action.item.weapon!==mark.to : tag!==mark.to)continue;
       if(pair==='relay'&&distance(action,enemy)<220)continue;
       if(pair==='toxic'&&!enemy.dead)continue;
       action.spent=true;
       this.readyAt.any=raid.elapsed+.35;this.readyAt[pair]=raid.elapsed+def.cooldown;
-      delete (def.set?this.setMarks:this.primers.get(enemy))[pair];
+      delete (mark.tower?this.towerPrimers.get(enemy):def.set?this.setMarks:this.primers.get(enemy))[pair];
       this.resolve(raid,enemy,pair,def,action,applied,damage,knock,angle);
       return;
     }

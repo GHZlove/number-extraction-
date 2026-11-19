@@ -242,3 +242,31 @@
 }
 #raid-screen #ambience-button[aria-pressed="true"] { background:#654252; border-color:#f3b9cb; }
 @media(pointer:coarse){ #raid-screen .operator-strip{bottom:185px;} }
+
+#raid-screen .training-readout {
+  position:absolute;
+  z-index:3;
+  top:25%;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:calc(100% - 28px);
+  padding:6px 10px;
+  background:#241d2bea;
+  border:1px solid #f3ce92;
+  border-radius:7px;
+  font-size:13px;
+  line-height:1.4;
+  text-align:center;
+  pointer-events:none;
+}
+#raid-screen .training-readout[hidden] { display:none; }
+
+#raid-screen :is(.siege-hud,.siege-kits) { position:absolute; z-index:4; padding:7px; background:#211b2bea; border:1px solid #ead49a; border-radius:7px; }
+#raid-screen .siege-hud { top:21%; left:50%; transform:translateX(-50%); min-width:min(240px,90vw); text-align:center; }
+#raid-screen .siege-hud small { margin-inline-start:10px; }
+#raid-screen .siege-hud span { display:block; margin-block:4px; }
+#raid-screen .siege-hud .interaction-track i { background:#8ae3a5; }
+#raid-screen .siege-kits { left:20px; bottom:158px; max-width:min(360px,92vw); display:flex; flex-wrap:wrap; gap:4px; }
+#raid-screen .siege-kits button { padding:6px; background:#33283d; border:1px solid #a597b3; border-radius:5px; }
+#raid-screen .siege-kits button[aria-pressed="true"] { background:#58472b; border-color:#f5d77e; }
+#raid-screen :is(.siege-hud,.siege-kits)[hidden] { display:none; }

@@ -1,5 +1,5 @@
 // All balance values live here. Rendering never decides a game rule.
-export const VERSION = '0.13.0';
+export const VERSION = '0.14.0';
 export const MAP_LAYOUTS = Object.freeze([
   {id:'random',name:'随机战区',description:'从七张地图中抽取一张'},
   {id:'tangram',name:'七巧遗迹',description:'拼片遗迹 · 斜线分区'},
@@ -38,6 +38,11 @@ export const FACILITIES = Object.freeze({
   recycler: { name: '回收中心', en: 'RECYCLER', icon: 'core', max: 20, base: 100, alloy: 4, description: '每级提高 5% 撤离资源收益。' },
 });
 export const ENEMY_TYPES = Object.freeze({
+  shieldbearer:{ advanced:true,name:'矩阵盾卫',pattern:'strike',windup:.65,range:105,cooldown:1,speed:126,shieldArc:Math.PI*.72,glyph:'▱' },
+  commander:{ advanced:true,name:'协同信标',pattern:'fan',windup:.7,range:345,cooldown:1.7,speed:107,glyph:'⌁' },
+  kamikaze:{ advanced:true,name:'过载裂变体',pattern:'kamikaze',windup:.9,range:75,cooldown:1,speed:215,glyph:'!' },
+  healer:{ advanced:true,name:'链路修复师',pattern:'healer',windup:.5,range:480,cooldown:3,speed:109,glyph:'✚' },
+  corruptor:{ advanced:true,name:'蚀刻干扰者',pattern:'fan',windup:.55,range:440,cooldown:1.35,speed:152,glyph:'◈' },
   hunter: { name: '追猎者', pattern: 'strike', windup: 0.46, range: 104, cooldown: 0.8, speed: 170 },
   sentry: { name: '哨戒炮', pattern: 'shot', windup: 0.6, range: 380, cooldown: 1.15, speed: 0 },
   gunner: { name: '散射手', pattern: 'fan', windup: 0.62, range: 410, cooldown: 1.2, speed: 115 },

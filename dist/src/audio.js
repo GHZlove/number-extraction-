@@ -1,4 +1,4 @@
-import { NUMBER_SKILLS } from './skill-tree.js';
+import { NUMBER_SKILLS, SKILL_BRANCHES } from './skill-tree.js';
 
 const SKILL_TONES = {
   lightning: [760, 1450, 'triangle'],
@@ -6,6 +6,8 @@ const SKILL_TONES = {
   space: [820, 390, 'sine'],
   fire: [165, 65, 'triangle', 840],
 };
+
+const SKILL_VARIANTS=new Map(SKILL_BRANCHES.flatMap(branch=>branch.ids.map((id,index)=>[id,index])));
 
 // Short synthesized transients, rate-limited for dense crowds. No audio assets.
 const GUNS={
@@ -70,17 +72,28 @@ export class Sound {
       }else if(type==='skill'){
         const tone = SKILL_TONES[NUMBER_SKILLS[event.skill]?.branch];
         if (tone) {
-          const [start, end, wave, cutoff] = tone;
-          this.tone(start,.14,wave,.045,end);
-          if (cutoff) this.noise(.09,.04,cutoff);
+          const [start,end,wave,cutoff]=tone;
+          const variant=SKILL_VARIANTS.get(event.skill)||0;
+          const pitch=2**(variant/12),length=.14+variant*.014;
+          this.tone(start*pitch,length,wave,.045,end*(1+variant*.045));
+          if(cutoff)this.noise(.09+variant*.009,.04,cutoff*pitch);
         }
       }else if(type==='synergy'){
         const pitches={thermal:[370,247],sanguine:[310,465],fault:[510,337],cage:[780,1040],
           toxic:[270,180],circuit:[630,945],breach:[208,312],relay:[620,827]};
         const [a,b]=pitches[event.pair]||pitches.circuit;
         this.tone(a,.11,'triangle',.037,a*1.1);
+        this.tone(a*1.25,.11,'sine',.019,a*1.32);
         this.tone(b,.19,'triangle',.036,b*1.32,.085);
         this.tone(b*1.5,.17,'sine',.018,b*1.46,.09);
+      }else if(type==='enemy-fuse-start'||type==='enemy-fuse-break'){
+        const start=type==='enemy-fuse-start';
+        this.tone(start?220:610,start?.24:.12,'triangle',.037,start?480:210);
+        this.tone(start?330:440,.13,'sine',.022,start?650:140,.07);
+      }else if(type==='enemy-merge'||type==='siege-merge'||type==='siege-phase'||type==='heal-link'){
+        const phase=type==='siege-phase',heal=type==='heal-link';
+        this.tone(phase?105:heal?440:295,.18,'triangle',.037,phase?245:heal?620:455);
+        this.tone(phase?208:heal?605:525,.19,'sine',.028,phase?315:heal?720:790,.08);
       }else if(type==='alarm'||type==='operator'){
         this.tone(type==='alarm'?284:580,.16,'triangle',.035,type==='alarm'?430:740);
       }else if(type==='hit'){

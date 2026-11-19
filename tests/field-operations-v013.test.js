@@ -111,9 +111,11 @@ test('airdrop, storm and smuggler use timed state and map markers with a repeata
 
 test('fusion is telegraphed, consumes one enemy and cannot produce loot',()=>{
   const raid=empty(),a=enemy(raid,'a',100),b=enemy(raid,'b',148);
-  raid.field=new FieldEvents(raid,72);a.fuser=true;
-  raid.field.fuse(raid);assert.ok(a.fusingUntil>0);assert.equal(a.fusingUntil,b.fusingUntil);
-  raid.elapsed=2.5;raid.field.fuse(raid);
+  a.waveId=b.waveId='patrol-test';
+  raid.tactics.updateFusion(raid);
+  raid.elapsed=1.5;raid.tactics.updateFusion(raid);
+  assert.ok(a.fusingUntil>0);assert.equal(a.fusingUntil,b.fusingUntil);
+  raid.elapsed=3;raid.tactics.updateFusion(raid);
   assert.equal(a.value,16);assert.equal(a.hp,a.maxHp);assert.equal(b.dead,true);
   assert.equal(raid.kills,0);assert.equal(raid.world.drops.length,0);
 });

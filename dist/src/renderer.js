@@ -1,3 +1,5 @@
+import { hiddenEnemy } from './enemy-tactics.js';
+import { drawEnemyField, drawEnemyTrait, drawSiegeField, drawSiegeMap } from './siege-art.js';
 import { actualNumber, isLocked } from './operations.js';
 import { drawAtmosphere, drawFieldEvents, drawForm, drawSkillSignature } from './field-art.js';
 import { NUMBER_SKILLS, numberSkillPreview } from './number-skills.js';
@@ -43,6 +45,10 @@ export class Renderer {
     this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);
     this.scale=clamp(this.width/1500,0.7,1.05)*1.22;
   }
+  worldView(){
+    const halfW=this.width/this.scale/2,halfH=this.height/this.scale/2;
+    return {left:this.camera.x-halfW,right:this.camera.x+halfW,top:this.camera.y-halfH,bottom:this.camera.y+halfH};
+  }
   screenToWorld(clientX,clientY){
     const rect=this.canvas.getBoundingClientRect();
     return {x:(clientX-rect.left-rect.width/2)/this.scale+this.camera.x,
@@ -69,12 +75,15 @@ export class Renderer {
     this.shake=Math.max(0,this.shake-dt*20);
     c.setTransform(this.dpr,0,0,this.dpr,0,0);c.clearRect(0,0,this.width,this.height);c.fillStyle=PAINT.ink;c.fillRect(0,0,this.width,this.height);
     c.save();c.translate(this.width/2+(this.reduced?0:Math.sin(time*90)*this.shake),this.height/2+(this.reduced?0:Math.cos(time*113)*this.shake*.55));c.scale(this.scale,this.scale);c.translate(-this.camera.x,-this.camera.y);
-    const left=this.camera.x-halfW,top=this.camera.y-halfH,right=left+2*halfW,bottom=top+2*halfH;
+    const view=this.worldView(),{left,top,right,bottom}=view;
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
     this.drawGroundDetails(w,{left,top,right,bottom});
     this.drawTerrain(w,time);
-    drawAtmosphere(c,raid,{left,top,right,bottom},time,this.reduced);
+    this.drawWeatherSectors(c,raid);
+    drawAtmosphere(c,raid,view,time,this.reduced);
     drawFieldEvents(this,raid);
+    drawSiegeField(this,raid);
+    drawEnemyField(this,raid,time);
     this.simulationTime=raid.elapsed;
     for(const cloud of w.hazards||[])if(this.visible(cloud.x,cloud.y,cloud.radius+30)){
       if(cloud.bossZone||cloud.runHazard){this.drawBossZone(cloud);continue;}
@@ -104,7 +113,14 @@ export class Renderer {
     for(const enemy of w.enemies)if(!enemy.dead&&enemy.state==='windup'&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y,800))this.drawTelegraph(enemy,time,raid.enemyMoveScale());
     const selected=p.dividers>0?raid.divideTarget():null;
     for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y)){
+      if(hiddenEnemy(raid,enemy)){
+        c.save();c.globalAlpha=.15;c.lineWidth=2;
+        const size=enemy.radius*2;
+        this.rect(enemy.x-enemy.radius,enemy.y-enemy.radius,size,size,7,'#243346','#cbdeed');
+        c.restore();continue;
+      }
       this.drawEnemy(enemy,p,time,enemy===selected);
+      drawEnemyTrait(this,raid,enemy,time);
       const trait=enemy.trainingDummy?'木桩':enemy.radixShield>0?'进制盾 ×'+enemy.radixShield:enemy.prime?'质数':isLocked(raid,enemy)?'LOCK':enemy.fuser?'融合体':'';
       if(trait)this.text(trait,enemy.x,enemy.y-enemy.radius-29,12);
       if(enemy.fusingUntil>raid.elapsed){
@@ -121,7 +137,8 @@ export class Renderer {
     let fusionDeformation = null;
     for (const effect of w.effects) {
       if (effect.kind !== 'tile-fusion' || !this.visible(effect.originX,effect.originY,245)) continue;
-      fusionDeformation = drawTileFusion(c, effect, p, this.reduced) || fusionDeformation;
+      const deformation=drawTileFusion(c,effect,effect.fusionTarget||p,this.reduced);
+      if(!effect.fusionTarget)fusionDeformation=deformation||fusionDeformation;
     }
     drawForm(c,p,time,this.reduced);
     this.drawPlayer(p,time,fusionDeformation);
@@ -134,6 +151,8 @@ export class Renderer {
         if(!this.reduced)c.rotate(Math.sin(e.x*1.15+e.y*.72)*.19);
         this.inkSplat(0,0,28+progress*8,e.color,.2,.75);
         this.text(e.text,0,0,22,{impact:true});c.restore();
+      }else if(e.kind==='siege-beam'){
+        c.strokeStyle=e.color;c.lineWidth=4;c.beginPath();c.moveTo(e.x,e.y);c.lineTo(e.endX,e.endY);c.stroke();
       }else if(e.kind==='skill-signature')drawSkillSignature(c,e,progress,this.reduced);
       else if(e.kind==='cinder-mark')drawSkillSignature(c,{...e,branch:'fire'},progress,this.reduced);
       else if(e.kind==='text'){
@@ -191,12 +210,30 @@ export class Renderer {
       fog.addColorStop(0,'#09131a00');fog.addColorStop(1,'#09131aff');c.fillStyle=fog;c.fillRect(left,top,right-left,bottom-top);
     }
     this.drawAim(p,w,'cursor');
-    this.drawMicroHints(raid,selected);
+    this.drawMicroHints(raid,selected,view);
     c.restore();
     if(raid.carriedValue()>0)this.drawExitArrow(raid);
     if(time-this.lastMapDraw>0.15){this.drawMap(raid);this.lastMapDraw=time;}
   }
-  drawMicroHints(raid,selected) {
+  drawWeatherSectors(c,raid,sx=1,sy=1){
+    for(const event of raid.field?.active||[]){
+      if(event.kind!=='cold'&&event.kind!=='magnetic')continue;
+      const zone=raid.world.zones.find(sector=>sector.id===event.zoneId);
+      if(!zone?.vertices)continue;
+      const magnetic=event.kind==='magnetic';
+      c.save();
+      polygon(c,zone.vertices,sx,sy);
+      c.fillStyle=magnetic?'#ae7fff29':'#abe7ff32';
+      c.fill();
+      c.strokeStyle=magnetic?'#d8b8ef9c':'#c6efffa8';
+      c.lineWidth=sx===1?3:1;
+      c.setLineDash(sx===1?[12,8]:[3,2]);
+      c.stroke();
+      c.setLineDash([]);
+      c.restore();
+    }
+  }
+  drawMicroHints(raid,selected,view) {
     if(raid.status!=='playing')return;
     const c=this.ctx,p=raid.player,lines=[];
     if(p.energy>=100&&p.overload<=0)lines.push('[G] 过载');
@@ -206,10 +243,16 @@ export class Renderer {
     const combo=(selected&&raid.synergies?.cue(raid,selected))||
       raid.synergies?.aimCue(raid,p.aimTarget||p,enemy=>this.visible(enemy.x,enemy.y));
     if(combo)lines.push(combo.text);
-    const side=p.aimTarget&&p.aimTarget.x<p.x?-1:1,x=p.x+side*(p.radius+35);
+    if(!lines.length)return;
+    const aim=p.aimTarget;
+    const origin=aim&&distance(p,aim)<Math.min(215,raid.run.vision)?aim:p;
+    const room=128;
+    const side=origin.x+room>view.right?-1:1;
+    const x=clamp(origin.x+side*(origin===p?p.radius+35:30),view.left+20,view.right-20);
+    const top=clamp(origin.y-34,view.top+25,view.bottom-25-(lines.length-1)*22);
     c.save();c.strokeStyle='#d2f3dc';c.lineWidth=1.8;
     for(const [i,label] of lines.entries()){
-      const y=p.y-42+i*22;
+      const y=top+i*22;
       c.beginPath();c.arc(x-side*8,y-3,8,side===1?2.1:-1,side===1?4.2:1);c.stroke();
       this.text(label,x+side*5,y,13,{align:side===1?'left':'right'});
     }
@@ -530,7 +573,7 @@ export class Renderer {
       }
       c.restore();
     }
-    const stroke=strong?'#ed3e72':'#d94a65',named=selected||e.elite||e.boss||e.hunter;
+    const stroke=strong?'#ed3e72':'#d94a65',named=selected||e.elite||e.boss||e.hunter||ENEMY_TYPES[e.type]?.advanced;
     const flash=!this.reduced&&(e.hitFlash||0)>.035;
     drawNumberTile(c,{x:e.x,y:e.y,size:s,value:e.value,stroke,flash,deformation:this.reduced?null:impactScale(e.impactMotion,this.simulationTime)});
     c.fillStyle='#e82d59';c.beginPath();c.arc(e.x+s/2-2,e.y-s/2+1,5,0,TAU);c.fill();
@@ -612,11 +655,12 @@ export class Renderer {
     const c=this.mctx,w=this.map.width,h=this.map.height,sx=w/this.bounds.width,sy=h/this.bounds.height;
     c.clearRect(0,0,w,h);
     for(const z of this.zones){if(!z.vertices)continue;polygon(c,z.vertices,sx,sy);c.fillStyle=z.floor;c.fill();c.strokeStyle=z.color;c.lineWidth=1;c.stroke();}
+    this.drawWeatherSectors(c,raid,sx,sy);
     for(const patch of raid.world.terrain||[]){c.fillStyle=(TERRAIN[patch.kind]?.line||'#93734d')+'55';c.fillRect(patch.x*sx,patch.y*sy,patch.w*sx,patch.h*sy);}
     for(const o of raid.world.obstacles){c.fillStyle='#3f315b88';c.fillRect(o.x*sx,o.y*sy,o.w*sx,o.h*sy);}
     for(const site of raid.world.sites||[]){c.fillStyle='#603bc799';c.fillRect(site.x*sx-1,site.y*sy-1,2,2);}
     for(const chest of raid.world.chests)if(!chest.opened){c.fillStyle=chest.keyCard?'#e7bc13':'#c68a00cc';const size=chest.keyCard?5:2;c.fillRect(chest.x*sx-size/2,chest.y*sy-size/2,size,size);if(chest.keyCard)drawComicText(c,'K',chest.x*sx+5,chest.y*sy+3,9,{align:'left'});}
-    for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(enemy,raid.player)<Math.min(450,raid.run.vision)){c.fillStyle='#ef228d';c.fillRect(enemy.x*sx-1.5,enemy.y*sy-1.5,3,3);}
+    for(const enemy of raid.world.enemies)if(!enemy.dead&&!hiddenEnemy(raid,enemy)&&distance(enemy,raid.player)<Math.min(450,raid.run.vision)){c.fillStyle='#ef228d';c.fillRect(enemy.x*sx-1.5,enemy.y*sy-1.5,3,3);}
     for(const node of raid.world.nodes||[])if(!node.used&&distance(node,raid.player)<2000){c.fillStyle='#7d2ad2';c.fillRect(node.x*sx-1,node.y*sy-1,2,2);}
     for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle=e.safehouse?PAINT.cyan:raid.extractionReady(e)?'#52a80c':'#df8517';c.fillRect(-4,-4,8,8);c.restore();}
     for(const merchant of raid.world.merchants||[]){c.fillStyle='#ffe64d';c.strokeStyle=PAINT.ink;c.lineWidth=1;c.fillRect(merchant.x*sx-3,merchant.y*sy-3,6,6);c.strokeRect(merchant.x*sx-3,merchant.y*sy-3,6,6);}
@@ -625,6 +669,7 @@ export class Renderer {
         event.x*sx,event.y*sy,w,h,'#ffcf9c');
     }
     for(const boss of raid.world.enemies.filter(e=>e.boss&&!e.dead&&distance(e,raid.player)<raid.run.vision)){c.fillStyle='#ee126c';c.beginPath();c.arc(boss.x*sx,boss.y*sy,4,0,TAU);c.fill();}
+    drawSiegeMap(c,raid,sx,sy);
     const p=raid.player;c.fillStyle=PAINT.ink;c.beginPath();c.arc(p.x*sx,p.y*sy,4,0,TAU);c.fill();c.fillStyle=PAINT.cyan;c.beginPath();c.arc(p.x*sx,p.y*sy,2.5,0,TAU);c.fill();
     for(const exit of raid.world.exits){
       const vehicle=exitVehicle(exit);

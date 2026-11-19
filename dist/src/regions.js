@@ -155,3 +155,24 @@ export function createSectors(bounds,random,protectedPoints=[],layout='tangram')
   }
   return sectors;
 }
+
+export function siegeMinePoints(sectors,center,random,bounds){
+  const kinds=['number_well','alloy_vein','data_vein','crystal_node'],points=[];
+  for(let round=0;round<3;round++){
+    for(const [i,kind] of kinds.entries()){
+      const angle=i*Math.PI/2+round*.67+random()*.38;
+      const radius=round===0?285:round===1?525:710;
+      const ideal={x:center.x+Math.cos(angle)*radius,y:center.y+Math.sin(angle)*radius};
+      const sector=sectorAt(ideal,sectors);
+      let point=ideal;
+      for(let tries=0;tries<8&&sector?.bounds;tries++){
+        const candidate=sampleSector(sector,random);
+        const d=Math.hypot(candidate.x-ideal.x,candidate.y-ideal.y);
+        if(d<125&&candidate.x>90&&candidate.y>90&&candidate.x<bounds.width-90&&candidate.y<bounds.height-90&&
+           points.every(other=>Math.hypot(candidate.x-other.x,candidate.y-other.y)>145)){point=candidate;break;}
+      }
+      points.push({...point,id:`mine-${kind}-${round}`,kind,readyAt:0,nextTile:1+round});
+    }
+  }
+  return points;
+}

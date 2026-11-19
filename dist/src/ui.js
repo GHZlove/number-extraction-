@@ -1,3 +1,4 @@
+import { BLUEPRINTS, SIEGE_GEAR } from './siege-catalog.js';
 import { FIELD_LABELS, FIELD_PROPS } from './field-events.js';
 import { actualNumber, OPERATORS } from './operations.js';
 import { dailyChallenge } from './daily.js';
@@ -38,7 +39,7 @@ export class UI {
       if (!button || button.disabled) return;
       const { action, key } = button.dataset;
       actions[action]?.(key);
-      if (action === 'selectMap' || action === 'selectDifficulty') {
+      if (action === 'selectMap' || action === 'selectDifficulty' || action === 'selectMode') {
         $(button.id)?.focus({ preventScroll: true });
       }
     };
@@ -75,6 +76,7 @@ export class UI {
     $('sound-button').onclick = actions.sound;
     $('ambience-button').onclick = actions.ambience;
     $('operator-strip').addEventListener('click',dispatch);
+    $('siege-kits').addEventListener('click',dispatch);
     $('inventory-shortcut').onclick = actions.inventory;
     $('overload-button').onclick = actions.overload;
     for(const slot of [0,1]) $('quick-slot-'+slot).onclick = ()=>actions.slot(String(slot));
@@ -122,6 +124,22 @@ export class UI {
   }
   shop(raid,id){
     const trader=raid.world.merchants.find(m=>m.id===id);if(!trader)return;
+    if(trader.siege){
+      const siege=raid.siege,rows=[];
+      for(const [key,item] of Object.entries(BLUEPRINTS)){
+        const enabled=siege.day&&siege.data>=item.cost&&siege.alloy>=item.alloy;
+        rows.push(`<article class="shop-item"><div><b>${item.glyph} ${item.name}</b><small>库存 ${siege.kits[key]||0}</small></div>
+          <button data-action="siegeBuy" data-key="${key}" ${enabled?'':'disabled'}>${item.cost} ◇ · ${item.alloy} 合金</button></article>`);
+      }
+      for(const [key,item] of Object.entries(SIEGE_GEAR)){
+        const enabled=siege.day&&siege.data>=item.cost&&raid.equipmentCount()<raid.capacity;
+        rows.push(`<article class="shop-item"><b>${item.name}</b><button data-action="siegeBuy" data-key="gear-${key}"
+          ${enabled?'':'disabled'}>${item.cost} ◇ · 购买</button></article>`);
+      }
+      this.show(`<h2 id="dialog-title">核心补给官</h2><p>${siege.data} 数据币 · ${siege.alloy} 合金。蓝图购买后可按 E 部署。</p>
+        <div class="shop-list">${rows.join('')}</div><button class="primary-button" data-action="close">返回防线</button>`,true);
+      return;
+    }
     if(trader.expiresAt){
       const options=raid.bag.flatMap((item,index)=>item.kind==='weapon'&&!item.starter?[
         `<article class="shop-item"><b>${escapeHTML(item.name)}</b><div class="inventory-actions">
@@ -137,6 +155,14 @@ export class UI {
     }
     const funds=tradeValue(raid);
     this.show(`<span class="eyebrow">FIELD TRADER</span><h2 id="dialog-title">${escapeHTML(trader.name)}</h2><p>可交易物资 <b>${funds} ◇</b>。消费背包里的物资价值，庇护所存款不受影响。装备商品放入背包，按 B 换装。</p><div class="shop-list">${Object.entries(SHOP).map(([key,offer])=>`<article class="shop-item"><div><b>${offer.weapon||key==='weapon'?weaponArt({weapon:offer.weapon||'rifle'}):comicItem(key==='medkit'?'medical':key)}${offer.name}</b><p>${key==='medkit'?`回复${raid.player.healAmount}生命，按R使用。`:offer.description}</p><small>本局剩余 ${trader.stock[key]} 件</small></div><button data-action="buy" data-key="${key}" ${trader.stock[key]<=0||funds<offer.cost||(!['medkit','divider'].includes(key)&&!Object.hasOwn(OPERATORS,key)&&raid.equipmentCount()>=raid.capacity)?'disabled':''}>${offer.cost} ◇ · 购买</button></article>`).join('')}</div><button class="primary-button" data-action="close">返回战区</button>`,true);
+  }
+  siegePanel(scores){
+    const rows=scores.map(entry=>`<li>第 ${entry.wave} 夜 · 核心 ${entry.coreHp}% · ${formatTime(entry.seconds)}</li>`).join('');
+    return `<section class="daily-challenge"><h3>核心防线</h3>
+      <p>从 2 起步。白昼 30 秒备战，黑夜守护中央核心。</p>
+      <small>白天靠近矿点、补给官或建筑按 E。防线成绩记入本机榜单。</small>
+      <details><summary>最高夜数榜单</summary>${rows?`<ol>${rows}</ol>`:'<p>尚无完成的夜晚。</p>'}</details>
+    </section>`;
   }
   dailyPanel(daily,challenge) {
     const scores=daily.scores[challenge.date];
@@ -159,7 +185,7 @@ export class UI {
       </details>
     </section>`;
   }
-  shelter(save,{lastResult=null,saveAvailable=true,journal=emptyJournal(),journalAvailable=true,playtestReview=null,selectedReviewCohort=null,daily={scores:{},available:true},challenge=dailyChallenge()}={}) {
+  shelter(save,{lastResult=null,saveAvailable=true,journal=emptyJournal(),journalAvailable=true,playtestReview=null,selectedReviewCohort=null,daily={scores:{},available:true},challenge=dailyChallenge(),mode='extraction',siegeScores=[]}={}) {
     const selected=difficultyOf(save.selectedDifficulty),loadout=applyWarehouseGear(starterLoadout(save),plannedWarehouseGear(save)),level=shelterLevel(save);
     const activeRoute = MAP_LAYOUTS.find(layout => layout.id === save.selectedMap) || MAP_LAYOUTS[0];
     const report=lastResult||save.lastRuns[0];
@@ -168,7 +194,9 @@ export class UI {
       ${icon(report.success?'exit':'shield')}<div><b>每日挑战 · ${report.success?'成功撤离':'行动结束'}</b>
       <p>${report.daily} UTC · 种子 ${Number(report.seed)>>>0} · 耗时 ${formatTime(report.seconds)}</p></div>
       <span class="run-rewards">${report.success?number(report.value)+' ◇ · 本机成绩':'本次无上榜成绩'}</span></section>`:'';
-    const reportHTML=dailyReport||(report?`<section class="run-report ${report.success?'':'failed'}">${icon(report.success?'exit':'shield')}<div><b>${report.success?'安全归来，资源已入库。':'行动结束，已返回庇护所。'}</b><p>${report.success?'准备下一次远征，或者先升级设施。'+(report.extractedVia?` ${exitKindName({kind:report.extractedVia})} · ${(report.exitBonus||0)>0?'路线奖励 +'+Math.round(report.exitBonus*100)+'%（币与材料）':'标准收益'}。`:''):escapeHTML(report.reason||'未能完成撤离')+'。已保存的庇护所资源仍然保留。'}</p>${report.seed!==undefined?`<small class="run-recap">复盘种子 ${Number(report.seed)>>>0} · 结束热度 ${Math.floor(report.heat||0)} · ${report.mutators?.length?report.mutators.map(id=>MUTATORS[id]?.name||'').join(' / '):'无行动词条'}</small>`:''}</div><span class="run-rewards">${rewards}</span></section>`:'');
+    const siegeReport=report?.siege!==undefined?`<section class="run-report"><div><b>核心防线 · 守住 ${report.siege} 夜</b>
+      <p>${escapeHTML(report.reason||'行动结束')}</p></div></section>`:'';
+    const reportHTML=siegeReport||dailyReport||(report?`<section class="run-report ${report.success?'':'failed'}">${icon(report.success?'exit':'shield')}<div><b>${report.success?'安全归来，资源已入库。':'行动结束，已返回庇护所。'}</b><p>${report.success?'准备下一次远征，或者先升级设施。'+(report.extractedVia?` ${exitKindName({kind:report.extractedVia})} · ${(report.exitBonus||0)>0?'路线奖励 +'+Math.round(report.exitBonus*100)+'%（币与材料）':'标准收益'}。`:''):escapeHTML(report.reason||'未能完成撤离')+'。已保存的庇护所资源仍然保留。'}</p>${report.seed!==undefined?`<small class="run-recap">复盘种子 ${Number(report.seed)>>>0} · 结束热度 ${Math.floor(report.heat||0)} · ${report.mutators?.length?report.mutators.map(id=>MUTATORS[id]?.name||'').join(' / '):'无行动词条'}</small>`:''}</div><span class="run-rewards">${rewards}</span></section>`:'');
     const resources=[['data','数据币',save.credits,''],['alloy','合金',save.materials.alloy,'alloy'],['core','核心',save.materials.core,'core']];
     const facilities=Object.entries(FACILITIES).map(([key,definition])=>{
       const current=facilityLevel(save,key),cost=facilityCost(key,current),next=Math.min(current+1,definition.max);
@@ -196,7 +224,7 @@ export class UI {
             </div>
             <div class="portal-controls">
               <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入关卡，${activeRoute.name}，${selected.name}">
-                进入关卡 ${icon('arrow')}
+                ${mode==='siege'?'启动核心防线':'进入关卡'} ${icon('arrow')}
               </button>
               <span class="portal-destination">${activeRoute.name} · ${selected.name}</span>
               <button type="button" class="training-entry" data-action="startTraining">20 秒试射</button>
@@ -213,7 +241,11 @@ export class UI {
         <div class="shelter-stats"><div class="stat-card"><small>成功撤离</small><b>${save.extractions}</b></div><div class="stat-card"><small>最高数字</small><b>${save.best}</b></div><div class="stat-card"><small>累计行动</small><b>${save.extractions+save.deaths}</b></div></div>
       </div><aside class="expedition-panel" id="expedition-panel" aria-label="远征终端">
         <h2>远征终端</h2>
-        ${this.dailyPanel(daily,challenge)}
+        <div class="siege-mode-select" role="group" aria-label="游戏模式">
+          <button type="button" id="mode-extraction" data-action="selectMode" data-key="extraction" aria-pressed="${mode==='extraction'}">搜打撤</button>
+          <button type="button" id="mode-siege" data-action="selectMode" data-key="siege" aria-pressed="${mode==='siege'}">核心防线</button>
+        </div>
+        ${mode==='siege'?this.siegePanel(siegeScores):this.dailyPanel(daily,challenge)}
         ${this.expeditionTerminal(activeRoute)}
         <h3 class="expedition-difficulty-title" id="expedition-difficulty">难度</h3>
         <div class="difficulty-list" role="group" aria-labelledby="expedition-difficulty">${DIFFICULTIES.map(mission=>`<button type="button" id="mission-${mission.id}" class="difficulty-card ${mission.id===selected.id?'selected':''}" style="--difficulty:${mission.color}" data-action="selectDifficulty" data-key="${mission.id}" aria-pressed="${mission.id===selected.id}"><div class="difficulty-top"><b>${mission.name}</b><span>${'◆'.repeat(mission.rank)}${'◇'.repeat(5-mission.rank)}</span></div><div class="difficulty-meta"><span>地图 ×${mission.width*mission.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}</span><span>敌人 ${2**(mission.enemyShift+1)}–${128*2**mission.enemyShift}</span><span>收益 ×${mission.reward}</span></div></button>`).join('')}</div>
@@ -300,6 +332,28 @@ export class UI {
     }
     const badges=raid.synergies?.indicators(raid)||[];
     $('synergy-lights').innerHTML=badges.map(item=>`<span class="synergy-light ${item.armed?'armed':''}" style="--combo:${item.color}" aria-label="${item.label} ${item.armed?'已准备':item.ready?'可准备':'冷却'}" title="${item.label} · ${item.description}">${item.glyph}</span>`).join('');
+    const siege=raid.siege, siegeHud=$('siege-hud');
+    siegeHud.hidden=!siege;
+    if(siege){
+      const core=siege.core,fraction=Math.ceil(core.hp/core.maxHp*100);
+      $('siege-core').textContent=`核心 ${Math.ceil(core.hp)} / ${core.maxHp} · 数字 ${core.value}`;
+      $('siege-core-fill').style.width=fraction+'%';
+      $('siege-phase').textContent=siege.day?'白昼备战':'第 '+siege.wave+' 夜';
+      $('siege-resources').textContent=`${siege.data} ◇ · ${siege.alloy} 合金`;
+    }
+    const loadoutMarkup=siege?Object.entries(siege.kits).filter(([,n])=>n>0).map(([key,n])=>
+      `<button type="button" data-action="siegeKit" data-key="${key}" aria-pressed="${key===siege.selected}">${BLUEPRINTS[key].glyph} ${BLUEPRINTS[key].name} ×${n}</button>`
+    ).join('')+(siege.selected?'<button type="button" data-action="siegeKit" data-key="cancel">取消部署</button>':''):'';
+    const siegeKits=$('siege-kits');
+    siegeKits.hidden=!siege?.day||!loadoutMarkup;
+    if(loadoutMarkup!==this.siegeKitMarkup){siegeKits.innerHTML=loadoutMarkup;this.siegeKitMarkup=loadoutMarkup;}
+    const training=$('training-readout');
+    training.hidden=!raid.training;
+    if(raid.training){
+      const hit=raid.trainingHit,armed=badges.find(item=>item.armed);
+      training.textContent=(hit?`命中 ${hit.distance} / ${hit.range} · 实际伤害 ${Math.round(hit.damage*10)/10}`:
+        `当前武器射程 ${weaponOf(item).range} · 试射木桩记录实际伤害`)+(armed?` · ${armed.label} ${armed.remaining.toFixed(1)}s`:'');
+    }
     for(const [key,op] of Object.entries(OPERATORS)){
       const button=$('operator-'+key),count=raid.operators[key];
       button.hidden=count===0;
@@ -315,7 +369,7 @@ export class UI {
     $('laser-label').textContent=p.laserDisabled?'镭射受干扰':p.laser?'红外瞄准':'准星瞄准';$('laser-label').classList.toggle('laser-on',!!p.laser&&!p.laserDisabled);
     $('loot-value').textContent=number(Math.round(raid.carriedValue()*raid.rewardMultiplier));$('bag-count').textContent=`${raid.equipmentCount()} / ${raid.capacity}`;
     $('divider-count').textContent=p.dividers;$('medkit-count').textContent=p.medkits;
-    const buffs=[];if(p.buffs.haste>0)buffs.push('疾行');if(p.chilled>0)buffs.push('寒霜减速');if(p.overload>0)buffs.push('过载');for(const[key,label]of[['fury','增幅'],['phase','相位'],['magnet','牵引']])if(p.buffs[key]>0)buffs.push(`${label} ${Math.ceil(p.buffs[key])}s`);
+    const buffs=[];if(p.buffs.haste>0)buffs.push('疾行');if(p.chilled>0)buffs.push('寒霜减速');if(p.corrupted>0)buffs.push('蚀刻 '+Math.ceil(p.corrupted)+'s');if(p.enemyBurn)buffs.push('灼烧');if(p.overload>0)buffs.push('过载');for(const[key,label]of[['fury','增幅'],['phase','相位'],['magnet','牵引']])if(p.buffs[key]>0)buffs.push(`${label} ${Math.ceil(p.buffs[key])}s`);
     $('buff-label').textContent=buffs.join(' · ');$('parry-status').textContent=p.parryWindow>0?'判定中':p.parryCooldown>0?p.parryCooldown.toFixed(1)+'s':'弹反就绪';
     $('mission-name').textContent=raid.training?'庇护所 / 试射靶场':(raid.daily?'每日挑战 / ':'')+raid.world.theme+' / '+raid.difficulty.name;$('zone-name').textContent=`${zone.name} · ${zone.riskLabel}`;
     $('terrain-label').textContent=raid.ground()?.name||'开阔地';
@@ -325,7 +379,7 @@ export class UI {
     const form=$('form-label');
     form.textContent=p.form.name+(p.digitShield?' · 数字护盾':p.ampBase!==undefined?' · ×2 '+Math.ceil(p.ampUntil-raid.elapsed)+'s':p.formPending?' · 体型待展开':'');
     form.title=`机动${Math.round(p.form.speed*raid.run.playerSpeed*100)}%${p.form.damage<1?' · 减伤'+Math.round((1-p.form.damage)*100)+'%':''}`;
-    $('time-value').textContent=formatTime(raid.duration-raid.elapsed);
+    $('time-value').textContent=formatTime((siege?siege.deadline:raid.duration)-raid.elapsed);
     $('map-scale').textContent=`${raid.world.bounds.width*raid.world.bounds.height/(LEGACY_WORLD.width*LEGACY_WORLD.height)}×`;$('map-theme').textContent=raid.world.theme+' · '+zone.name+(raid.nightMode?' · 月夜':'');
     const playing=!paused&&!raid.result, hints=playing&&raid.showHints;
     const near=playing?raid.nearbyGear():null, gearHint=$('nearby-gear');
@@ -344,12 +398,12 @@ export class UI {
     if(atExit){
       $('exit-status').textContent=context.locked?context.status.label:'按住 E · '+exitVehicle(context.target).label;
       $('extract-time').textContent=context.locked?(context.status.wait>0?formatTime(context.status.wait):''):`${Math.max(0,RULES.extractSeconds-raid.extractProgress).toFixed(1)}s`;
-      $('extract-fill').style.width=`${Math.min(100,context.progress*100)}%`;
+      $('extract-fill').style.width=`${Math.min(100,(context.progress||0)*100)}%`;
     }
     const action=active&&!atExit;
     $('interaction').hidden=!action;
     if(action){
-      $('interaction-text').textContent=context.kind==='merchant'?'与商人交易':context.kind==='node'?nodeLabel(context.target):
+      $('interaction-text').textContent=context.kind==='siege'?context.label:context.kind==='merchant'?'与商人交易':context.kind==='node'?nodeLabel(context.target):
         context.kind==='crossing'?FIELD_PROPS[context.target.kind]:context.target.opensAt>raid.elapsed?'舱门 '+Math.ceil(context.target.opensAt-raid.elapsed)+'s 后开启':
         context.target.keyCard?'静止 · 搜索撤离钥卡':'静止 · 按住搜索';
       $('interaction-fill').style.width=`${Math.min(100,context.progress*100)}%`;

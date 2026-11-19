@@ -134,7 +134,7 @@ function hit(raid,enemy,power,element,stun=0) {
     secondary:element!=='fire', noKnock:true, angle, value:p.value, element,
     enchant:element==='fire'?'burn':'none',
   });
-  if (!enemy.dead && stun) enemy.stun=Math.max(enemy.stun,stun*(enemy.boss?.35:1));
+  if (!enemy.dead && stun) raid.interruptEnemy(enemy,stun*(enemy.boss?.35:1));
 }
 function ahead(raid,reach) {
   const p=raid.player, dx=Math.cos(p.aimAngle),dy=Math.sin(p.aimAngle);
@@ -275,6 +275,7 @@ export function useNumberSkill(raid, id) {
   const index=raid.world.effects.length;
   if (!handlers[id](raid)) return false;
   const point=raid.player;
+  if(point.buffs.phase>0)point.corrupted=0;
   raid.world.effects.splice(index,0,{x:point.x,y:point.y,text:'',color:skill.color,kind:'skill-signature',
     life:.52,maxLife:.52,branch:skill.branch,angle:point.aimAngle,variant:Object.keys(NUMBER_SKILLS).indexOf(id)%7,radius:62});
   if(skill.branch==='wind'&&id!=='airStep')raid.field?.gustRemnants(raid);

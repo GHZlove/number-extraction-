@@ -1,5 +1,6 @@
+import { setEnemyClass } from './enemy-tactics.js';
 import { roadNetwork } from './roads.js';
-import { createSectors, sampleSector, containsPoint } from './regions.js';
+import { createSectors, sampleSector, containsPoint, siegeMinePoints } from './regions.js';
 import { WORLD, ZONES, LOOT, ENEMY_TYPES, difficultyOf, MAP_LAYOUTS } from './config.js';
 import { seededRandom, isFree, distance, zoneAt, maxEnemyHealth } from './math.js';
 import { makeEquipment, randomEquipment, decorateWeapon } from './equipment.js';
@@ -10,11 +11,11 @@ import { SpatialGrid } from './spatial.js';
 
 export function createEnemy(id, x, y, value, type = 'hunter') {
   const enemyType = Object.hasOwn(ENEMY_TYPES,type) ? type : 'hunter';
-  return { id, x, y, homeX: x, homeY: y, value, type: enemyType,
+  return setEnemyClass({ id, x, y, homeX: x, homeY: y, value, type: enemyType,
     hp: maxEnemyHealth(value), maxHp: maxEnemyHealth(value), radius: ENEMY_TYPES[enemyType].radius || 21, moveScale: 1, hitFlash:0,knockX:0,knockY:0,
     state: 'idle', timer: 0, cooldown: 0.7, contactCooldown: 0, stun: 0,
     aimX: x, aimY: y, dead: false, phase: (id.length*0.73)%6.28,
-    rarity: 'white', armor: null, chargeTime: 0, chargeX: 0, chargeY: 0, burstLeft: 0, burstTimer: 0 };
+    rarity: 'white', armor: null, chargeTime: 0, chargeX: 0, chargeY: 0, burstLeft: 0, burstTimer: 0 },enemyType);
 }
 const GROUND_BY_LAYOUT = {
   delta: ['brush', 'water'],
@@ -95,7 +96,7 @@ export function generateWorld(seed, difficulty = 'scout', options={}) {
     }
     return null;
   }
-  const types=Object.keys(ENEMY_TYPES),scale=2**mission.enemyShift;
+  const types=Object.keys(ENEMY_TYPES).filter(id=>!ENEMY_TYPES[id].advanced),scale=2**mission.enemyShift;
   for(const zone of zones){
     for(let i=0;i<Math.round((120+rank*32)*share(zone));i++){
       const p=spot(zone,30);if(p)world.tiles.push({...p,id:`tile-${zone.id}-${i}`,value:Math.min(2048,pick(zone.values)*scale),dead:false});
@@ -169,4 +170,19 @@ export function createLoot(x,y,zone,value,id){
 export function lootForEnemy(enemy,zones=ZONES){
   const zone=enemy.zone??zoneAt(enemy,zones).risk;
   return createLoot(enemy.x,enemy.y,zone,Math.round(5+Math.log2(enemy.value)*5+zone*12),`loot-${enemy.id}`);
+}
+
+export function generateSiegeWorld(seed,difficulty,requested){
+  const random=seededRandom(seed^0x8b6d89),bounds={width:2800,height:2000};
+  const center={x:bounds.width/2,y:bounds.height/2};
+  const choices=MAP_LAYOUTS.slice(1),layout=choices.find(m=>m.id===requested)||choices[Math.floor(random()*choices.length)];
+  const zones=createSectors(bounds,random,[center],layout.id);
+  const spawn={x:center.x,y:center.y+98};
+  const obstacles=[];
+  const {roads,routes}=roadNetwork(bounds,{x:bounds.width-290,y:center.y});
+  return {seed,difficulty,bounds,spawn,theme:layout.name,layout:layout.id,zones,sectors:zones,
+    siegeMines:siegeMinePoints(zones,center,random,bounds),obstacles,
+    obstacleGrid:new SpatialGrid(obstacles),terrain:[],landmarks:[],sites:[],roads,roadRoutes:routes,
+    tiles:[],drops:[],chests:[],nodes:[],merchants:[{id:'siege-trader',siege:true,name:'核心补给官',x:center.x-131,y:center.y+23}],
+    exits:[],enemies:[],effects:[],hazards:[],projectiles:[],spawnWarnings:[]};
 }

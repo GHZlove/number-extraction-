@@ -1,6 +1,6 @@
 import { attackDamage, distance, isFree, maxEnemyHealth, seededRandom, segmentCircleFraction, zoneAt } from './math.js';
+import { sampleSector } from './regions.js';
 import { obstaclesFor } from './spatial.js';
-import { isLocked } from './operations.js';
 import { WORLD } from './config.js';
 
 const inField=(raid,p,r=18)=>!raid.safehouseAt(p,20)&&isFree(p.x,p.y,r,obstaclesFor(raid.world,p,p,r),raid.world.bounds);
@@ -9,18 +9,12 @@ const BROADCASTS=['drop','weather','smuggler'];
 export const FIELD_LABELS={drop:'空投运算舱',magnetic:'区域磁暴',cold:'局部寒潮',smuggler:'限时走私商'};
 export const FIELD_PROPS={nitrogen:'液氮罐',electric:'高压电箱',zip:'单向滑索',spring:'跨区跳板'};
 
-function interrupt(enemy,seconds){
-  enemy.stun=Math.max(enemy.stun||0,seconds*(enemy.boss?.35:1));
-  enemy.state='idle';enemy.chargeTime=0;enemy.burstLeft=0;
-}
-
 export class FieldEvents {
   constructor(raid,seed){
     this.random=seededRandom(seed^0x36ac145e);
     this.next=60+this.random()*30;
     this.order=BROADCASTS.map(id=>({id,rank:this.random()})).sort((a,b)=>a.rank-b.rank).map(v=>v.id);
-    this.sequence=0;this.active=[];this.props=[];this.fusionPairs=[];this.drifting=[];
-    this.nextFusion=0;
+    this.sequence=0;this.active=[];this.props=[];this.drifting=[];
     const {world}=raid;
     const guards=world.enemies.filter(e=>e.guard&&!e.boss&&e.zone>=1);
     for(const [i,enemy] of guards.entries()){
@@ -86,7 +80,7 @@ export class FieldEvents {
     const frost=prop.kind==='nitrogen';
     if(frost)this.active.push({kind:'nitrogen',x:prop.x,y:prop.y,radius:145,until:raid.elapsed+5,temporary:true});
     else for(const enemy of raid.world.enemies)if(!enemy.dead&&distance(prop,enemy)<=155&&raid.visible(prop,enemy)){
-      interrupt(enemy,1.35);
+      raid.interruptEnemy(enemy,1.35*(enemy.boss?.35:1));
       raid.effect(prop.x,prop.y,'','#a9efff','lightning',.33,{endX:enemy.x,endY:enemy.y});
     }
     raid.effect(prop.x,prop.y,frost?'FSSSH!':'ZAP!',frost?'#bbeaff':'#e4db9a','comic',.75);
@@ -115,15 +109,27 @@ export class FieldEvents {
     raid.effect(exit.x,exit.y-38,'撤离警报','#ffc486','comic',.8);
     raid.event('alarm');
   }
-  broadcast(raid){
-    const type=this.order[this.sequence%this.order.length],id='broadcast-'+(++this.sequence);
-    const {world}=raid,risk=type==='drop'?2:1;
+  broadcastPoint(raid,risk){
+    const {world}=raid;
     const sites=(world.sites||[]).filter(site=>site.zone===risk&&distance(site,WORLD.spawn)>400);
-    const anchor=sites[Math.floor(this.random()*sites.length)];
-    if(!anchor)return;
-    const point=this.findSpot(raid,anchor,40,170,false,risk) || (inField(raid,anchor,26)?anchor:null);
-    if(!point)return;
-    const now=raid.elapsed,zone=zoneAt(point,world.zones);
+    const start=Math.floor(this.random()*sites.length);
+    for(let offset=0;offset<sites.length;offset++){
+      const anchor=sites[(start+offset)%sites.length];
+      const point=this.findSpot(raid,anchor,40,170,false,risk)||(inField(raid,anchor,26)?anchor:null);
+      if(point)return point;
+    }
+    const eligible=world.zones.filter(zone=>zone.risk===risk&&zone.bounds&&zone.vertices);
+    for(let attempt=0;attempt<32&&eligible.length;attempt++){
+      const zone=eligible[Math.floor(this.random()*eligible.length)],point=sampleSector(zone,this.random);
+      if(distance(point,WORLD.spawn)>400&&zoneAt(point,world.zones).risk===risk&&inField(raid,point,27))return point;
+    }
+    return null;
+  }
+  broadcast(raid){
+    const type=this.order[this.sequence%this.order.length];
+    const {world}=raid,point=this.broadcastPoint(raid,type==='drop'?2:1);
+    if(!point)return false;
+    const id='broadcast-'+(++this.sequence),now=raid.elapsed,zone=zoneAt(point,world.zones);
     let event={id,...point,zoneId:zone.id,until:now+32};
     if(type==='drop'){
       const chest={id,zone:2,value:420+raid.difficulty.rank*55,dividers:2,medkits:1,opened:false,name:'空投运算舱',
@@ -140,38 +146,9 @@ export class FieldEvents {
     this.active.push(event);
     raid.message('战区广播 · '+FIELD_LABELS[event.kind]+' · '+zone.name);
     raid.event('alarm');
+    return true;
   }
 
-  fuse(raid){
-    const {world,elapsed:now}=raid;
-    const canFuse=e=>e&&!e.dead&&!e.boss&&!e.prime&&!e.radixShield&&e.value<512&&
-      !isLocked(raid,e)&&!(e.stun>0)&&distance(e,raid.player)<1000&&!raid.safehouseAt(e);
-    this.fusionPairs=this.fusionPairs.filter(pair=>{
-      const {a,b,readyAt}=pair;
-      if(!canFuse(a)||!canFuse(b)||a.value!==b.value||distance(a,b)>93||!raid.visible(a,b)){
-        a.fusingUntil=b.fusingUntil=0;return false;
-      }
-      if(now<readyAt)return true;
-      b.dead=true; a.fusingUntil=b.fusingUntil=0;
-      a.value*=2;a.maxHp=maxEnemyHealth(a.value)*1.15;a.hp=a.maxHp;
-      a.elite=true;a.fuser=false;a.cooldown=.65;
-      raid.effect(a.x,a.y,'双体融合','#ffb6db','comic',.85);
-      raid.effect(a.x,a.y,'','#ef9dd8','pulse',.5);
-      return false;
-    });
-    if(this.fusionPairs.length>=3)return;
-    for(const a of world.enemies){
-      if(!a.fuser||a.fusingUntil>now||!canFuse(a))continue;
-      const b=world.enemies.find(e=>e!==a&&e.value===a.value&&!(e.fusingUntil>now)&&
-        distance(a,e)<75&&canFuse(e)&&raid.visible(a,e));
-      if(!b)continue;
-      const readyAt=now+2.4;
-      a.fusingUntil=b.fusingUntil=readyAt;
-      a.state=b.state='idle';
-      this.fusionPairs.push({a,b,readyAt});
-      if(this.fusionPairs.length>=3)break;
-    }
-  }
 
   ignite(raid,tile){
     if(tile.dead||!tile.remnant)return;
@@ -234,7 +211,8 @@ export class FieldEvents {
   }
   update(raid,dt){
     if(raid.elapsed>=this.next){
-      this.broadcast(raid);this.next=raid.elapsed+60+this.random()*30;
+      const started=this.broadcast(raid);
+      this.next=raid.elapsed+(started?60+this.random()*30:6);
     }
     this.active=this.active.filter(event=>{
       if(raid.elapsed<event.until)return true;
@@ -242,7 +220,6 @@ export class FieldEvents {
       if(event.merchant)raid.world.merchants=raid.world.merchants.filter(m=>m!==event.merchant);
       return false;
     });
-    if(raid.elapsed>=this.nextFusion){this.nextFusion=raid.elapsed+.2;this.fuse(raid);}
     if(this.drifting.length)this.moveRemnants(raid,dt);
   }
 }

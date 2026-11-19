@@ -245,7 +245,7 @@ test('water affects simulation movement rather than only changing map appearance
   near(distance(start, wet.player), distance(start, dry.player)*0.58);
 });
 
-test('generated maps vary terrain and contain all configured enemy patterns and weapon types', () => {
+test('generated maps vary terrain and contain all standard enemy patterns and weapon types', () => {
   const types = new Set(), weapons = new Set(), rarities = new Set(), terrain = new Set();
   for (let seed = 0; seed < 40; seed++) {
     const world = generateWorld(seed);
@@ -255,7 +255,7 @@ test('generated maps vary terrain and contain all configured enemy patterns and 
     for (const item of items) { if (item.weapon) weapons.add(item.weapon); rarities.add(item.rarity); }
     assert.ok(world.obstacles.some(item => item.material === 'ruin' || item.material === 'warehouse'));
   }
-  assert.deepEqual([...types].sort(), Object.keys(ENEMY_TYPES).sort());
+  assert.deepEqual([...types].sort(), Object.keys(ENEMY_TYPES).filter(id=>!ENEMY_TYPES[id].advanced).sort());
   assert.deepEqual([...weapons].sort(), Object.keys(WEAPONS).sort());
   assert.equal(rarities.size, 6); assert.deepEqual([...terrain].sort(), Object.keys(TERRAIN).sort());
   assert.notDeepEqual(generateWorld(1).obstacles, generateWorld(2).obstacles);

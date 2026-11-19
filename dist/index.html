@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ff49ac">
   <meta name="description" content="数字进化：合成数字，探索资源据点，挑战首领，带物资撤离并打造装备。">
-  <title>数字进化 · 传送门试玩版 v0.13.0</title>
+  <title>数字进化 · 传送门试玩版 v0.14.0</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./tactical.css">
@@ -36,6 +36,10 @@
       <div class="supply-strip"><span><kbd>Q</kbd> ÷2 <b id="divider-count">2</b></span><span><kbd>R</kbd> 修复 <b id="medkit-count">1</b></span><span><kbd>右键 / C</kbd> <b id="parry-status">弹反就绪</b></span><button id="inventory-shortcut"><kbd>B</kbd> 装备 <b id="bag-count">0 / 8</b></button><span id="buff-label" class="buff-label"></span></div>
       <div id="operator-strip" class="operator-strip" aria-label="稀有运算符"><button type="button" id="operator-amplify" data-action="operator" data-key="amplify" hidden></button><button type="button" id="operator-equalize" data-action="operator" data-key="equalize" hidden></button><button type="button" id="operator-lock" data-action="operator" data-key="lock" hidden></button><button type="button" id="operator-shock" data-action="operator" data-key="shock" hidden>[T] 裂解</button></div>
       <span id="field-signal" class="field-signal" hidden></span>
+      <aside id="siege-hud" class="siege-hud" hidden><b id="siege-phase"></b><small id="siege-resources"></small>
+        <span id="siege-core"></span><div class="interaction-track"><i id="siege-core-fill"></i></div></aside>
+      <div id="siege-kits" class="siege-kits" aria-label="已购建筑蓝图" hidden></div>
+      <span id="training-readout" class="training-readout" hidden></span>
       <div class="nearby-gear" id="nearby-gear" hidden></div>
       <div class="context-tips" aria-label="情境操作">
         <span id="tip-overload" class="tip-overload" hidden><kbd>G</kbd> 过载</span>
