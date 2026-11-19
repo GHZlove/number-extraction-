@@ -164,18 +164,31 @@ export class UI {
       ${reportHTML}${this.warning(saveAvailable)}
       <nav class="shelter-tabs" aria-label="庇护所功能">${[['deploy','出击终端','OPERATIONS'],['base','基地设施','SHELTER'],['forge','武器工坊','WORKSHOP'],['vault','战备仓库','WAREHOUSE'],['bosses','首领图鉴','BOSSES'],['rules','行动设置','RUN RULES'],['skills','技能树','SKILLS'],['journal','试玩记录','PLAYTEST']].map(([key,label,en])=>`<button data-action="shelterTab" data-key="${key}" aria-pressed="${this.shelterTab===key}"><span>${label}</span><small>${en}</small></button>`).join('')}</nav>
       <div class="shelter-layout"><div class="shelter-main">
-        <section class="shelter-hero"><div class="hero-heading"><div><span class="eyebrow">HOME / SECTOR ZERO</span><h1>第零庇护所</h1><p>在终端选关，点传送门出击。</p><a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a></div><span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span></div>
-          <div class="portal-controls">
-            <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入关卡，${activeRoute.name}，${selected.name}">
-              进入关卡 ${icon('arrow')}
-            </button>
-            <span class="portal-destination"><small>前往</small> <strong>${activeRoute.name} · ${selected.name}</strong></span>
-          </div>
-          <div class="shelter-display">
+        <section class="shelter-hero">
+          <div class="shelter-stage">
             <figure class="shelter-illustration">
               <img src="./art/shelter-workshop.png" alt="" width="1448" height="1086" decoding="async">
               <button type="button" class="portal-hotspot" data-action="start" tabindex="-1" aria-label="点击传送门进入${activeRoute.name}，${selected.name}"></button>
             </figure>
+            <div class="shelter-stage-card">
+              <div class="hero-heading">
+                <div>
+                  <span class="eyebrow">HOME / SECTOR ZERO</span>
+                  <h1>第零庇护所</h1>
+                  <p>在终端选关，点传送门出击。</p>
+                  <a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a>
+                </div>
+                <span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span>
+              </div>
+              <div class="portal-controls">
+                <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入关卡，${activeRoute.name}，${selected.name}">
+                  进入关卡 ${icon('arrow')}
+                </button>
+                <span class="portal-destination"><small>前往</small> <strong>${activeRoute.name} · ${selected.name}</strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="shelter-display">
             <div class="shelter-number-board">
               <span class="shelter-board-label">数字陈列</span>
               ${this.numberPreview()}

@@ -1,6 +1,6 @@
 # 数字进化 · Number Extraction
 
-> **v0.12.10 传送门网页试玩版**。全息终端可选七张地图。选好难度后，点击醒目的「进入关卡」按钮或插画里的绿色传送门。战斗界面改用红色血条和低血量警告，撤离计时只在撤离区出现。庇护所恢复 v0.12.8 字体和文字样式，局内保留黑白美漫字。行动时间回到顶部中央，带黑边的红色血条受击时逐帧回弹。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
+> **v0.12.11 传送门网页试玩版**。第零庇护所全页使用原创美漫场景，传送门与远征控制台融入画面。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
 
 **合成成长，搭配装备，决定何时带着收获撤离。**
 
@@ -12,7 +12,7 @@
 
 | 项目概览 | |
 | --- | --- |
-| 版本 | v0.12.10 网页试玩 · v0.11.3 Windows 桌面发布版 |
+| 版本 | v0.12.11 网页试玩 · v0.11.3 Windows 桌面发布版 |
 | 内容 | 20类武器、12种附魔、12类敌人、9种首领 |
 | 对局变化 | 7种地图、5档难度、10个可选行动词条 |
 | 局外成长 | 庇护所升级、永久打造、可扩容战备仓库 |
