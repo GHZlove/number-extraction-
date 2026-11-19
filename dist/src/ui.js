@@ -188,6 +188,7 @@ export class UI {
   shelter(save,{lastResult=null,saveAvailable=true,journal=emptyJournal(),journalAvailable=true,playtestReview=null,selectedReviewCohort=null,daily={scores:{},available:true},challenge=dailyChallenge(),mode='extraction',siegeScores=[]}={}) {
     const selected=difficultyOf(save.selectedDifficulty),loadout=applyWarehouseGear(starterLoadout(save),plannedWarehouseGear(save)),level=shelterLevel(save);
     const activeRoute = MAP_LAYOUTS.find(layout => layout.id === save.selectedMap) || MAP_LAYOUTS[0];
+    const deployLabel=mode==='siege'?'启动核心防线':'进入关卡';
     const report=lastResult||save.lastRuns[0];
     const rewards=report?.success?`+${number(report.value)} ◇ · +${report.materials?.alloy||0} 合金 · +${report.materials?.core||0} 核心 · 装备${(report.warehouse?.stored||0)+(report.warehouse?.pending||0)}件`:'本次未带出资源';
     const dailyReport=report?.daily?`<section class="run-report ${report.success?'':'failed'}">
@@ -214,20 +215,27 @@ export class UI {
       <div class="shelter-layout"><div class="shelter-main">
         <section class="shelter-hero">
           <div class="shelter-stage">
-            <div class="hero-heading">
-              <div>
-                <span class="eyebrow">SECTOR ZERO</span>
-                <h1>第零庇护所</h1>
-                <a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a>
+            <figure class="shelter-illustration">
+              <img src="./art/shelter-workshop.png" alt="" width="1448" height="1086" decoding="async">
+              <button type="button" class="portal-hotspot" data-action="start" tabindex="-1" aria-label="${deployLabel}，${activeRoute.name}，${selected.name}"></button>
+            </figure>
+            <div class="shelter-stage-card">
+              <div class="hero-heading">
+                <div>
+                  <span class="eyebrow">HOME / SECTOR ZERO</span>
+                  <h1>第零庇护所</h1>
+                  <p>在终端选关，点传送门出击。</p>
+                  <a class="terminal-jump" href="#holo-terminal">前往选关 ↓</a>
+                </div>
+                <span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span>
               </div>
-              <span class="safe-tag"><i class="signal-dot"></i>安全区 · Lv.${level}</span>
-            </div>
-            <div class="portal-controls">
-              <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="进入关卡，${activeRoute.name}，${selected.name}">
-                ${mode==='siege'?'启动核心防线':'进入关卡'} ${icon('arrow')}
-              </button>
-              <span class="portal-destination">${activeRoute.name} · ${selected.name}</span>
-              <button type="button" class="training-entry" data-action="startTraining">20 秒试射</button>
+              <div class="portal-controls">
+                <button type="button" class="portal-launch" id="portal-launch" data-action="start" aria-label="${deployLabel}，${activeRoute.name}，${selected.name}">
+                  ${deployLabel} ${icon('arrow')}
+                </button>
+                <span class="portal-destination"><small>前往</small> <strong>${activeRoute.name} · ${selected.name}</strong></span>
+                <button type="button" class="training-entry" data-action="startTraining">20 秒试射</button>
+              </div>
             </div>
           </div>
           <div class="shelter-display">

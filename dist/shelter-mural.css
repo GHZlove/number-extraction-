@@ -1,3 +1,266 @@
-undefined
-#shelter-screen .siege-mode-select { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
-#shelter-screen .siege-mode-select button { min-height:36px; padding:5px 11px; }
+/* The artwork is the backdrop for every shelter tab. */
+body[data-screen="shelter"] {
+  background: #825d55;
+}
+body[data-screen="shelter"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: linear-gradient(180deg, #22152618 0%, transparent 45%, #21172445 100%),
+    var(--route-vista, none), url("./art/sector-zero-vista.png");
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+body[data-shelter-map="tangram"] { --route-vista: url("./art/route-tangram.png"); }
+body[data-shelter-map="fracture"] { --route-vista: url("./art/route-fracture.png"); }
+body[data-shelter-map="blocks"] { --route-vista: url("./art/route-blocks.png"); }
+body[data-shelter-map="wilds"] { --route-vista: url("./art/route-wilds.png"); }
+body[data-shelter-map="delta"] { --route-vista: url("./art/route-delta.png"); }
+body[data-shelter-map="observatory"] { --route-vista: url("./art/route-observatory.png"); }
+body[data-shelter-map="glacier"] { --route-vista: url("./art/route-glacier.png"); }
+#shelter-screen {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  padding-top: clamp(16px, 2.7vw, 40px);
+}
+#shelter-screen .shelter-top {
+  gap: 11px;
+  border: 0;
+  padding-bottom: 0;
+  margin-bottom: 14px;
+}
+#shelter-screen .brand,
+#shelter-screen .shelter-footer {
+  padding: 10px 14px;
+  background: #f3e4c9;
+  border: 2px solid var(--cel-ink);
+  border-radius: 8px 12px 6px 9px;
+  box-shadow: 4px 4px 0 var(--cel-ink);
+}
+#shelter-screen .brand small { color: #53475d; }
+#shelter-screen .resource-chip { box-shadow: 3px 3px 0 var(--cel-ink); }
+#shelter-screen .shelter-tabs {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  border: 2px solid #231d2d;
+  margin-bottom: clamp(13px, 2vw, 25px);
+  background: #463848ee;
+  box-shadow: 4px 5px 0 #231d2d;
+}
+#shelter-screen .shelter-tabs button {
+  min-width: 0;
+  padding: 8px 5px;
+  background: #f0e2c7;
+}
+#shelter-screen .shelter-tabs button[aria-pressed="true"] {
+  background: #d7ec9d;
+}
+#shelter-screen .shelter-hero {
+  background: #5b465a;
+  background-image: none;
+  border-radius: 12px 7px 13px 8px;
+  overflow: hidden;
+}
+#shelter-screen .shelter-stage {
+  position: relative;
+  background: #c2bd98;
+}
+#shelter-screen .shelter-stage .shelter-illustration {
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+#shelter-screen .shelter-stage .shelter-illustration img {
+  object-fit: fill;
+}
+#shelter-screen .shelter-stage-card {
+  position: absolute;
+  inset: clamp(12px, 2vw, 31px) auto auto clamp(12px, 2vw, 31px);
+  z-index: 2;
+  width: min(45%, 367px);
+  padding: clamp(10px, 1.5vw, 20px);
+  background: #f9ebd4f5;
+  border: 2px solid var(--cel-ink);
+  border-radius: 8px 14px 7px 10px;
+  box-shadow: 4px 5px 0 #261f30d9;
+}
+#shelter-screen .shelter-stage-card .hero-heading {
+  display: block;
+  padding: 0;
+}
+#shelter-screen .shelter-stage-card h1 {
+  font-size: clamp(24px, 3vw, 43px);
+  line-height: 1.05;
+  margin: 0 0 9px;
+}
+#shelter-screen .shelter-stage-card .safe-tag {
+  display: inline-flex;
+  margin-top: 10px;
+}
+#shelter-screen .shelter-stage-card .portal-controls {
+  align-items: flex-start;
+  gap: 9px 13px;
+  padding: 12px 0 0;
+}
+#shelter-screen .shelter-stage-card button.portal-launch {
+  min-height: 45px;
+  min-width: 148px;
+  font-size: clamp(16px, 1.8vw, 22px);
+}
+#shelter-screen .shelter-stage-card .portal-destination {
+  flex: 1 1 144px;
+  align-self: center;
+}
+#shelter-screen .shelter-display {
+  display: block;
+  padding: 0;
+  border-top: 2px solid #241e2e;
+}
+#shelter-screen .shelter-number-board {
+  padding: 11px clamp(10px, 1.5vw, 19px) 15px;
+  border: 0;
+  border-radius: 0;
+  background: #48394e;
+  box-shadow: none;
+}
+#shelter-screen .shelter-board-label {
+  color: #fff1d3;
+  margin-bottom: 6px;
+}
+#shelter-screen .shelter-number-board .number-preview {
+  grid-template-columns: repeat(12,minmax(0,1fr));
+  width: 100%;
+  max-width: none;
+  gap: clamp(4px,.6vw,9px);
+}
+#shelter-screen .hero-footer {
+  padding: 12px clamp(10px, 1.5vw, 19px);
+  background: #ead7b7;
+}
+#shelter-screen .expedition-panel {
+  border-width: 2px;
+  background: #f2e3c8f7;
+  box-shadow: 4px 5px 0 #211a28;
+}
+#shelter-screen .expedition-panel > h2 {
+  padding: 3px 0 9px;
+  border-bottom: 2px solid #8e685f;
+}
+#shelter-screen .shelter-footer {
+  margin-top: 21px;
+}
+@media(max-width:720px) {
+  #shelter-screen .shelter-tabs { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
+@media(max-width:680px) {
+  #shelter-screen .shelter-stage-card {
+    position: relative;
+    inset: auto;
+    width: auto;
+    margin: 0;
+    padding: 13px;
+    border: 0;
+    border-bottom: 2px solid var(--cel-ink);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #shelter-screen .shelter-stage {
+    display: flex;
+    flex-direction: column;
+  }
+  #shelter-screen .shelter-stage .shelter-illustration { order: 1; }
+  #shelter-screen .shelter-number-board .number-preview { grid-template-columns: repeat(6,minmax(0,1fr)); }
+  #shelter-screen .shelter-stage-card .portal-destination { flex: auto; }
+}
+@media(max-width:400px) {
+  #shelter-screen .shelter-tabs { gap: 4px; padding: 4px; }
+  #shelter-screen .shelter-tabs button span { font-size: 11px; }
+  #shelter-screen .shelter-tabs button small { letter-spacing: 0; }
+}
+
+#shelter-screen .shelter-live {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+body:not([data-shelter-map="random"]) .shelter-live { display: none; }
+.shelter-live i { position:absolute; display:block; }
+.shelter-live .portal-lumen {
+  inset: 36% 53% 22% 4%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--portal-energy) 43%, transparent), transparent 68%);
+  animation: shelter-hum 3.6s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+.shelter-live .workshop-neon {
+  top: 49%; left: 13%; width: 7%; height: 3px;
+  background: #ffc48a; box-shadow: 0 0 9px 4px #f292c5aa;
+  transform: rotate(-13deg); opacity: 0;
+}
+#shelter-screen[data-workshop="lit"] .workshop-neon { opacity: .75; }
+.shelter-live .radar-stripe {
+  color: #beead470;
+  right: 19%; top: 18%;
+  width: clamp(34px,7vw,105px); aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, currentColor, transparent 55deg);
+  mask-image: radial-gradient(#0007, transparent 71%);
+  animation: shelter-radar 13s linear infinite;
+}
+#shelter-screen button.training-entry {
+  padding: 7px 9px; min-height:36px; background: #372d3c;
+  color: #f4ebd9; border: 1px solid #ebc6826e; box-shadow: none;
+}
+#shelter-screen button.training-entry:hover { background:#534251; color:#fff2d9; }
+@keyframes shelter-hum { from { opacity: .42; } to { opacity: .85; } }
+@keyframes shelter-radar { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .shelter-live i { animation: none!important; }
+}
+
+#shelter-screen .siege-mode-select {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 7px;
+  border: 1px solid #7b615d;
+  border-radius: 8px 5px 8px 6px;
+  background: #e4d0b2;
+}
+#shelter-screen .siege-mode-select button {
+  min-height: 38px;
+  padding: 5px 8px;
+  color: #282431;
+  background: #f5e6cb;
+}
+#shelter-screen .siege-mode-select button:is(:hover, [aria-pressed="true"]) {
+  background: #d7ec9d;
+}
+#shelter-screen .expedition-panel .daily-challenge {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid #957366;
+  background: #f8ead0;
+  border-radius: 7px 5px 8px 6px;
+  color: #282431;
+}
+#shelter-screen .expedition-panel .daily-challenge :is(h3, p) { margin: 0 0 6px; }
+#shelter-screen .expedition-panel .daily-challenge small { color: #53475d; }
+#shelter-screen .expedition-panel .daily-challenge button { padding: 5px 8px; margin: 6px 0; }
+#shelter-screen .expedition-panel .daily-challenge summary {
+  width: fit-content;
+  margin-top: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+#shelter-screen .expedition-panel .daily-leaders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#shelter-screen .expedition-panel .daily-leaders ol { margin: 4px 0; padding-inline-start: 18px; }
+#shelter-screen .expedition-panel .daily-leaders li small { display: block; }
+#shelter-screen .shelter-stage-card button.training-entry { min-height: 40px; }

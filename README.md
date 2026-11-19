@@ -1,6 +1,6 @@
 # Number Extraction
 
-> **v0.14.0 browser playtest.** Field Operations adds number-tier powers, eight weapon linkups, prototype gear, raid broadcasts, a twenty-second firing range, and map-specific comic atmosphere. Prime targets with two-weapon enchantment combos, preview number skills before casting, or try the shared daily seed with local extraction leaderboards. [Download playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Core Siege](docs/CORE_SIEGE_V014.md) · [Field Operations](docs/FIELD_OPERATIONS_V013.md) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
+> **v0.14.1 browser playtest.** The illustrated shelter and clickable portal return in this build. Field Operations adds number-tier powers, eight weapon linkups, prototype gear, raid broadcasts, a twenty-second firing range, and map-specific comic atmosphere. Prime targets with two-weapon enchantment combos, preview number skills before casting, or try the shared daily seed with local extraction leaderboards. [Download playable ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [Core Siege](docs/CORE_SIEGE_V014.md) · [Field Operations](docs/FIELD_OPERATIONS_V013.md) · [Controls and setup](docs/NUMBER_SKILLS_V012.md). The desktop release below is v0.11.3.
 
 **Grow your number. Shape your loadout. Bring something home.**
 
@@ -12,7 +12,7 @@ Built with **vanilla JavaScript and HTML5 Canvas**, the project explores how a s
 
 | At a glance | |
 | --- | --- |
-| Builds | v0.14.0 browser playtest · v0.11.3 Windows desktop release |
+| Builds | v0.14.1 browser playtest · v0.11.3 Windows desktop release |
 | Gameplay | Number merging, aimed combat, extraction and shelter progression |
 | Content | 20 weapons · 12 enchantments · 12 enemy types · 9 bosses |
 | Run variety | 7 map families · 5 difficulties · 10 optional mutators |
