@@ -61,7 +61,7 @@ test('glass core survives the full-health 4096 yellow hunter boundary but remain
 });
 
 test('core movement and physical size improve without removing its defence or dash tradeoff',()=>{
- const r=empty();r.player.value=1024;updateNumberForm(r);assert.equal(r.player.radius,26);
+ const r=empty();r.player.value=1024;r.player.shieldReadyAt=Infinity;updateNumberForm(r);assert.equal(r.player.radius,26);
  const x=r.player.x;r.update(step,{x:1});near(r.player.x-x,193.5*step);
  r.hurt(25);near(r.player.hp,78.5);
  r.player.invulnerable=0;const before=r.player.x;r.update(step,{x:1,dash:true});near(r.player.x-before,RULES.dashSpeed*step);
@@ -80,6 +80,7 @@ test('a core with no dodge can leave a volatile blast in open shallow water afte
 test('standing in the same warned volatile blast still causes damage once',()=>{
  const r=empty(['no_dodge','volatile']);r.player.value=1024;updateNumberForm(r);
  r.world.terrain=[{x:1800,y:1800,w:2000,h:2000,kind:'water'}];
+ r.player.shieldReadyAt=Infinity;
  const e=createEnemy('stationary-remnant',r.player.x,r.player.y,1,'hunter');r.world.enemies=[e];r.kill(e);r.world.tiles=[];r.world.drops=[];
  advance(r,1.2);assert.equal(r.player.hp,100);advance(r,.35);near(r.player.hp,87.1);assert.equal(r.world.hazards.length,0);
 });

@@ -1,3 +1,4 @@
+import { gainEnergy } from './operations.js';
 import { attackDamage, distance, isFree, segmentCircleFraction, clamp } from './math.js';
 import { obstaclesFor } from './spatial.js';
 import { markImpact, pushActor } from './impact-motion.js';
@@ -157,6 +158,7 @@ function pulseArea(raid, base, reach) {
 
 function pulse(raid,id,element,base,power,stun=0,reach=0,cone=false) {
   const p=raid.player,{ target: point, radius }=pulseArea(raid,base,reach);
+  if(element==='fire')raid.field?.igniteArea(raid,point,radius);
   raid.effect(point.x,point.y,'',NUMBER_SKILLS[id].color,cone?'enemy-impact':element==='fire'?'impact':element==='wind'?'gust':'overload',.4,{
     radius, angle:p.aimAngle, ...(cone?{arc:2*Math.acos(.64)}:{}),
   });
@@ -233,7 +235,7 @@ const handlers = {
   staticPulse:r=>pulse(r,'staticPulse','lightning',128,.6,.75),
   fork:r=>arcBurst(r,'fork',true),
   groundWire:r=>lightningPulse(r,'groundWire'),
-  arcWard:r=>{buff(r.player,'phase',3.5);r.player.energy=Math.min(100,r.player.energy+18);return pulse(r,'arcWard','lightning',125,.37,.2);},
+  arcWard:r=>{buff(r.player,'phase',3.5);gainEnergy(r,18);return pulse(r,'arcWard','lightning',125,.37,.2);},
   thunder:r=>lightningPulse(r,'thunder'),
   airStep:r=>buff(r.player,'haste',3.4),
   vortex:r=>{
@@ -270,7 +272,12 @@ export function useNumberSkill(raid, id) {
     raid.message('安全屋内无法释放攻击技能。');
     return false;
   }
+  const index=raid.world.effects.length;
   if (!handlers[id](raid)) return false;
+  const point=raid.player;
+  raid.world.effects.splice(index,0,{x:point.x,y:point.y,text:'',color:skill.color,kind:'skill-signature',
+    life:.52,maxLife:.52,branch:skill.branch,angle:point.aimAngle,variant:Object.keys(NUMBER_SKILLS).indexOf(id)%7,radius:62});
+  if(skill.branch==='wind'&&id!=='airStep')raid.field?.gustRemnants(raid);
   raid.player.skillCooldowns[id] = skill.cooldown;
   raid.event('skill', { skill: id });
   return true;

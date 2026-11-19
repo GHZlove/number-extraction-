@@ -69,7 +69,7 @@ function resolve(raid,e){
     raid.spawnBossAdds(e,enraged?4:2,e.bossMove==='sentries'?'sentry':'scout');
   }else if(e.bossMove==='consume'){
     const adds=raid.world.enemies.filter(a=>a.bossOwnerId===e.id&&!a.dead&&distance(a,e)<600&&raid.visible(e,a));
-    const before=e.hp;if(adds.length){adds[0].dead=true;e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.12:.08));}
+    const before=e.hp;if(adds.length&&!(e.numberLockUntil>raid.elapsed)){adds[0].dead=true;e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(enraged?.12:.08));}
     raid.effect(e.x,e.y-70,e.hp>before?`汲取 +${Math.round(e.hp-before)}`:'无虫群可汲取',BOSSES[e.boss].color,'text',.8);
   }else if(['cross','icefield','icewave','bombard','furnace','well','collapse'].includes(e.bossMove)){
     // Their persistent warning zones own the matching damage geometry.

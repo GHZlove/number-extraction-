@@ -1,3 +1,4 @@
+import { gainEnergy } from './operations.js';
 import { attackDamage, distance } from './math.js';
 
 function afflict(enemy,kind,impact,power,duration){
@@ -20,7 +21,7 @@ export function applyEnchantment(raid,enemy,damage,impact){
   if(key==='leech'){
     const heal=Math.min(4,damage*.12),before=p.hp;p.hp=Math.min(p.maxHp,p.hp+heal);
     if(p.hp>before)raid.effect(p.x,p.y-40,'吸血 +'+(p.hp-before).toFixed(1),'#ff85a9','text',.55);
-    return;
+    return 'leech';
   }
   if((p.enchantCooldowns[key]||0)>0)return;
   if(key==='lightning'){
@@ -31,6 +32,7 @@ export function applyEnchantment(raid,enemy,damage,impact){
       raid.effect(from.x,from.y,'','#8eefff','lightning',.2,{endX:next.x,endY:next.y});
       raid.damageEnemy(next,damage*.35,{secondary:true,weapon:'contact',element:'lightning'});seen.add(next.id);from=next;
     }
+    return {tag:'lightning',seen};
   }else if(key==='stun'&&!enemy.dead){
     p.enchantCooldowns[key]=1.1;const previous=enemy.stun||0,interrupted=enemy.state==='windup'||enemy.chargeTime>0||enemy.burstLeft>0;
     enemy.stun=Math.max(previous,(.32+level*.06)*(enemy.boss?.4:1));
@@ -40,10 +42,11 @@ export function applyEnchantment(raid,enemy,damage,impact){
   }else if(key==='poison'){
     p.enchantCooldowns[key]=1.25;
     raid.world.hazards.push({kind:'poison',owner:'player',x:enemy.x,y:enemy.y,radius:90+level*5,life:3.5,tick:0,value:impact.value||p.value,rarity:impact.rarity||'white',power:.07+level*.01});
+    return 'poison';
   }else if(key==='burn'||key==='bleed'){
     p.enchantCooldowns[key]=.45;
     afflict(enemy,key,snapshot,key==='burn'?.06+level*.005:.04+level*.005,key==='burn'?3:4);
-    if(key==='burn'&&!enemy.dead)return 'burn';
+    if(!enemy.dead)return key;
   }else if(key==='frost'&&!enemy.dead){
     p.enchantCooldowns[key]=.45;enemy.slowTime=2.5+level*.2;enemy.slowScale=enemy.boss?.8:.55;
     enemy.chillStacks=(enemy.chillStacks||0)+1;
@@ -57,16 +60,19 @@ export function applyEnchantment(raid,enemy,damage,impact){
     const before=enemy.armor?.durability||0;
     if(before>0){enemy.armor.durability=Math.max(0,before-8-level*2);if(enemy.armor.durability===0)raid.event('armorbreak',{strength:1});}
     raid.effect(enemy.x,enemy.y-48,'破甲 / 易伤','#f5c06c','text',.7);
+    return 'sunder';
   }else if(key==='detonate'&&enemy.dead){
     p.enchantCooldowns[key]=.8;const radius=125+level*8;
     raid.effect(enemy.x,enemy.y,'','#ff8a55','impact',.4,{radius});raid.event('explosion',{strength:.8});
     for(const next of raid.world.enemies)if(!next.dead&&distance(enemy,next)<radius+next.radius&&raid.visible(enemy,next)){
       raid.damageEnemy(next,attackDamage(snapshot.value,next.value,next.maxHp,snapshot.rarity||'white')*.45,{secondary:true});
     }
+    return {tag:'detonate',radius};
   }else if(key==='critical'&&!enemy.dead){
     p.enchantCooldowns[key]=.35;
     if(raid.random()<.2+(level-1)*.02){
       raid.damageEnemy(enemy,(impact.baseAmount??damage)*.5,{secondary:true});raid.effect(enemy.x,enemy.y-56,'暴击！','#ffdb67','text',.8,{heavy:true});raid.event('critical');
+      raid.effect(enemy.x+22,enemy.y-21,'CRACK!','#ffe297','comic',.6);return 'critical';
     }
   }else if(key==='gravity'){
     p.enchantCooldowns[key]=1;const radius=175+level*5;
@@ -75,8 +81,9 @@ export function applyEnchantment(raid,enemy,damage,impact){
       const d=distance(enemy,next),pull=Math.min(Math.max(0,d-28),30+level*6)*(next.boss?.25:1);
       if(d>0)raid.move(next,(enemy.x-next.x)/d*pull,(enemy.y-next.y)/d*pull);
     }
+    return 'gravity';
   }else if(key==='energize'){
-    p.enchantCooldowns[key]=.65;const gain=3+level;p.energy=Math.min(100,p.energy+gain);
+    p.enchantCooldowns[key]=.65;const gain=gainEnergy(raid,3+level);
     raid.effect(p.x,p.y-42,'能量 +'+gain,'#6befb1','text',.55);
     return 'energize';
   }

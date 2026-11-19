@@ -52,6 +52,16 @@ export const ENCHANTS = Object.freeze({
   gravity:{name:'重力',color:'#aa83ff',description:'将落点周围可见敌人向中心牵引，受墙体与首领抗性约束。'},
   energize:{name:'回能',color:'#69efb1',description:'有效命中回复过载能量，冷却0.65秒，尸体不能充能。'},
 });
+export const PROTOTYPES = {
+  overheat: { name:'过热枪管', description:'射速 +35%，每发开火增加 1.2 热度。' },
+  lightweight: { name:'轻量化改造', description:'移动速度 +15%，占用任一武器槽时无法穿护甲。' },
+};
+export const armorIncompatible = player => player.weapons.some(item=>item?.prototype==='lightweight');
+export function addPrototype(item,key) {
+  if(item.kind!=='weapon'||!['purple','red'].includes(item.rarity)||!Object.hasOwn(PROTOTYPES,key)||
+     key==='overheat'&&weaponOf(item).mode!=='ranged')return item;
+  return {...item,prototype:key,name:item.name+' · '+PROTOTYPES[key].name};
+}
 export const ENCHANT_KEYS=Object.freeze(Object.keys(ENCHANTS).filter(key=>key!=='none'));
 export function decorateWeapon(item,enchant='none',level=1){
   if(item.kind!=='weapon')return item;
@@ -90,7 +100,10 @@ export function randomEquipment(random, zone, id) {
   if (kind < 0.38) return { ...makeEquipment('laser', '', 'white', id), zone };
   const types = Object.keys(WEAPONS);
   const item={...makeEquipment('weapon', types[Math.floor(random() * types.length)], rarity, id),zone};
-  return random()<.16+zone*.12?decorateWeapon(item,ENCHANT_KEYS[Math.floor(random()*ENCHANT_KEYS.length)],1+Math.floor(zone/2)):item;
+  const equipped = random()<.16+zone*.12?decorateWeapon(item,ENCHANT_KEYS[Math.floor(random()*ENCHANT_KEYS.length)],1+Math.floor(zone/2)):item;
+  const prototypeRoll=(roll*100003)%1;
+  if (prototypeRoll >= .24) return equipped;
+  return addPrototype(equipped,prototypeRoll<.12&&weaponOf(equipped).mode==='ranged'?'overheat':'lightweight');
 }
 
 export function absorbDamage(amount, armor) {

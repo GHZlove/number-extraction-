@@ -1,3 +1,5 @@
+import { actualNumber, isLocked } from './operations.js';
+import { drawAtmosphere, drawFieldEvents, drawForm, drawSkillSignature } from './field-art.js';
 import { NUMBER_SKILLS, numberSkillPreview } from './number-skills.js';
 import { drawComicText } from './comic-type.js';
 import { drawRoadNetwork } from './roads.js';
@@ -71,6 +73,8 @@ export class Renderer {
     for(const zone of this.zones){if(!zone.vertices)continue;polygon(c,zone.vertices);c.fillStyle=zone.floor||PAINT.ground[zone.risk];c.fill();}
     this.drawGroundDetails(w,{left,top,right,bottom});
     this.drawTerrain(w,time);
+    drawAtmosphere(c,raid,{left,top,right,bottom},time,this.reduced);
+    drawFieldEvents(this,raid);
     this.simulationTime=raid.elapsed;
     for(const cloud of w.hazards||[])if(this.visible(cloud.x,cloud.y,cloud.radius+30)){
       if(cloud.bossZone||cloud.runHazard){this.drawBossZone(cloud);continue;}
@@ -101,6 +105,13 @@ export class Renderer {
     const selected=p.dividers>0?raid.divideTarget():null;
     for(const enemy of w.enemies)if(!enemy.dead&&distance(enemy,p)<raid.run.vision&&this.visible(enemy.x,enemy.y)){
       this.drawEnemy(enemy,p,time,enemy===selected);
+      const trait=enemy.trainingDummy?'木桩':enemy.radixShield>0?'进制盾 ×'+enemy.radixShield:enemy.prime?'质数':isLocked(raid,enemy)?'LOCK':enemy.fuser?'融合体':'';
+      if(trait)this.text(trait,enemy.x,enemy.y-enemy.radius-29,12);
+      if(enemy.fusingUntil>raid.elapsed){
+        const width=44*(1-Math.min(1,(enemy.fusingUntil-raid.elapsed)/2.4));
+        this.rect(enemy.x-22,enemy.y+enemy.radius+8,44,5,2,'#342234');
+        if(width>0)this.rect(enemy.x-22,enemy.y+enemy.radius+8,width,5,2,'#f59acf');
+      }
       const cue=raid.synergies?.cue(raid,enemy);
       if(cue)this.text(cue.text,enemy.x,enemy.y+enemy.radius+27,13,{fill:cue.color});
     }
@@ -112,12 +123,20 @@ export class Renderer {
       if (effect.kind !== 'tile-fusion' || !this.visible(effect.originX,effect.originY,245)) continue;
       fusionDeformation = drawTileFusion(c, effect, p, this.reduced) || fusionDeformation;
     }
+    drawForm(c,p,time,this.reduced);
     this.drawPlayer(p,time,fusionDeformation);
     this.drawSkillPreviews(raid);
     for(const e of w.effects) {
       if (e.kind === 'tile-fusion') continue;
       const progress=1-e.life/e.maxLife;c.globalAlpha=Math.min(1,e.life/e.maxLife*2);
-      if(e.kind==='text'){
+      if(e.kind==='comic'){
+        c.save();c.translate(e.x,e.y-progress*20);
+        if(!this.reduced)c.rotate(Math.sin(e.x*1.15+e.y*.72)*.19);
+        this.inkSplat(0,0,28+progress*8,e.color,.2,.75);
+        this.text(e.text,0,0,22,{impact:true});c.restore();
+      }else if(e.kind==='skill-signature')drawSkillSignature(c,e,progress,this.reduced);
+      else if(e.kind==='cinder-mark')drawSkillSignature(c,{...e,branch:'fire'},progress,this.reduced);
+      else if(e.kind==='text'){
         if(e.text==='击破')this.inkSplat(e.x,e.y,38+progress*20,PAINT.pink,.3,Math.min(.75,e.life/e.maxLife));
         const armor=e.text.startsWith('护甲');
         const damage=/^[−-]\d/.test(e.text);
@@ -159,9 +178,10 @@ export class Renderer {
     if (raid.nightMode) {
       let reach=0;
       if(p.flashlight){
-        const end={x:p.x+Math.cos(p.aimAngle)*FLASHLIGHT_REACH,y:p.y+Math.sin(p.aimAngle)*FLASHLIGHT_REACH};
+        const base=FLASHLIGHT_REACH*(raid.field?.lampScale(raid)??1);
+        const end={x:p.x+Math.cos(p.aimAngle)*base,y:p.y+Math.sin(p.aimAngle)*base};
         const wall=firstWallFraction(p,end,obstaclesFor(w,p,end));
-        reach=FLASHLIGHT_REACH*(wall===Infinity?1:wall);
+        reach=base*(wall===Infinity?1:wall);
       }
       drawMoonlight(c,p,{left,top,right,bottom},reach);
     }
@@ -171,9 +191,29 @@ export class Renderer {
       fog.addColorStop(0,'#09131a00');fog.addColorStop(1,'#09131aff');c.fillStyle=fog;c.fillRect(left,top,right-left,bottom-top);
     }
     this.drawAim(p,w,'cursor');
+    this.drawMicroHints(raid,selected);
     c.restore();
     if(raid.carriedValue()>0)this.drawExitArrow(raid);
     if(time-this.lastMapDraw>0.15){this.drawMap(raid);this.lastMapDraw=time;}
+  }
+  drawMicroHints(raid,selected) {
+    if(raid.status!=='playing')return;
+    const c=this.ctx,p=raid.player,lines=[];
+    if(p.energy>=100&&p.overload<=0)lines.push('[G] 过载');
+    if(actualNumber(p)===2048)lines.push('[T] 裂解冲击');
+    const gear=raid.nearbyGear();
+    if(gear)lines.push('[F] '+(raid.emptyGearSlot(gear)!==null?'装备':'拾取'));
+    const combo=(selected&&raid.synergies?.cue(raid,selected))||
+      raid.synergies?.aimCue(raid,p.aimTarget||p,enemy=>this.visible(enemy.x,enemy.y));
+    if(combo)lines.push(combo.text);
+    const side=p.aimTarget&&p.aimTarget.x<p.x?-1:1,x=p.x+side*(p.radius+35);
+    c.save();c.strokeStyle='#d2f3dc';c.lineWidth=1.8;
+    for(const [i,label] of lines.entries()){
+      const y=p.y-42+i*22;
+      c.beginPath();c.arc(x-side*8,y-3,8,side===1?2.1:-1,side===1?4.2:1);c.stroke();
+      this.text(label,x+side*5,y,13,{align:side===1?'left':'right'});
+    }
+    c.restore();
   }
   drawSkillPreviews(raid) {
     const c=this.ctx;
@@ -580,6 +620,10 @@ export class Renderer {
     for(const node of raid.world.nodes||[])if(!node.used&&distance(node,raid.player)<2000){c.fillStyle='#7d2ad2';c.fillRect(node.x*sx-1,node.y*sy-1,2,2);}
     for(const e of raid.world.exits){c.save();c.translate(e.x*sx,e.y*sy);c.rotate(Math.PI/4);c.fillStyle=e.safehouse?PAINT.cyan:raid.extractionReady(e)?'#52a80c':'#df8517';c.fillRect(-4,-4,8,8);c.restore();}
     for(const merchant of raid.world.merchants||[]){c.fillStyle='#ffe64d';c.strokeStyle=PAINT.ink;c.lineWidth=1;c.fillRect(merchant.x*sx-3,merchant.y*sy-3,6,6);c.strokeRect(merchant.x*sx-3,merchant.y*sy-3,6,6);}
+    for(const event of raid.field?.active||[])if(!event.temporary){
+      mapBadge(c,event.kind==='drop'?'空投':event.kind==='smuggler'?'走私商':event.kind==='magnetic'?'磁暴':'寒潮',
+        event.x*sx,event.y*sy,w,h,'#ffcf9c');
+    }
     for(const boss of raid.world.enemies.filter(e=>e.boss&&!e.dead&&distance(e,raid.player)<raid.run.vision)){c.fillStyle='#ee126c';c.beginPath();c.arc(boss.x*sx,boss.y*sy,4,0,TAU);c.fill();}
     const p=raid.player;c.fillStyle=PAINT.ink;c.beginPath();c.arc(p.x*sx,p.y*sy,4,0,TAU);c.fill();c.fillStyle=PAINT.cyan;c.beginPath();c.arc(p.x*sx,p.y*sy,2.5,0,TAU);c.fill();
     for(const exit of raid.world.exits){

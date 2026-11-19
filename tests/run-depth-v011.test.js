@@ -44,7 +44,7 @@ test('risk rewards add once at settlement and do not inflate field money or ware
 
 test('doubled enemies change initial guards and bosses exactly once without changing neutral merge tiles',()=>{
  const normal=new Raid(defaultSave(),502),double=new Raid(defaultSave(),502,{mutators:['doubled']});assert.ok(normal.world.enemies.some(e=>e.boss));
- assert.deepEqual(double.world.enemies.map(e=>[e.id,e.value]),normal.world.enemies.map(e=>[e.id,e.value*2]));
+ assert.deepEqual(double.world.enemies.map(e=>[e.id,e.value]),normal.world.enemies.map(e=>[e.id,e.prime?e.value:e.value*2]));
  assert.deepEqual(double.world.tiles.map(e=>e.value),normal.world.tiles.map(e=>e.value));assert.deepEqual(double.world.enemies.map(e=>e.maxHp),normal.world.enemies.map(e=>e.maxHp));
 });
 
@@ -154,7 +154,7 @@ test('completed raids freeze heat and cannot schedule additional hunters',()=>{
 
 test('number identities change physical size, real movement and incoming damage at explicit thresholds',()=>{
  const cases=[[32,19,1,1],[64,21,1.04,1],[128,21,1.04,1],[256,24,.94,.92],[512,24,.94,.92],[1024,26,.90,.86],[2048,26,.90,.86]];
- for(const [value,radius,speed,damage]of cases){const r=empty();r.player.value=value;updateNumberForm(r);assert.equal(r.player.radius,radius);assert.equal(numberForm(value),r.player.form);const x=r.player.x;r.update(step,{x:1});near(r.player.x-x,RULES.speed*speed*step);r.hurt(25);near(r.player.hp,100-25*damage);}
+ for(const [value,radius,speed,damage]of cases){const r=empty();r.player.value=value;r.player.shieldReadyAt=Infinity;updateNumberForm(r);assert.equal(r.player.radius,radius);assert.equal(numberForm(value),r.player.form);const x=r.player.x;r.update(step,{x:1});near(r.player.x-x,RULES.speed*speed*step);r.hurt(25);near(r.player.hp,100-25*damage);}
  assert.equal(attackDamage(8,4),50);assert.equal(attackDamage(4,8),25);assert.equal(attackDamage(16,4),75);assert.equal(attackDamage(4,16),12.5);
 });
 

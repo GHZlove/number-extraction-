@@ -9,7 +9,7 @@ export function browserStubs(t) {
     originals.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
     Object.defineProperty(globalThis, name, { configurable: true, writable: true, value });
   }
-  const contextMethods = new Set(['beginPath','arc','fill','stroke','fillRect','strokeRect','clearRect','moveTo','lineTo','bezierCurveTo','closePath',
+  const contextMethods = new Set(['beginPath','arc','fill','stroke','fillRect','strokeRect','clearRect','moveTo','lineTo','bezierCurveTo','quadraticCurveTo','ellipse','closePath',
     'save','restore','strokeText','clip','drawImage','createPattern','translate','rotate','scale','setTransform','roundRect','setLineDash','fillText','createLinearGradient','createRadialGradient']);
   function context() {
     const state = {};

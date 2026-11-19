@@ -3,10 +3,11 @@ import { researchSkill, toggleLoadoutSkill } from './skill-tree.js';
 import { analyzePlaytestReports, MAX_REVIEW_REPORTS, MAX_REPORT_BYTES, MAX_REVIEW_BYTES } from './playtest-analysis.js';
 import { readJournal, writeJournal, recordStart, recordCheckpoint, recordFinish, interruptOpenRuns, setFeedback, serializeJournal } from './playtest.js';
 import { MUTATORS, normalizeMutators } from './run-rules.js';
-import { prepareWarehouseDeployment, selectWarehouseGear, claimPendingGear, recycleWarehouseGear, repairWarehouseGear } from './warehouse.js';
+import { prepareWarehouseDeployment, plannedWarehouseGear, selectWarehouseGear, claimPendingGear, recycleWarehouseGear, repairWarehouseGear } from './warehouse.js';
 import { bossPool } from './bosses.js';
 import { RULES, difficultyOf, MAP_LAYOUTS, SAVE_KEY } from './config.js';
 import { Raid } from './game.js';
+import { numberShock, useOperator } from './operations.js';
 import { Input } from './input.js';
 import { Renderer } from './renderer.js';
 import { Sound } from './audio.js';
@@ -14,7 +15,7 @@ import { UI } from './ui.js';
 import { defaultSave,readSave,settleRun,writeSave } from './storage.js';
 import { upgradeFacility,unlockedWeapons,forgeWeapon } from './shelter.js';
 import { ENCHANTS } from './equipment.js';
-import { buyFromMerchant } from './commerce.js';
+import { barterWeapon, buyFromMerchant } from './commerce.js';
 import { BACKUP_KEY, serializeSave, parseSaveFile, commitSaveImport } from './save-transfer.js';
 
 let storage=null;try{storage=window.localStorage;}catch{}
@@ -39,21 +40,21 @@ function enterShelter(){
   document.body.dataset.screen='shelter';document.getElementById('raid-screen').hidden=true;document.getElementById('shelter-screen').hidden=false;
   ui.hide(false);refreshShelter();
 }
-function start(dailyRun = false){
+function start(dailyRun = false, training = false){
   if(view==='raid')return;
   const challenge = dailyRun ? dailyChallenge() : null;
   const seed=new Uint32Array(1);
   if(challenge)seed[0]=challenge.seed;
   else if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(seed);
   else seed[0]=Date.now();
-  const prepared=challenge?{save:defaultSave(),count:0}:prepareWarehouseDeployment(save);
+  const prepared=training?{save,gear:plannedWarehouseGear(save),count:0}:challenge?{save:defaultSave(),count:0}:prepareWarehouseDeployment(save);
   const nextRaid=new Raid(prepared.save,seed[0],challenge
     ? {layout:challenge.layout.id,difficulty:challenge.difficulty,daily:challenge}
-    : {warehouseGear:prepared.gear});
+    : {warehouseGear:prepared.gear,training,pressure:training?false:undefined,fieldSystems:training?false:undefined});
   if(prepared.count&&!writeSave(storage,prepared.save)){ui.toast('无法保存出击装备变更，请检查存档权限后再试。');return;}
   if(prepared.count){save=prepared.save;saveAvailable=true;}
   document.getElementById('arena').classList.remove('health-hit');
-  raid=nextRaid;if(!challenge)changeJournal(next=>recordStart(next,raid.playtestSnapshot()));view='raid';paused=false;modal=null;accumulator=0;
+  raid=nextRaid;if(!challenge&&!training)changeJournal(next=>recordStart(next,raid.playtestSnapshot()));view='raid';paused=false;modal=null;accumulator=0;
   window.numberExtractionDesktop?.setRaidActive(true);
   document.body.dataset.screen='raid';document.getElementById('shelter-screen').hidden=true;document.getElementById('raid-screen').hidden=false;
   renderer.resize();renderer.camera={...raid.player};renderer.lastMapDraw=-Infinity;input.clear();input.active=true;ui.hide();ui.update(raid,save,true,false);
@@ -67,11 +68,11 @@ function close(){
   if(view==='shelter')document.getElementById('shelter-screen').querySelector('[data-action="help"]')?.focus();
   if(view==='raid'&&raid.status==='playing'){paused=false;input.clear();input.active=true;accumulator=0;}
 }
-function pause(){if(modal){close();return;}if(view==='raid'&&raid.status==='playing')show('pause');}
+function pause(){if(view==='raid'&&raid.training){raid.finish(false,'试射结束');handleEvents();return;}if(modal){close();return;}if(view==='raid'&&raid.status==='playing')show('pause');}
 function inventory(){if(view!=='raid'||raid.status!=='playing')return;if(modal==='inventory')close();else show('inventory');}
 const input=new Input(canvas,pause,inventory);
 const ui=new UI({
-  start:()=>start(),startDaily:()=>start(true),close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
+  start:()=>start(),startDaily:()=>start(true),startTraining:()=>start(false,true),close,pause,inventory,exits:()=>{if(view==='raid')show('exits');},help:()=>show('help'),abandonAsk:()=>show('abandonAsk'),
   shelterTab:key=>{if(view==='shelter'&&['deploy','base','forge','vault','bosses','rules','journal','skills'].includes(key)){ui.shelterTab=key;refreshShelter();}},
   saves:()=>{if(view==='shelter'){pendingSave=null;show('saves');}},
   toggleRecording:()=>{if(view!=='shelter')return;changeJournal(next=>{next.enabled=!next.enabled;return true;});refreshShelter();ui.toast(!journalAvailable?'设置仅在本次会话生效，无法写入本机。':journal.enabled?'本机试玩记录已开启。':'本机试玩记录已停用。');},
@@ -126,6 +127,8 @@ const ui=new UI({
   selectEnchant:key=>{if(view!=='shelter'||!Object.hasOwn(ENCHANTS,key))return;save.selectedEnchant=key;persist();refreshShelter();},
   forge:()=>{if(view==='shelter'&&forgeWeapon(save)){persist();refreshShelter();ui.toast('武器打造完成，之后每次出击自动发放。');}},
   buy:key=>{if(view==='raid'&&modal==='merchant'&&buyFromMerchant(raid,merchantId,key)){ui.shop(raid,merchantId);ui.update(raid,save,true,true);sound.play('loot');}},
+  barter:key=>{if(view==='raid'&&modal==='merchant'&&barterWeapon(raid,merchantId,key)){ui.shop(raid,merchantId);ui.update(raid,save,true,true);sound.play('loot');}},
+  operator:key=>{if(view==='raid'&&!paused){if(key==='shock')numberShock(raid);else useOperator(raid,key);}},
   upgradeFacility:key=>warehouseChange(next=>upgradeFacility(next,key),'设施升级完成。'),
   vaultSelect:key=>{const [slot,...id]=key.split(':');warehouseChange(next=>selectWarehouseGear(next,id.join(':'),slot),'出击装备选择已保存。');},
   claimPending:()=>warehouseChange(claimPendingGear,'待收装备已收纳。'),
@@ -136,6 +139,7 @@ const ui=new UI({
   drop:key=>{if(raid?.dropItem(Number(key)))show('inventory');},remove:key=>{if(raid?.removeEquipment(key))show('inventory');},
   slot:key=>{if(view==='raid'&&raid.switchWeapon(Number(key))){if(modal==='inventory')show('inventory');ui.update(raid,save,true,paused);}},
   overload:()=>{if(view==='raid'&&!paused)raid.activateOverload();},
+  ambience:()=>{const enabled=sound.toggleAmbience();document.getElementById('ambience-button').setAttribute('aria-pressed',enabled);},
   sound:()=>{const enabled=sound.toggle();document.getElementById('sound-state').textContent=enabled?'ON':'OFF';document.getElementById('sound-button').setAttribute('aria-label',enabled?'关闭音效':'开启音效');},
 });
 function applyPlaytestReview(texts){
@@ -156,7 +160,7 @@ function changeJournal(action){
   try{if(!action(next))return false;journal=next;journalAvailable=writeJournal(storage,journal);return true;}
   catch{journalAvailable=false;return false;}
 }
-function checkpointJournal(){if(raid?.status==='playing'&&!raid.daily)changeJournal(next=>recordCheckpoint(next,raid.playtestSnapshot()));}
+function checkpointJournal(){if(raid?.status==='playing'&&!raid.daily&&!raid.training)changeJournal(next=>recordCheckpoint(next,raid.playtestSnapshot()));}
 window.addEventListener('beforeunload',checkpointJournal);
 function warehouseChange(action,message){
   if(view!=='shelter')return false;
@@ -175,6 +179,7 @@ function handleEvents(){
     if(event.type==='message')ui.toast(event.text);
     else if(event.type==='trade'){merchantId=event.id;show('merchant');}
     else if(event.type==='finish'){
+      if(raid.training){sound.play('finish');enterShelter();continue;}
       if (raid.daily) {
         daily = recordDaily(storage,daily,raid.daily,event.result);
       } else {
@@ -192,6 +197,7 @@ function frame(timestamp){
   const dt=Math.min((timestamp-lastTime)/1000||0,0.1);lastTime=timestamp;
   if(view==='raid'){
     if(!paused&&raid.status==='playing'){
+      sound.pulseHeat(raid.heat?.value||0,(raid.heat?.nextHunt||0)-raid.elapsed);
       accumulator+=dt;
       while(accumulator>=RULES.fixedStep&&!paused&&raid.status==='playing'){
         const controls=input.consume();

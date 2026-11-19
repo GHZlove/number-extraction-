@@ -7,7 +7,7 @@ export class Input {
     this.pointer = null; this.mouseAttack = false;this.parryPressed=false;this.rightHeld=false;
     const typing = target => /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName) || target?.isContentEditable;
     const controlled = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'KeyC', 'KeyH', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2', ...skillKeys]);
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyR', 'KeyE', 'KeyF', 'KeyG', 'KeyC', 'KeyH', 'KeyZ', 'KeyX', 'KeyV', 'KeyT', 'ShiftLeft', 'ShiftRight', 'Digit1', 'Digit2', ...skillKeys]);
     window.addEventListener('keydown', event => {
       if (typing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.code === 'Escape' && !event.repeat) { onPause(); return; }
@@ -94,6 +94,8 @@ export class Input {
       dash: this.pressed.has('ShiftLeft') || this.pressed.has('ShiftRight'), pickup: this.pressed.has('KeyF'), overload: this.pressed.has('KeyG'),
       skill: this.pressed.has('Digit3') ? 0 : this.pressed.has('Digit4') ? 1 : undefined,
       flashlight: this.pressed.has('KeyH'),
+      amplify:this.pressed.has('KeyZ'), equalize:this.pressed.has('KeyX'), lock:this.pressed.has('KeyV'),
+      numberShock:this.pressed.has('KeyT'),
       slot: this.pressed.has('Digit1') ? 0 : this.pressed.has('Digit2') ? 1 : undefined,
       pointer: this.pointer ? { ...this.pointer } : null,
     };

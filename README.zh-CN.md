@@ -1,6 +1,6 @@
 # 数字进化 · Number Extraction
 
-> **v0.12.14 传送门网页试玩版**。新增双武器附魔联动、技能释放预览和每日种子挑战。庇护所采用深紫半透明面板，保留七幅原创美漫地图全景。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
+> **v0.13.0 传送门网页试玩版**。战区行动版加入数字被动、8 组双武器联动、限时战区事件、原型装备和 20 秒靶场。庇护所采用深紫半透明面板，保留七幅原创美漫地图全景。[下载可玩 ZIP](https://github.com/GHZlove/number-extraction-/archive/refs/heads/feature/number-skills-art-v012.zip) · [战区行动说明](docs/FIELD_OPERATIONS_V013.md) · [操作与启动](docs/NUMBER_SKILLS_V012.md)。下方桌面版为 v0.11.3。
 
 **合成成长，搭配装备，决定何时带着收获撤离。**
 
@@ -12,7 +12,7 @@
 
 | 项目概览 | |
 | --- | --- |
-| 版本 | v0.12.14 网页试玩 · v0.11.3 Windows 桌面发布版 |
+| 版本 | v0.13.0 网页试玩 · v0.11.3 Windows 桌面发布版 |
 | 内容 | 20类武器、12种附魔、12类敌人、9种首领 |
 | 对局变化 | 7种地图、5档难度、10个可选行动词条 |
 | 局外成长 | 庇护所升级、永久打造、可扩容战备仓库 |

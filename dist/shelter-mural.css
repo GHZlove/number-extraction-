@@ -450,3 +450,44 @@ body[data-screen="shelter"] #dialog :where(*) { text-shadow: none; -webkit-text-
 @media (prefers-reduced-transparency: reduce) {
   #shelter-screen { --shelter-glass: #20192a; --shelter-text-glass: #1d1625; }
 }
+
+#shelter-screen .shelter-live {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+body:not([data-shelter-map="random"]) .shelter-live { display: none; }
+.shelter-live i { position:absolute; display:block; }
+.shelter-live .portal-lumen {
+  inset: 36% 53% 22% 4%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--portal-energy) 43%, transparent), transparent 68%);
+  animation: shelter-hum 3.6s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+.shelter-live .workshop-neon {
+  top: 49%; left: 13%; width: 7%; height: 3px;
+  background: #ffc48a; box-shadow: 0 0 9px 4px #f292c5aa;
+  transform: rotate(-13deg); opacity: 0;
+}
+#shelter-screen[data-workshop="lit"] .workshop-neon { opacity: .75; }
+.shelter-live .radar-stripe {
+  color: #beead470;
+  right: 19%; top: 18%;
+  width: clamp(34px,7vw,105px); aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, currentColor, transparent 55deg);
+  mask-image: radial-gradient(#0007, transparent 71%);
+  animation: shelter-radar 13s linear infinite;
+}
+#shelter-screen button.training-entry {
+  padding: 7px 9px; min-height:36px; background: #372d3c;
+  color: #f4ebd9; border: 1px solid #ebc6826e; box-shadow: none;
+}
+#shelter-screen button.training-entry:hover { background:#534251; color:#fff2d9; }
+@keyframes shelter-hum { from { opacity: .42; } to { opacity: .85; } }
+@keyframes shelter-radar { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .shelter-live i { animation: none!important; }
+}

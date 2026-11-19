@@ -14,18 +14,37 @@ const GUNS={
   revolver:[.075,.09,1700,80],doublebarrel:[.09,.11,1400,65],plasma:[.08,.035,3200,540],flamethrower:[.12,.045,900,110],rocket:[.14,.1,700,50],
 };
 export class Sound {
-  constructor(){this.enabled=false;this.context=null;this.master=null;this.noiseBuffer=null;this.last=new Map();}
-  toggle(){
-    this.enabled=!this.enabled;
-    if(this.enabled){try{
+  constructor(){this.enabled=false;this.ambience=false;this.nextBeat=0;this.context=null;this.master=null;this.noiseBuffer=null;this.last=new Map();}
+  wake(){
+    try{
       const Audio=window.AudioContext||window.webkitAudioContext;this.context ||= new Audio();
       if(!this.master){this.master=this.context.createGain();this.master.gain.value=.55;this.master.connect(this.context.destination);}
-      const resumed=this.context.resume();resumed?.catch?.(()=>{});this.play('merge');
-    }catch{this.enabled=false;}}
+      const resumed=this.context.resume();resumed?.catch?.(()=>{});return true;
+    }catch{return false;}
+  }
+  toggle(){
+    this.enabled=!this.enabled&&this.wake();
+    if(this.enabled)this.play('merge');
     return this.enabled;
   }
-  tone(frequency,duration,wave='triangle',volume=.035,end=frequency*.6){
-    const ctx=this.context,osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime;
+  toggleAmbience(){
+    this.ambience=!this.ambience&&this.wake();
+    this.nextBeat=0;
+    return this.ambience;
+  }
+  pulseHeat(heat,nextHunt){
+    if(!this.ambience||!this.context||!heat)return;
+    const now=this.context.currentTime;
+    if(now<this.nextBeat)return;
+    const pressure=Math.max(0,Math.min(1,heat/100)),near=nextHunt>0&&nextHunt<8?.15:0;
+    this.nextBeat=now+Math.max(.38,1.45-pressure*.92-near);
+    try {
+      this.tone(52,.12,'sine',.018+pressure*.012,35);
+      if(pressure>.4)this.tone(42,.09,'sine',.012,32,.15);
+    }catch{}
+  }
+  tone(frequency,duration,wave='triangle',volume=.035,end=frequency*.6,delay=0){
+    const ctx=this.context,osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime+delay;
     osc.type=wave;osc.frequency.setValueAtTime(frequency,now);osc.frequency.exponentialRampToValueAtTime(Math.max(30,end),now+duration);
     gain.gain.setValueAtTime(volume,now);gain.gain.exponentialRampToValueAtTime(.001,now+duration);
     osc.connect(gain);gain.connect(this.master||ctx.destination);osc.start(now);osc.stop(now+duration);
@@ -56,8 +75,14 @@ export class Sound {
           if (cutoff) this.noise(.09,.04,cutoff);
         }
       }else if(type==='synergy'){
-        const thermal=event.pair==='thermal';
-        this.tone(thermal?370:980,.18,'triangle',.045,thermal?110:1570);
+        const pitches={thermal:[370,247],sanguine:[310,465],fault:[510,337],cage:[780,1040],
+          toxic:[270,180],circuit:[630,945],breach:[208,312],relay:[620,827]};
+        const [a,b]=pitches[event.pair]||pitches.circuit;
+        this.tone(a,.11,'triangle',.037,a*1.1);
+        this.tone(b,.19,'triangle',.036,b*1.32,.085);
+        this.tone(b*1.5,.17,'sine',.018,b*1.46,.09);
+      }else if(type==='alarm'||type==='operator'){
+        this.tone(type==='alarm'?284:580,.16,'triangle',.035,type==='alarm'?430:740);
       }else if(type==='hit'){
         const heavy=event.strength>=.9;this.noise(heavy?.055:.025,event.blocked?.035:heavy?.075:.045,event.blocked?3500:1900);
         this.tone(event.blocked?820:heavy?120:230,heavy?.075:.035,event.blocked?'sine':'triangle',.025);

@@ -3,11 +3,11 @@ import { distance } from './math.js';
 export const FLASHLIGHT_REACH = 650;
 export const FLASHLIGHT_ARC = .41;
 
-export function detectsFlashlight(player,enemy) {
+export function detectsFlashlight(player,enemy,scale=1) {
   if (!player.flashlight) return false;
   const d = distance(player,enemy);
   if (d <= 205) return true;
-  if (d > FLASHLIGHT_REACH) return false;
+  if (d > FLASHLIGHT_REACH*scale) return false;
   const bearing = Math.atan2(enemy.y-player.y,enemy.x-player.x);
   return Math.cos(bearing-player.aimAngle) >= Math.cos(FLASHLIGHT_ARC);
 }

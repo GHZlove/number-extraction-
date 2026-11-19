@@ -1,5 +1,5 @@
 import { FACILITIES } from './config.js';
-import { WEAPONS, RARITIES, ENCHANTS, isEquipment, makeEquipment, decorateWeapon } from './equipment.js';
+import { WEAPONS, RARITIES, ENCHANTS, isEquipment, makeEquipment, decorateWeapon, addPrototype, armorIncompatible } from './equipment.js';
 
 export const WAREHOUSE_SLOTS=['0','1','armor','laser'];
 export const defaultWarehouse=()=>({items:[],pending:[],nextId:1});
@@ -8,6 +8,10 @@ export function gearRecord(item,id=item?.id){
   if(!isEquipment(item)||item.starter||!RARITIES.some(r=>r.id===item.rarity)||item.kind==='weapon'&&!Object.hasOwn(WEAPONS,item.weapon))return null;
   const record={id,kind:item.kind,rarity:item.kind==='laser'?'white':item.rarity};
   if(item.kind==='weapon')Object.assign(record,{weapon:item.weapon,level:Math.max(1,Math.min(5,Math.floor(item.level)||1)),enchant:Object.hasOwn(ENCHANTS,item.enchant)?item.enchant:'none'});
+  if(item.kind==='weapon'){
+    if(['purple','red'].includes(item.rarity) &&
+       (item.prototype==='lightweight'||item.prototype==='overheat'&&WEAPONS[item.weapon].mode==='ranged'))record.prototype=item.prototype;
+  }
   if(item.kind==='armor'){
     const max=makeEquipment('armor','',item.rarity).maxDurability;
     record.durability=Number.isFinite(item.durability)?Math.max(0,Math.min(max,item.durability)):max;
@@ -16,7 +20,7 @@ export function gearRecord(item,id=item?.id){
 }
 export function hydrateEquipment(record){
   const item=makeEquipment(record.kind,record.weapon,record.rarity,record.id);
-  if(record.kind==='weapon')return decorateWeapon(item,record.enchant,record.level);
+  if(record.kind==='weapon')return addPrototype(decorateWeapon(item,record.enchant,record.level),record.prototype);
   if(record.kind==='armor')item.durability=record.durability;
   return item;
 }
@@ -38,6 +42,7 @@ export function normalizeDeployment(save,data){
     if(!item||seen.has(item.id)||item.kind!==(slot==='0'||slot==='1'?'weapon':slot)||item.kind==='armor'&&item.durability<=0)continue;
     plan[slot]=item.id;seen.add(item.id);
   }
+  if(['0','1'].some(slot=>save.warehouse.items.find(item=>item.id===plan[slot])?.prototype==='lightweight'))delete plan.armor;
   return plan;
 }
 export function storeExtractedGear(save,items){
@@ -56,6 +61,8 @@ export function selectWarehouseGear(save,id,slot){
   if(!id){delete save.deployment[slot];return true;}
   const item=save.warehouse.items.find(i=>i.id===id);
   if(!item||item.kind!==(slot==='0'||slot==='1'?'weapon':slot)||item.kind==='armor'&&item.durability<=0)return false;
+  if(slot==='armor'&&['0','1'].some(key=>save.warehouse.items.find(gear=>gear.id===save.deployment[key])?.prototype==='lightweight'))return false;
+  if(item.prototype==='lightweight')delete save.deployment.armor;
   for(const key of WAREHOUSE_SLOTS)if(save.deployment[key]===id)delete save.deployment[key];
   save.deployment[slot]=id;return true;
 }
@@ -75,6 +82,7 @@ export function applyWarehouseGear(loadout,gear){
   }
   for(const slot of [0,1])if(gear.weapons?.[slot])loadout.weapons[slot]={...gear.weapons[slot]};
   for(const key of ['armor','laser'])if(gear[key])loadout[key]={...gear[key]};
+  if(armorIncompatible(loadout))loadout.armor=null;
   return loadout;
 }
 export function prepareWarehouseDeployment(save){

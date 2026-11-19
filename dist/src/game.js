@@ -1,3 +1,5 @@
+import { FieldEvents } from './field-events.js';
+import { actualNumber, gainEnergy, isLocked, numberShock, tickNumberPowers, useOperator, OPERATORS } from './operations.js';
 import { Synergies } from './synergies.js';
 import { NUMBER_SKILLS, normalizeSkills } from './skill-tree.js';
 import { detectsFlashlight } from './raid-light.js';
@@ -16,7 +18,7 @@ import {
   moveEntity, seededRandom, segmentCircleFraction, firstWallFraction, inAttackArc, terrainSpeed, terrainAt, isFree, zoneAt,
 } from './math.js';
 import { createLoot, createEnemy, generateWorld, lootForEnemy } from './world.js';
-import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, HIT_FEEDBACK, knockbackFor, weaponPower, decorateWeapon, makeEquipment, isEquipment } from './equipment.js';
+import { randomEquipment, activeWeapon, weaponOf, spreadOf, absorbDamage, HIT_FEEDBACK, knockbackFor, weaponPower, decorateWeapon, makeEquipment, isEquipment, armorIncompatible } from './equipment.js';
 import { applyEnchantment, updateHazards, updateAfflictions, slowMultiplier } from './enchantments.js';
 import { updateBoss, BOSSES } from './bosses.js';
 import { updateBossZones } from './boss-hazards.js';
@@ -28,6 +30,7 @@ export class Raid {
   constructor(save, seed = Date.now() >>> 0, options = {}) {
     this.id = `${Date.now()}-${seed}`;
     this.daily = options.daily || null;
+    this.training=options.training===true;
     this.random = seededRandom(seed ^ 0x5a91bd);
     this.difficulty = difficultyOf(options.difficulty ?? save.selectedDifficulty);
     this.run=runRules(options.mutators??save.selectedMutators,options.runRules!==false);
@@ -68,13 +71,28 @@ export class Raid {
     this.events = []; this.lastMessage = ''; this.lastMessageTime = -10;
     this.tutorial = { merge: false, chest: false, extraction: false };
     this.nodesActivated = 0; this.combo = 0; this.lastMerge = -Infinity;
+    this.operators={amplify:0,equalize:0,lock:0};
     updateNumberForm(this);configureExpedition(this,seed);
+    this.field=options.fieldSystems!==false&&this.run.enabled?new FieldEvents(this,seed):null;
+    if(this.training){
+      this.duration=20;this.nightMode=false;
+      Object.assign(this.world,{chests:[],nodes:[],tiles:[],drops:[],enemies:[],exits:[],obstacles:[],terrain:[],roads:[],merchants:[],hazards:[]});
+      this.director=null;this.heat=null;this.field=null;
+      this.player.value=8;
+      for(const [i,dx,dy] of [[0,100,-40],[1,330,35],[2,580,76]]){
+        const enemy=createEnemy('dummy-'+i,this.player.x+dx,this.player.y+dy,8,'sentry');
+        Object.assign(enemy,{trainingDummy:true,maxHp:240,hp:240});
+        this.world.enemies.push(enemy);
+      }
+      this.message('庇护所靶场 · 20 秒。1 / 2 切枪试射，Esc 可提前返回。');
+      return;
+    }
     this.message(`守卫主要驻守资源点。${this.difficulty.extractAt} 秒后可撤离；右键弹反，西侧安全屋有商人。`);
   }
 
   playtestSnapshot(){
     return {id:this.id,buildVersion:VERSION,balanceVersion:BALANCE_VERSION,seed:this.world.seed,difficulty:this.difficulty.id,map:this.world.layout,mutators:[...this.run.ids],loadout:this.startingLoadout,
-      duration:this.duration,seconds:this.elapsed,number:this.player.value,heat:this.heat?.value||0,hpPercent:100*this.player.hp/this.player.maxHp,rawValue:this.carriedValue(),gearCount:this.equipmentCount(),bagCapacity:this.capacity,chests:this.opened,kills:this.kills,
+      duration:this.duration,seconds:this.elapsed,number:actualNumber(this.player),heat:this.heat?.value||0,hpPercent:100*this.player.hp/this.player.maxHp,rawValue:this.carriedValue(),gearCount:this.equipmentCount(),bagCapacity:this.capacity,chests:this.opened,kills:this.kills,
       huntersSpawned:this.playtestMetrics.huntersSpawned,firstHunterAt:this.playtestMetrics.firstHunterAt,hunterWaves:this.heat?.waves||0};
   }
 
@@ -110,7 +128,7 @@ export class Raid {
     if(!node||node.used||!['fury','phase','magnet'].includes(node.kind)||this.status!=='playing')return false;
     node.used=true;this.nodesActivated++;this.heat?.add(2);
     const durations={fury:20,phase:16,magnet:30};
-    this.player.buffs[node.kind]=durations[node.kind];this.player.energy=Math.min(100,this.player.energy+20);
+    this.player.buffs[node.kind]=durations[node.kind];gainEnergy(this,20);
     const names={fury:'增幅：伤害 +35%',phase:'相位：承受伤害降低30%',magnet:'牵引：扩大合成和物资拾取范围'};
     this.effect(node.x,node.y,names[node.kind],'#a5c7ff','text',1.6);this.event('node');this.message(names[node.kind]);return true;
   }
@@ -138,6 +156,8 @@ export class Raid {
     const p = this.player;
     const exit = this.world.exits.find(target => distance(p, target) < target.radius);
     if (exit){const status=this.extractionStatus(exit);return {kind:'exit',target:exit,locked:!status.ready,bossLocked:status.bossLocked,status,progress:this.extractProgress/RULES.extractSeconds};}
+    const fixture=this.field?.fixtureAt(p);
+    if(fixture&&this.visible(p,fixture))return {kind:'crossing',target:fixture,progress:0};
     const merchant=this.world.merchants.find(m=>distance(p,m)<115&&this.visible(p,m));
     if(merchant)return{kind:'merchant',target:merchant,progress:0};
     const chest = this.world.chests.filter(target => !target.opened && distance(p, target) < 75 && this.visible(p, target))
@@ -181,7 +201,8 @@ export class Raid {
     return true;
   }
   emptyGearSlot(item) {
-    if (item.kind === 'weapon') return this.player.weapons[1] ? null : 1;
+    if (item.kind === 'weapon') return this.player.weapons[1] || item.prototype==='lightweight'&&this.player.armor ? null : 1;
+    if (item.kind==='armor'&&armorIncompatible(this.player))return null;
     return this.player[item.kind] ? null : item.kind;
   }
   pickupGear() {
@@ -208,6 +229,9 @@ export class Raid {
     if (this.status !== 'playing' || !Number.isInteger(index)) return false;
     const item = this.bag[index];
     if (!item || !['weapon', 'armor', 'laser'].includes(item.kind)) return false;
+    if (item.kind==='armor'&&armorIncompatible(this.player)||item.prototype==='lightweight'&&this.player.armor){
+      this.message('轻量化武器不能与护甲一起装备。');return false;
+    }
     let old;
     if (item.kind === 'weapon') {
       if (slot !== 0 && slot !== 1) return false;
@@ -240,6 +264,7 @@ export class Raid {
   }
   switchWeapon(slot) {
     if ((slot !== 0 && slot !== 1) || this.status !== 'playing' || !this.player.weapons[slot]) return false;
+    if(this.player.activeSlot!==slot)this.synergies?.switched(slot);
     this.player.activeSlot = slot;
     // A shared cooldown prevents switching from bypassing the previous weapon's cadence.
     return true;
@@ -256,7 +281,7 @@ export class Raid {
     if (p.attackCooldown > 0 || this.status !== 'playing') return false;
     if(this.safehouseAt()){this.message('安全屋内收起武器。离开保护圈后可以攻击。');return false;}
     const item = activeWeapon(p), weapon = weaponOf(item), action = this.synergies?.attack(p);
-    p.attackCooldown = weapon.interval*(p.overload>0?0.75:1);
+    p.attackCooldown = weapon.interval*(p.overload>0?0.75:1)/(item.prototype==='overheat'?1.35:1);
     this.event('attack',{weapon:item.weapon});
     if (weapon.mode === 'ranged') {
       const power=this.damagePower()*weaponPower(item)/(weapon.burst||1);
@@ -267,6 +292,14 @@ export class Raid {
       this.effect(p.x, p.y, '', playerShotColor(item.level), 'slash', swingTime(item.weapon), {
         angle: p.aimAngle, arc: weapon.arc, radius: weapon.range, side, weapon: item.weapon,
       });
+      for(const fixture of this.field?.props||[])if(!fixture.dead&&inAttackArc(p,fixture,p.aimAngle,weapon.arc,weapon.range)&&this.visible(p,fixture)){
+        this.field.strike(this,fixture,26*weaponPower(item));
+      }
+      if(item.enchant==='burn'&&this.field)for(const tile of this.world.tiles){
+        if(!tile.dead&&tile.remnant&&inAttackArc(p,tile,p.aimAngle,weapon.arc,weapon.range)&&this.visible(p,tile)){
+          this.field.ignite(this,tile);break;
+        }
+      }
       const targets = this.world.enemies.filter(enemy => !enemy.dead &&
         inAttackArc(p, enemy, p.aimAngle, weapon.arc, weapon.range) && this.visible(p, enemy));
       targets.sort((a, b) => distance(p, a) - distance(p, b) || a.id.localeCompare(b.id));
@@ -279,6 +312,7 @@ export class Raid {
     return true;
   }
   fireWeapon(item,angle,power,action){
+    if(item.prototype==='overheat')this.heat?.add(1.2);
     const weapon=weaponOf(item),pellets=weapon.pellets||1,p=this.player;
     for(let i=0;i<pellets;i++){
       const offset=pellets===1?this.random()*2-1:i/(pellets-1)*2-1;
@@ -301,6 +335,10 @@ export class Raid {
   }
   damageEnemy(enemy,amount,impact={}){
     if(enemy.dead)return;
+    if(enemy.radixShield>0&&!impact.secondary&&amount>0){
+      enemy.radixShield--;this.effect(enemy.x,enemy.y-33,'进制盾 '+enemy.radixShield,'#9ce5ff','text',.6);
+      this.event('armorbreak',{strength:.5});return;
+    }
     const vulnerability=enemy.sundered>0?(enemy.boss?1.06:1.12):1;
     const hit=absorbDamage(amount*(enemy.damageResistance??1)*vulnerability,impact.ignoreArmor?null:enemy.armor),oldArmor=impact.ignoreArmor?0:enemy.armor?.durability||0,oldHp=enemy.hp;
     if(enemy.armor&&!impact.ignoreArmor)enemy.armor.durability=hit.durability;
@@ -322,20 +360,23 @@ export class Raid {
     if(enemy.hp<=0)this.kill(enemy,impact);
     const lostHp = Math.min(oldHp,hit.damage);
     const applied = applyEnchantment(this,enemy,lostHp,{...impact,baseAmount:amount});
-    if (impact.action && !impact.secondary && lostHp > 0) this.synergies?.hit(this,enemy,impact,applied);
+    if (impact.action && !impact.secondary && lostHp > 0) this.synergies?.hit(this,enemy,impact,applied,lostHp,knock,angle);
   }
   kill(enemy,impact={}){
     if(enemy.dead)return;
-    enemy.dead=true;this.kills++;this.heat?.add(enemy.boss?RUN_BALANCE.bossHeat:RUN_BALANCE.killHeat);
+    enemy.dead=true;
+    if(enemy.trainingDummy){enemy.respawnAt=this.elapsed+.7;this.effect(enemy.x,enemy.y-26,'木桩命中','#ffc98b','text',.8);return;}
+    this.kills++;this.heat?.add(enemy.boss?RUN_BALANCE.bossHeat:RUN_BALANCE.killHeat);
     if(this.run.volatile&&!enemy.boss&&this.world.hazards.filter(h=>h.runHazard).length<32)this.world.hazards.push({kind:'deathburst',runHazard:true,owner:'enemy',x:enemy.x,y:enemy.y,radius:RUN_BALANCE.burstRadius,age:0,warn:RUN_BALANCE.burstWarning,life:RUN_BALANCE.burstWarning+.2,color:'#ff8055',label:'残爆',done:false});this.event('kill',{weapon:impact.weapon,strength:HIT_FEEDBACK[impact.weapon]?.strength||.6});
     this.world.tiles.push({id:`remnant-${enemy.id}`,x:enemy.x,y:enemy.y,value:enemy.value,remnant:true,coins:remnantCoins(enemy.value),dead:false});
-    this.player.energy=Math.min(100,this.player.energy+(enemy.elite?8:enemy.horde?4:2));
+    gainEnergy(this,enemy.elite?8:enemy.horde?4:2);
     if(enemy.horde)this.hordeKills++;
     if(!enemy.horde||this.random()<.35)this.world.drops.push(lootForEnemy(enemy,this.world.zones));
     if(this.random()<(enemy.horde?.08:.42)){
       const gear=randomEquipment(this.random,enemy.zone??zoneAt(enemy,this.world.zones).risk,`gear-${enemy.id}`);this.world.drops.push({...gear,x:enemy.x,y:enemy.y,dead:false});
     }
     this.effect(enemy.x,enemy.y,'击破','#ffb4df');
+    if((HIT_FEEDBACK[impact.weapon]?.strength||0)>=.9)this.effect(enemy.x+25,enemy.y-21,'BOOM!','#ffb4cf','comic',.72);
     this.effect(enemy.x,enemy.y,'','#ff73b6','shatter',.35,{radius:48,seed:enemy.id.length*17+enemy.value});
     if(enemy.boss){
       const loot={...createLoot(enemy.x,enemy.y,2,220+enemy.bossRank*100,`boss-loot-${enemy.id}`),bossLoot:true,name:'首领核心物资'};
@@ -348,6 +389,7 @@ export class Raid {
     }
   }
   spawnBossAdds(boss,count,type){
+    if(isLocked(this,boss))return 0;
     if(this.status!=='playing'||this.safehouseAt())return 0;
     let spawned=0;
     for(let n=0;n<count;n++){
@@ -382,13 +424,17 @@ export class Raid {
     if (!p.dividers) { this.message('没有 ÷2 道具了。补给箱中可能找到运算道具。'); return; }
     const enemy = this.divideTarget();
     if (!enemy) { this.message('÷2 需要 215 范围内、有视线且数字大于 1 的敌人。'); return; }
+    if(isLocked(this,enemy)){this.message('目标数字已锁定。');return;}
     p.dividers--;
-    const old = enemy.value, ratio = clamp(enemy.hp/enemy.maxHp, 0, 1);
-    enemy.value /= 2; enemy.maxHp = enemy.boss?enemy.maxHp:maxEnemyHealth(enemy.value); enemy.hp = ratio*enemy.maxHp;
-    enemy.stun = enemy.boss?.35:RULES.divideStun; enemy.state = 'idle'; enemy.timer = 0; enemy.chargeTime = 0; enemy.burstLeft=0;enemy.healTarget=null;enemy.cooldown = 0.8;
-    this.effect(enemy.x, enemy.y-35, `${old} ÷ 2 → ${enemy.value}`, '#c3b4fa', 'text', 1.25);
+    const old = enemy.value, ratio = clamp(enemy.hp/enemy.maxHp, 0, 1), guarded=enemy.radixShield>0;
+    if(guarded)enemy.radixShield=0;
+    if(!enemy.prime&&!guarded){
+      enemy.value /= 2; enemy.maxHp = enemy.boss?enemy.maxHp:maxEnemyHealth(enemy.value); enemy.hp = ratio*enemy.maxHp;
+    }
+    enemy.stun = enemy.prime?.4:enemy.boss?.35:RULES.divideStun; enemy.state = 'idle'; enemy.timer = 0; enemy.chargeTime = 0; enemy.burstLeft=0;enemy.healTarget=null;enemy.cooldown = 0.8;
+    this.effect(enemy.x, enemy.y-35, enemy.prime?'质数 · 打断':guarded?'进制盾解除':`${old} ÷ 2 → ${enemy.value}`, '#c3b4fa', 'text', 1.25);
     this.effect(enemy.x, enemy.y, '', '#b9a5f4', 'pulse', 0.4);
-    this.event('divide'); this.message(`敌人 ${old} → ${enemy.value}，攻击已打断。`);
+    this.event('divide'); this.message(enemy.prime?'质数不可减半，已暂时打断。':guarded?'进制护盾已解除。':`敌人 ${old} → ${enemy.value}，攻击已打断。`);
   }
   heal() {
     const p = this.player;
@@ -400,8 +446,8 @@ export class Raid {
     const p=this.player;if(p.parryWindow<=0||!source||this.status!=='playing'||this.safehouseAt())return false;
     const angle=Math.atan2(source.y-p.y,source.x-p.x);
     if(Math.cos(angle-p.aimAngle)<.15)return false;
-    p.parryWindow=0;p.parryCooldown=Math.min(p.parryCooldown,.45);p.invulnerable=Math.max(p.invulnerable,.22);p.energy=Math.min(100,p.energy+12);
-    this.effect(p.x,p.y,'','#8eefff','pulse',.35,{radius:90});this.effect(p.x,p.y-55,'弹反！','#8eefff','text',.65);this.event('parry',{strength:1.2});
+    p.parryWindow=0;p.parryCooldown=Math.min(p.parryCooldown,.45);p.invulnerable=Math.max(p.invulnerable,.22);gainEnergy(this,12);
+    this.effect(p.x,p.y,'','#8eefff','pulse',.35,{radius:90});this.effect(p.x,p.y-55,'弹反！','#8eefff','text',.65);this.effect(p.x+38,p.y-20,'CLANG!','#f9dd92','comic',.64);this.event('parry',{strength:1.2});
     if(!projectile&&this.world.enemies.includes(source)&&!source.dead){
       source.state='idle';source.chargeTime=0;source.burstLeft=0;source.stun=Math.max(source.stun,source.boss?.65:1);
       this.damageEnemy(source,attackDamage(p.value,source.value,source.maxHp)*1.25,{weapon:'contact'});
@@ -413,6 +459,10 @@ export class Raid {
     if(this.safehouseAt())return false;
     if(options.parryable&&this.tryParry(options.source))return false;
     if (p.invulnerable > 0 || p.dashTime > 0 || this.status !== 'playing') return false;
+    if(amount>0&&p.digitShield){
+      p.digitShield=false;p.shieldReadyAt=this.elapsed+22;
+      this.effect(p.x,p.y-38,'数字护盾','#8be5f8','pulse',.5);this.event('armorbreak',{strength:.45});return false;
+    }
     const hit = absorbDamage(amount*this.run.incomingDamage*(p.buffs.phase>0?0.7:1)*(p.form?.damage||1), p.armor);
     if (p.armor) p.armor.durability = hit.durability;
     const previousHp=p.hp;
@@ -429,7 +479,7 @@ export class Raid {
   }
   clash(enemy) {
     const p = this.player;
-    if (enemy.dead || this.safehouseAt() || enemy.contactCooldown > 0 || distance(p, enemy) > p.radius+enemy.radius ||
+    if (enemy.trainingDummy || enemy.dead || this.safehouseAt() || enemy.contactCooldown > 0 || distance(p, enemy) > p.radius+enemy.radius ||
         !this.visible(p, enemy) || this.status !== 'playing') return;
     enemy.contactCooldown = RULES.contactCooldown;
     if(enemy.stun<=0&&this.tryParry(enemy))return;
@@ -459,11 +509,11 @@ export class Raid {
       enemy.state='charge';enemy.chargeTime=0.65;enemy.chargeX=Math.cos(angle);enemy.chargeY=Math.sin(angle);return;
     }else if(pattern==='heal'){
       const ally=this.world.enemies.find(e=>e.id===enemy.healTarget&&!e.dead);
-      if(ally&&ally!==enemy&&distance(enemy,ally)<=definition.range&&this.visible(enemy,ally)){
+      if(ally&&ally!==enemy&&!isLocked(this,ally)&&distance(enemy,ally)<=definition.range&&this.visible(enemy,ally)){
         ally.hp=Math.min(ally.maxHp,ally.hp+ally.maxHp*.18);this.effect(ally.x,ally.y-30,'修复 +18%','#8fe5bc','text',1);
       }
       enemy.healTarget=null;
-    }else if(pattern==='summon'){
+    }else if(pattern==='summon'&&!isLocked(this,enemy)){
       const living=this.world.enemies.filter(e=>!e.dead&&e.summonerId===enemy.id).length;
       for(let i=0;i<Math.min(2,4-living);i++){
         if((this.world.summonedCount||0)>=RULES.summonBudget||this.world.enemies.filter(e=>!e.dead).length>=640)break;
@@ -480,6 +530,8 @@ export class Raid {
         }
         if(child)this.effect(child.x,child.y,'孵化','#c4a1f2','pulse',.6);
       }
+    }else if(pattern==='summon'){
+      this.effect(enemy.x,enemy.y-42,'LOCK','#d3b5fb','text',.5);
     }else if(pattern==='burst'){
       enemy.state='burst';enemy.burstLeft=3;enemy.burstTimer=0;return;
     }else{
@@ -490,6 +542,11 @@ export class Raid {
     enemy.state='idle';enemy.cooldown=this.enemyCooldown(definition);
   }
   updateEnemy(enemy,dt){
+    if(enemy.trainingDummy){
+      if(enemy.dead&&this.elapsed>=enemy.respawnAt){enemy.dead=false;enemy.hp=enemy.maxHp;enemy.afflictions={};}
+      enemy.hitFlash=Math.max(0,(enemy.hitFlash||0)-dt);
+      return;
+    }
     if(enemy.dead)return;
     enemy.hitFlash=Math.max(0,(enemy.hitFlash||0)-dt);
     applyMomentum(this, enemy, dt);
@@ -500,6 +557,13 @@ export class Raid {
     enemy.poisoned=Math.max(0,(enemy.poisoned||0)-dt);
     if(enemy.recover>0){enemy.recover=Math.max(0,enemy.recover-dt);return;}
     if(enemy.boss){updateBoss(this,enemy,dt);return;}
+    if(enemy.fusingUntil>this.elapsed)return;
+    if(enemy.signalTarget?.until>this.elapsed&&!this.safehouseAt()){
+      const d=distance(enemy,enemy.signalTarget);
+      if(d>35){const speed=definition.speed*1.18*dt/d;
+        this.move(enemy,(enemy.signalTarget.x-enemy.x)*speed,(enemy.signalTarget.y-enemy.y)*speed);return;
+      }
+    }
     if(enemy.guard&&distance(enemy,{x:enemy.homeX,y:enemy.homeY})>(enemy.leash||850))enemy.returning=true;
     if(enemy.returning&&distance(enemy,{x:enemy.homeX,y:enemy.homeY})<100)enemy.returning=false;
     if(this.safehouseAt(this.player)||enemy.returning){
@@ -507,7 +571,9 @@ export class Raid {
       if(d>15)this.move(enemy,(enemy.homeX-enemy.x)/d*120*dt,(enemy.homeY-enemy.y)/d*120*dt);return;
     }
     if(enemy.state==='charge'){
-      const before={x:enemy.x,y:enemy.y};this.move(enemy,enemy.chargeX*560*this.run.enemySpeed*dt*slowMultiplier(enemy),enemy.chargeY*560*this.run.enemySpeed*dt*slowMultiplier(enemy));enemy.chargeTime-=dt;
+      const before={x:enemy.x,y:enemy.y};
+      const stride=560*this.run.enemySpeed*dt*slowMultiplier(enemy)*(this.field?.slow(this,enemy)??1);
+      this.move(enemy,enemy.chargeX*stride,enemy.chargeY*stride);enemy.chargeTime-=dt;
       if(enemy.chargeTime<=0||distance(before,enemy)<.1){enemy.state='idle';enemy.cooldown=this.enemyCooldown(definition);}return;
     }
     if(enemy.state==='burst'){
@@ -521,12 +587,12 @@ export class Raid {
     }
     if(enemy.state==='windup'){enemy.timer-=dt;if(enemy.timer<=0)this.resolveEnemyAttack(enemy,definition);return;}
     const p=this.player,d=distance(enemy,p),conceal=d>160?(this.ground(p)?.concealment||1):1;
-    const visible=this.visible(enemy,p),sight=visible&&(d<Math.max(850,definition.range+180)*conceal*(this.nightMode?.57:1)||detectsFlashlight(p,enemy));
+    const visible=this.visible(enemy,p),sight=visible&&(d<Math.max(850,definition.range+180)*conceal*(this.nightMode?.57:1)||detectsFlashlight(p,enemy,this.field?.lampScale(this)??1));
     enemy.aggro=Math.max(0,(enemy.aggro||0)-dt);if(sight)enemy.aggro=5;
     const pursuing=enemy.horde||enemy.aggro>0;
     const beginWindup=()=>{enemy.state='windup';enemy.windup=Math.max(.28,definition.windup*this.pressureState.windup);enemy.timer=enemy.windup;};
     if(pattern==='heal'&&enemy.cooldown===0){
-      const ally=this.world.enemies.filter(e=>e!==enemy&&!e.dead&&e.hp<e.maxHp&&distance(enemy,e)<=definition.range&&this.visible(enemy,e)).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
+      const ally=this.world.enemies.filter(e=>e!==enemy&&!e.dead&&!isLocked(this,e)&&e.hp<e.maxHp&&distance(enemy,e)<=definition.range&&this.visible(enemy,e)).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];
       if(ally){enemy.healTarget=ally.id;enemy.aimX=ally.x;enemy.aimY=ally.y;beginWindup();return;}
     }else if(pattern!=='heal'&&d<definition.range*conceal&&visible&&enemy.cooldown===0){
       enemy.aimX=p.x;enemy.aimY=p.y;beginWindup();return;
@@ -554,11 +620,17 @@ export class Raid {
       }
       mx+=sx*.9;my+=sy*.9;const norm=Math.max(1,Math.hypot(mx,my));mx/=norm;my/=norm;
     }
-    const speed=Math.min(PRESSURE.maxChaseSpeed,definition.speed*(enemy.moveScale||1)*this.pressureState.speed)*terrainSpeed(enemy,terrainFor(this.world,enemy))*slowMultiplier(enemy);enemy.chaseSpeed=speed;this.move(enemy,mx*speed*dt,my*speed*dt);
+    const speed=Math.min(PRESSURE.maxChaseSpeed,definition.speed*(enemy.moveScale||1)*this.pressureState.speed)*terrainSpeed(enemy,terrainFor(this.world,enemy))*slowMultiplier(enemy)*(this.field?.slow(this,enemy)??1)*(actualNumber(p)>=512&&enemy.value<actualNumber(p)&&d<240?.86:1);enemy.chaseSpeed=speed;this.move(enemy,mx*speed*dt,my*speed*dt);
   }
   explode(bullet,point){
     if(bullet.exploded)return;bullet.exploded=true;bullet.dead=true;
     this.effect(point.x,point.y,'',bullet.element==='fire'?'#ff9155':'#f4bf7e','impact',.45,{radius:bullet.blast});this.event('explosion',{weapon:'grenade',strength:1.25});
+    if(bullet.owner==='player'){
+      if(bullet.element==='fire'||bullet.intrinsic==='burn'||bullet.enchant==='burn')this.field?.igniteArea(this,point,bullet.blast);
+      for(const prop of this.field?.props||[])if(!prop.dead&&distance(point,prop)<bullet.blast&&this.visible(point,prop)){
+        this.field.strike(this,prop,30*bullet.power);
+      }
+    }
     for(const enemy of this.world.enemies){
       const d=distance(point,enemy);
       if(!enemy.dead&&d<=bullet.blast+enemy.radius&&this.visible(point,enemy)){
@@ -593,6 +665,17 @@ export class Raid {
         if(at<wall)hits.push({target,id,at});
       }
       if (hits.length > 1) hits.sort((a,b) => a.at-b.at || grid.pointOrder.get(a.target)-grid.pointOrder.get(b.target));
+      const fixture=this.field?.fixtureFraction(this,bullet,next,Math.min(wall,hits[0]?.at??Infinity));
+      if(bullet.owner==='player'&&!bullet.blast&&(bullet.element==='fire'||bullet.intrinsic==='burn'||bullet.enchant==='burn')){
+        const fraction=Math.min(1,wall,fixture?.at??Infinity,bullet.pierce?Infinity:(hits[0]?.at??Infinity));
+        this.field?.igniteSweep(this,bullet,{x:bullet.x+(next.x-bullet.x)*fraction,y:bullet.y+(next.y-bullet.y)*fraction});
+      }
+      if(fixture){
+        const point={x:bullet.x+(next.x-bullet.x)*fixture.at,y:bullet.y+(next.y-bullet.y)*fixture.at};
+        if(bullet.blast)this.explode(bullet,point);
+        else{this.field.strike(this,fixture.prop,Math.max(7,32*bullet.power));bullet.dead=true;}
+        continue;
+      }
       if(bullet.blast){
         const impact=hits[0]?.at??Infinity,t=Math.min(impact,wall);
         if(t!==Infinity)this.explode(bullet,{x:bullet.x+(next.x-bullet.x)*Math.max(0,t-.001),y:bullet.y+(next.y-bullet.y)*Math.max(0,t-.001)});
@@ -636,20 +719,32 @@ export class Raid {
       Math.hypot(this.player.knockX || 0, this.player.knockY || 0) < 22 && !NUMBER_SKILLS[skillId]?.movement;
     if (!context || !input.interact || !stationary) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = null; return; }
     if (context.target.id !== this.interactId) { this.extractProgress = 0; this.searchProgress = 0; this.nodeProgress = 0; this.interactId = context.target.id; }
+    if(context.kind==='crossing'){
+      if(this.field&&this.visible(this.player,context.target)){
+        Object.assign(this.player,context.target.landing,{knockX:0,knockY:0,dashTime:0});this.event('dash');
+      }
+      return;
+    }
     if(context.kind==='merchant'){this.event('trade',{id:context.target.id});return;}
     if (context.kind === 'exit') {
       if(context.locked){this.extractProgress=0;return;}
+      if(this.extractProgress===0)this.field?.alarm(this,context.target);
       this.extractProgress += dt; this.tutorial.extraction = true;
       if (this.extractProgress >= RULES.extractSeconds){if(context.target.kind==='key')this.exitKeys--;this.extractedVia=context.target.kind||'classic';this.finish(true, '成功撤离');}
     } else if(context.kind==='node'){
       this.nodeProgress+=dt;if(this.nodeProgress>=0.9){this.activateNode(context.target);this.nodeProgress=0;}
     } else {
+      if(context.target.opensAt>this.elapsed){this.searchProgress=0;return;}
       this.searchProgress += dt;
       if (this.searchProgress >= 0.75) {
         const chest = context.target;
         chest.opened = true; this.opened++;this.heat?.add(3);if(chest.keyCard)this.exitKeys++; this.tutorial.chest = true;
         this.addLoot({...createLoot(chest.x, chest.y, chest.zone, chest.value, chest.id),bossLoot:!!chest.bossLoot});
         this.player.dividers += chest.dividers; this.player.medkits += chest.medkits; this.searchProgress = 0;
+        if(Object.hasOwn(OPERATORS,chest.operator)){
+          this.operators[chest.operator]++;
+          this.effect(chest.x,chest.y-34,OPERATORS[chest.operator].symbol+' +1','#d9bdff','text',.9);
+        }
         for (const gear of chest.gear || []) this.world.drops.push({ ...gear, x: chest.x, y: chest.y+24, dead: false });
         this.message((chest.keyCard?'撤离钥卡 +1。':'')+(chest.gear?.length ? '资源已收入不限量资源袋，装备留在箱边。按 F 拾取，按 B 换装。' : '补给已收入不限量资源袋。左上方绿圈可以撤离。'));
       }
@@ -659,19 +754,19 @@ export class Raid {
     if (this.status !== 'playing') return;
     const p=this.player;this.hitStopCooldown=Math.max(0,this.hitStopCooldown-dt);
     if(this.hitStop>0){
-      for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight'])if(input[key])this.pendingInput[key]=true;
+      for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight','amplify','equalize','lock','numberShock'])if(input[key])this.pendingInput[key]=true;
       if(input.slot!==undefined)this.pendingInput.slot=input.slot;
       if(input.skill!==undefined)this.pendingInput.skill=input.skill;
       if(Number.isFinite(input.aimX)){this.pendingInput.aimX=input.aimX;this.pendingInput.aimY=input.aimY;}
       this.hitStop=Math.max(0,this.hitStop-dt);return;
     }
     const buffered=this.pendingInput;this.pendingInput={};
-    for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight'])if(buffered[key])input={...input,[key]:true};
+    for(const key of ['attack','divide','heal','dash','pickup','overload','parry','flashlight','amplify','equalize','lock','numberShock'])if(buffered[key])input={...input,[key]:true};
     if(buffered.slot!==undefined&&input.slot===undefined)input={...input,slot:buffered.slot};
     if(buffered.skill!==undefined&&input.skill===undefined)input={...input,skill:buffered.skill};
     if(buffered.aimX!==undefined&&!Number.isFinite(input.aimX))input={...input,aimX:buffered.aimX,aimY:buffered.aimY};
     updateNumberForm(this);
-    this.elapsed += dt;tickNumberSkills(p,dt);this.sectorNotice=Math.max(0,this.sectorNotice-dt);
+    this.elapsed += dt;tickNumberPowers(this);this.field?.update(this,dt);tickNumberSkills(p,dt);this.sectorNotice=Math.max(0,this.sectorNotice-dt);
     for (const key of ['attackCooldown','dashCooldown','invulnerable','overload','parryWindow','parryCooldown']) p[key]=Math.max(0,p[key]-dt);
     for(const key of Object.keys(p.enchantCooldowns))p.enchantCooldowns[key]=Math.max(0,p.enchantCooldowns[key]-dt);
     p.chilled=Math.max(0,(p.chilled||0)-dt);
@@ -697,7 +792,8 @@ export class Raid {
       this.move(p, p.dashX*RULES.dashSpeed*dt, p.dashY*RULES.dashSpeed*dt);
       p.dashTime = Math.max(0, p.dashTime-dt);
     } else {
-      const speed = RULES.speed*(p.buffs.haste>0?1.32:1)*this.run.playerSpeed*p.form.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
+      const speed = RULES.speed*(p.buffs.haste>0?1.32:1)*(p.ampBase!==undefined?.75:1)*
+        (armorIncompatible(p)?1.15:1)*(this.field?.slow(this,p)??1)*this.run.playerSpeed*p.form.speed*terrainSpeed(p, terrainFor(this.world,p))*(p.chilled>0?.68:1);
       this.move(p, mx*speed*dt, my*speed*dt);
     }
     const sector=zoneAt(p,this.world.zones);
@@ -718,18 +814,21 @@ export class Raid {
         this.synergies?.clear();this.synergyShelter=true;
       }
     }
+    for(const key of Object.keys(OPERATORS))if(input[key])useOperator(this,key);
+    if(input.numberShock)numberShock(this);
     if (input.divide) this.divide();
     if (input.heal) this.heal();
     this.updateBursts(dt);
     if (input.attack) this.attack();
     for (const tile of this.world.tiles) {
-      if (!tile.dead && distance(p, tile) < (p.buffs.magnet>0?135:p.radius+17) && canMerge(p.value, tile.value) && this.visible(p, tile)) {
+      if (!tile.dead && !tile.flying && p.ampBase===undefined &&
+        distance(p, tile) < (p.buffs.magnet>0?135:p.radius+17)+(this.run.enabled&&tile.remnant&&actualNumber(p)>=16?32:0) && canMerge(p.value, tile.value) && this.visible(p, tile)) {
         tile.dead = true; const old = p.value; p.value *= 2; p.hp = Math.min(p.maxHp, p.hp+8);
         updateNumberForm(this);this.tileFusion(tile);this.merges++; this.tutorial.merge = true;
         this.combo=this.elapsed-this.lastMerge<4?Math.min(5,this.combo+1):1;this.lastMerge=this.elapsed;
-        p.energy=Math.min(100,p.energy+RULES.energyPerMerge+(this.combo-1)*2);
+        gainEnergy(this,RULES.energyPerMerge+(this.combo-1)*2);
         this.effect(p.x, p.y-p.radius-17, `${old} + ${old} = ${p.value}`, '#a9edd1', 'text', 1.1); this.event('merge');
-      } else if (canRecycleRemnant(p.value,tile) && distance(p,tile)<(p.buffs.magnet>0?220:56) && this.visible(p,tile)) {
+      } else if (!tile.flying && canRecycleRemnant(actualNumber(p),tile) && distance(p,tile)<(p.buffs.magnet>0?220:56)+(this.run.enabled&&actualNumber(p)>=16?36:0) && this.visible(p,tile)) {
         const value=tile.coins??remnantCoins(tile.value);
         if(this.addLoot({id:`coins-${tile.id}`,kind:'loot',currencyOnly:true,name:'残骸金币',value,x:tile.x,y:tile.y})){
           tile.dead=true;this.tileFusion(tile, true);this.recycled++;this.recycledValue+=value;
@@ -762,7 +861,7 @@ export class Raid {
     updateAfflictions(this,dt);
     if (this.status !== 'playing') return;
     this.world.effects = this.world.effects.filter(effect => (effect.life -= dt) > 0);
-    if (this.elapsed >= this.duration) { this.finish(false, '行动超时，信号失联'); return; }
+    if (this.elapsed >= this.duration) { this.finish(false, this.training?'试射结束':'行动超时，信号失联'); return; }
     this.updateInteraction(input, dt);
   }
   finish(success, reason) {
@@ -772,7 +871,7 @@ export class Raid {
     const equipped = [...this.player.weapons, this.player.armor, this.player.laser].filter(item => item && !item.starter);
     const items=[...this.bag,...equipped],materials=salvageMaterials(this.bag.filter(item=>!isEquipment(item)));
     const exitMultiplier=success?exitRewardMultiplier({kind:this.extractedVia}):1,multiplier=this.rewardMultiplier*exitMultiplier;
-    this.result = { id:this.id,success,reason,exitBonus:exitMultiplier-1,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*multiplier),number:this.player.value,
+    this.result = { id:this.id,success,reason,exitBonus:exitMultiplier-1,rawValue:this.carriedValue(),value:Math.round(this.carriedValue()*multiplier),number:actualNumber(this.player),
       seconds:this.elapsed,kills:this.kills,hordeKills:this.hordeKills,waves:this.director?.wave||0,merges:this.merges,difficulty:this.difficulty.id,nodes:this.nodesActivated,recycled:this.recycled,recycledValue:this.recycledValue,mutators:[...this.run.ids],heat:this.heat?.value||0,seed:this.world.seed,extractedVia:this.extractedVia,
       materials:{alloy:Math.round(materials.alloy*multiplier),core:Math.round(materials.core*multiplier)},
       gear:this.carriedEquipment().map(item=>({...item})),loot:items.map(item=>({...item})) };
